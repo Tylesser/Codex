@@ -1,0 +1,18 @@
+package-as: Codex
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+move-folders:
+  Codex/Themes/Runestone: Codex_Runestone
+  Codex/Themes/Hearthwood: Codex_Hearthwood
+  Codex/Themes/Classic: Codex_Classic
+  Codex/Themes/Slate: Codex_Slate
+  Codex/Themes/Dusk: Codex_Dusk
+  Codex/Skins: Codex_Skins
+
+ignore:
+  - README.md
+  - CLAUDE.md
+  - branding

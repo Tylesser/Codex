@@ -1,0 +1,6 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <Script file="Module.lua"/>
+  <Script file="Plates.lua"/>
+  <Script file="Bags.lua"/>
+  <Script file="Page.lua"/>
+</Ui>

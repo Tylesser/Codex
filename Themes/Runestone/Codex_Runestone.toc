@@ -1,0 +1,11 @@
+## Interface: 16001
+## Title: Tylesser - Codex: Runestone theme
+## Notes: The Runestone look for Tylesser - Codex. Codex loads it only when you pick this theme.
+## Author: Tylesser
+## Version: @project-version@
+## Dependencies: Codex
+## LoadOnDemand: 1
+## X-License: MIT
+## IconTexture: Interface\AddOns\Codex\Media\Emblem
+
+Theme.lua

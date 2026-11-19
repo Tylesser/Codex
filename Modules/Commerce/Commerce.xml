@@ -1,0 +1,14 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <Script file="Data.lua"/>
+  <Script file="Settings.lua"/>
+  <Script file="Core.lua"/>
+  <Script file="Learn.lua"/>
+  <Script file="Quests.lua"/>
+  <Script file="Tooltip.lua"/>
+  <Script file="Vendor.lua"/>
+  <Script file="Shopping.lua"/>
+  <Script file="Window.lua"/>
+  <Script file="NPCs.lua"/>
+  <Script file="Page.lua"/>
+  <Script file="Module.lua"/>
+</Ui>

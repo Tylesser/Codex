@@ -1,0 +1,11 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <Script file="Data.lua"/>
+  <Script file="Tooltip.lua"/>
+  <Script file="Window.lua"/>
+  <Script file="Blizzard.lua"/>
+  <Script file="Bank.lua"/>
+  <Script file="Deposit.lua"/>
+  <Script file="GuildBank.lua"/>
+  <Script file="Page.lua"/>
+  <Script file="Module.lua"/>
+</Ui>

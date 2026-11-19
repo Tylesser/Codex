@@ -1,0 +1,43 @@
+## Interface: 16001
+## Title: Tylesser - Codex
+## Notes: All-in-one interface for WoW Forever: themes, a restyled game interface, bags, auction house, quest windows, ring menus, buffs, info bars, proc art and more, every part switchable.
+## Author: Tylesser
+## Version: @project-version@
+## SavedVariables: CodexDB
+## SavedVariablesPerCharacter: CodexCharDB
+## IconTexture: Interface\AddOns\Codex\Media\Emblem
+## X-License: MIT
+## X-Website: https://tylesser.com/codex/
+
+Tylesser.lua
+Core.lua
+Gathering.lua
+Theme.lua
+Widgets.lua
+Window.lua
+Areas.lua
+Search.lua
+Home.lua
+Settings.lua
+SettingsUI.lua
+Profiles.lua
+Setup.lua
+Minimap.lua
+Modules\Auction\Auction.xml
+Modules\Buffs\Buffs.xml
+Modules\Bags\Bags.xml
+Modules\MoveWindows\MoveWindows.xml
+Modules\Professions\Professions.xml
+Modules\Commerce\Commerce.xml
+Modules\VendorSearch\VendorSearch.xml
+Modules\BarFade\BarFade.xml
+Modules\StatDelta\StatDelta.xml
+Modules\QuestKeys\QuestKeys.xml
+Modules\Dialogue\Dialogue.xml
+Modules\Vendor\Vendor.xml
+Modules\QoL\QoL.xml
+Modules\Highlight\Highlight.xml
+Modules\InfoBar\InfoBar.xml
+Modules\Resource\Resource.xml
+Modules\Rings\Rings.xml
+Events.lua

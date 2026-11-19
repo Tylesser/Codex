@@ -1,0 +1,9 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <Script file="Data.lua"/>
+  <Script file="Stats.lua"/>
+  <Script file="Score.lua"/>
+  <Script file="Tooltip.lua"/>
+  <Script file="Arrows.lua"/>
+  <Script file="Page.lua"/>
+  <Script file="Module.lua"/>
+</Ui>

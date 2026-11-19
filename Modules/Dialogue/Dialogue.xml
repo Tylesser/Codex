@@ -1,0 +1,13 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <Script file="Module.lua"/>
+  <Script file="RepData.lua"/>
+  <Script file="Reputation.lua"/>
+  <Script file="Data.lua"/>
+  <Script file="Blizzard.lua"/>
+  <Script file="Window.lua"/>
+  <Script file="Gossip.lua"/>
+  <Script file="Quest.lua"/>
+  <Script file="Keys.lua"/>
+  <Script file="Auto.lua"/>
+  <Script file="Page.lua"/>
+</Ui>

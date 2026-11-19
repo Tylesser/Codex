@@ -1,0 +1,18 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <Script file="Module.lua"/>
+  <Script file="Loot.lua"/>
+  <Script file="Quests.lua"/>
+  <Script file="Gather.lua"/>
+  <Script file="Zones.lua"/>
+  <Script file="RevealData.lua"/>
+  <Script file="Reveal.lua"/>
+  <Script file="MapExtrasData.lua"/>
+  <Script file="MapExtras.lua"/>
+  <Script file="AddonButtons.lua"/>
+  <Script file="ProcGlow.lua"/>
+  <Script file="ProcArt.lua"/>
+  <Script file="Ranks.lua"/>
+  <Script file="ClassSpellsData.lua"/>
+  <Script file="FutureSpells.lua"/>
+  <Script file="Page.lua"/>
+</Ui>

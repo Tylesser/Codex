@@ -1,0 +1,616 @@
+local addonName, codex = ...
+local ns = codex.buffs
+
+-- The row of icons on screen: centered on an anchor that can be dragged while unlocked, or while
+-- Blizzard's Edit Mode is open.
+
+local UI = codex.UI
+local GAP = 6
+local RING = "Interface\\AddOns\\" .. addonName .. "\\Modules\\Buffs\\Media\\Ring"
+local CIRCLE_MASK = "Interface\\AddOns\\Codex\\Media\\Circle" -- smooth 256px circle (TempPortraitAlphaMask looked jagged)
+local WARN_SECONDS = 60
+local RESCAN_SECONDS = 1
+local TOP_OFFSET = 44 -- default position: the row's center, below the top edge of the screen
+
+local anchor, anchorLabel, mover
+local editMode = false -- Edit Mode open: unlocked for now, without changing the saved lock
+
+local function IsUnlocked()
+  return editMode or not ns.db.locked
+end
+local icons = {}
+-- Secure buttons laid over the icons of buffs you can cast, so a click casts the buff on you.
+-- The icons themselves stay plain frames, free to change in combat. The game doesn't let addons
+-- move or change secure buttons in combat, so these are hidden as combat starts and laid out
+-- again when it ends: in combat the icons can't be clicked. They're placed on UIParent, not on
+-- the icons, as anchoring a secure button to an icon would lock the icon in combat too.
+local clicks = {}
+
+-- Look ------------------------------------------------------------------------------------------
+-- Icons and party buttons follow the active Codex theme: its slot fill and rings (the borders of
+-- action and bag slots), and its corner piece (studs, rivets) as the "missing" mark. Themes change
+-- after a reload, so the theme is read once, when a frame is made.
+
+ns.GREY = { 0.35, 0.35, 0.35 } -- dimmed: not read yet, done, or the frame moved
+
+-- Icons and buttons sit over the game world: the theme's ink surfaces (the light-theme rule, Theme.lua).
+local function Theme()
+  return codex.InkTheme and codex.InkTheme() or codex.Theme()
+end
+
+-- Rings darker than this (the black shade lines between borders) keep their color when a border
+-- is recolored, like the black middle line of the old double border.
+local function IsShade(color)
+  return (color[1] + color[2] + color[3]) < 0.3
+end
+
+-- The theme's ring color a frame shows normally (also the circle's ring color).
+local function MainRingColor()
+  for _, ring in ipairs(Theme().slot.rings or {}) do
+    if not IsShade(ring.color) then
+      return ring.color
+    end
+  end
+  return Theme().accent
+end
+
+-- Missing / "Always" red.
+function ns.BadColor()
+  return Theme().bad
+end
+
+-- Backdrop and rings of the theme's slot on frame. Sets frame.border (line sets, recolored by
+-- ns.SetFrameColor) and returns the backdrop and how far in the art should start.
+function ns.StyleSlot(frame)
+  local slot = Theme().slot
+  local backdrop = frame:CreateTexture(nil, "BACKGROUND")
+  backdrop:SetAllPoints()
+  UI.SetColor(backdrop, slot.fill or { 0, 0, 0, 1 })
+  local rings = slot.rings or {}
+  frame.border = UI.Rings(frame, rings, "OVERLAY")
+  frame.borderRings = rings
+  local inset = 1
+  for _, ring in ipairs(rings) do
+    inset = math.max(inset, (ring.inset or 0) + (ring.size or 1))
+  end
+  return backdrop, inset
+end
+
+-- The theme's corner piece as the "missing" mark in an icon's corner, or nil when the theme has
+-- none. Runestone's stud has a ruby twin (the old Buff Tracker look); other corners are tinted red.
+function ns.MissingMark(frame, size)
+  local corner = Theme().corner
+  if not (corner and corner.texture) then
+    return nil
+  end
+  local mark = frame:CreateTexture(nil, "OVERLAY", nil, 7)
+  mark:SetSize(size, size)
+  if corner.texture == codex.T.STUD then
+    mark:SetTexture(codex.T.STUD_RUBY)
+  else
+    mark:SetTexture(corner.texture)
+    mark:SetVertexColor(UI.Unpack(ns.BadColor()))
+  end
+  return mark
+end
+
+-- Shapes ----------------------------------------------------------------------------------------
+-- Icons and party buttons are squares with the theme's slot rings, or circles: the art cut round
+-- with a mask and a ring (Media/Ring, white, colored like the border) in place of the rings.
+-- Clients without mask textures only get squares.
+
+-- Codex's "Round icons" setting (Settings > game interface) rounds these too.
+function ns.RoundFromSettings()
+  return codex.SkinPartOn ~= nil and codex.SkinPartOn("roundicons") or false
+end
+
+function ns.IsRound()
+  return ns.db.iconShape == "circle" or ns.RoundFromSettings()
+end
+
+-- frame needs: border (ns.StyleSlot), and the textures to cut round in frame.roundParts.
+function ns.ApplyShape(frame, round)
+  round = round and frame.CreateMaskTexture ~= nil
+  if (frame.round or false) == round then
+    return
+  end
+  if round and not frame.mask then
+    frame.mask = frame:CreateMaskTexture()
+    frame.mask:SetTexture(CIRCLE_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    frame.mask:SetAllPoints()
+    if frame.border then -- the click overlays have no border, so no ring either
+      frame.ring = frame:CreateTexture(nil, "OVERLAY", nil, 6)
+      frame.ring:SetAllPoints()
+      frame.ring:SetTexture(RING)
+      local color = frame.ringColor or MainRingColor()
+      frame.ring:SetVertexColor(color[1], color[2], color[3])
+    end
+  end
+  frame.round = round
+  local parts = {}
+  for _, part in ipairs(frame.roundParts or {}) do
+    parts[#parts + 1] = part
+  end
+  parts[#parts + 1] = frame.GetHighlightTexture and frame:GetHighlightTexture() or nil
+  for _, part in ipairs(parts) do
+    if round then
+      part:AddMaskTexture(frame.mask)
+    elseif frame.mask then
+      part:RemoveMaskTexture(frame.mask)
+    end
+  end
+  if frame.ring then
+    frame.ring:SetShown(round)
+  end
+  if frame.border then
+    for _, lines in pairs(frame.border) do
+      for _, line in ipairs(lines) do
+        line:SetShown(not round)
+      end
+    end
+  end
+end
+
+-- Border color for either shape. color nil = the theme's own ring colors.
+function ns.SetFrameColor(frame, color)
+  if frame.border then
+    for index, lines in ipairs(frame.border) do
+      local ring = frame.borderRings and frame.borderRings[index]
+      local ringColor = ring and ring.color or { 0, 0, 0 }
+      if color and not IsShade(ringColor) then
+        codex.T.ColorLines(lines, color)
+      else
+        codex.T.ColorLines(lines, ringColor, ringColor[4])
+      end
+    end
+  end
+  frame.ringColor = color
+  if frame.ring then
+    local ringColor = color or MainRingColor()
+    frame.ring:SetVertexColor(ringColor[1], ringColor[2], ringColor[3])
+  end
+end
+
+local function FormatTime(seconds)
+  if seconds >= 3600 then
+    return string.format("%dh", math.ceil(seconds / 3600))
+  elseif seconds >= 60 then
+    return string.format("%dm", math.ceil(seconds / 60))
+  end
+  return string.format("%d", math.ceil(seconds))
+end
+
+-- Top center of the screen until the row is moved. A moved row is saved as an offset from the
+-- screen center, so it stays centered as icons come and go.
+local function SavePosition()
+  local x, y = anchor:GetCenter()
+  local centerX, centerY = UIParent:GetCenter()
+  ns.db.x, ns.db.y = x - centerX, y - centerY
+end
+
+local function ApplyPosition()
+  anchor:ClearAllPoints()
+  if ns.db.x and ns.db.y then
+    anchor:SetPoint("CENTER", UIParent, "CENTER", ns.db.x, ns.db.y)
+  else
+    anchor:SetPoint("CENTER", UIParent, "TOP", 0, -TOP_OFFSET)
+  end
+end
+
+function ns.CreateDisplay()
+  anchor = UI.Ink(CreateFrame("Frame", nil, UIParent))
+  anchor:SetSize(ns.db.iconSize, ns.db.iconSize)
+  anchor:SetClampedToScreen(true)
+  anchor:SetMovable(true)
+  anchor:RegisterForDrag("LeftButton")
+  anchor:SetScript("OnDragStart", anchor.StartMoving)
+  anchor:SetScript("OnDragStop", function(self)
+    self:StopMovingOrSizing()
+    SavePosition()
+    ApplyPosition()
+  end)
+
+  -- Shown while unlocked: a panel in the theme's look behind the row and a label above it.
+  mover = CreateFrame("Frame", nil, anchor)
+  mover:SetPoint("TOPLEFT", -10, 10)
+  mover:SetPoint("BOTTOMRIGHT", 10, -24)
+  mover:SetFrameLevel(math.max(anchor:GetFrameLevel() - 1, 0))
+  UI.Panel(mover, { cornerSize = 12 })
+
+  anchorLabel = UI.Text(mover, "head", 11, "accent")
+  anchorLabel:SetPoint("BOTTOM", mover, "TOP", 0, 6)
+  local label = "Codex Buffs: drag to move"
+  anchorLabel:SetText(Theme().titlebar.upper and label:upper() or label)
+
+  ApplyPosition()
+
+  ns.CreateCombatFrame()
+
+  -- Clients with Edit Mode: the row can be moved there too, like Blizzard's own frames.
+  local manager = EditModeManagerFrame
+  if manager and manager.HookScript then
+    manager:HookScript("OnShow", function()
+      editMode = true
+      ns.UpdateDisplay()
+    end)
+    manager:HookScript("OnHide", function()
+      editMode = false
+      ns.UpdateDisplay()
+    end)
+    editMode = manager:IsShown() and true or false
+  end
+end
+
+local function GetIcon(index)
+  local icon = icons[index]
+  if icon then
+    return icon
+  end
+  icon = CreateFrame("Frame", nil, anchor)
+  local inset
+  icon.backdrop, inset = ns.StyleSlot(icon)
+  icon.stud = ns.MissingMark(icon, 12) -- nil when the theme has no corner piece
+  if icon.stud then
+    icon.stud:SetPoint("CENTER", icon, "TOPRIGHT", -1, -1)
+  end
+  icon.texture = icon:CreateTexture(nil, "ARTWORK")
+  icon.texture:SetPoint("TOPLEFT", inset, -inset)
+  icon.texture:SetPoint("BOTTOMRIGHT", -inset, inset)
+  icon.texture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+  icon.roundParts = { icon.texture, icon.backdrop }
+  icon.count = icon:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+  icon.count:SetPoint("BOTTOMRIGHT", -2, 2)
+  icon.time = icon:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmallOutline")
+  icon.time:SetPoint("TOP", icon, "BOTTOM", 0, -2)
+  icons[index] = icon
+  return icon
+end
+
+-- A few quick blinks of the plain icon (never the secure overlay), for "Alert".
+local FLASH_BLINKS = 8
+local function Flash(icon)
+  if not icon.CreateAnimationGroup then
+    return
+  end
+  if not icon.flash then
+    local group = icon:CreateAnimationGroup()
+    local fade = group:CreateAnimation("Alpha")
+    if fade.SetFromAlpha then
+      fade:SetFromAlpha(1)
+      fade:SetToAlpha(0.15)
+    else
+      fade:SetChange(-0.85)
+    end
+    fade:SetDuration(0.2)
+    group:SetLooping("BOUNCE")
+    group:SetScript("OnLoop", function(self)
+      self.blinks = (self.blinks or 0) + 1
+      if self.blinks >= FLASH_BLINKS then
+        self:Stop()
+      end
+    end)
+    icon.flash = group
+  end
+  icon.flash:Stop()
+  icon.flash.blinks = 0
+  icon.flash:Play()
+end
+
+local function ShowClickTooltip(self)
+  GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+  GameTooltip:AddLine(self.spellName)
+  local action = self.action
+  if action and action.item then
+    local name = ns.ItemName(action.item) or ("item " .. action.item)
+    local where = action.slot == 17 and " on your off-hand weapon" or action.slot and " on your main-hand weapon" or ""
+    GameTooltip:AddLine(string.format("Click to use %s%s (%d left).", name, where, ns.ItemCount(action.item)),
+      0.6, 0.6, 0.6)
+  else
+    GameTooltip:AddLine("Click to cast it on yourself.", 0.6, 0.6, 0.6)
+  end
+  GameTooltip:Show()
+end
+
+local function GetClick(index)
+  local click = clicks[index]
+  if click then
+    return click
+  end
+  click = CreateFrame("Button", nil, UIParent, "SecureActionButtonTemplate")
+  -- Newer clients run secure clicks on key down or up depending on a setting; they need both.
+  if C_CVar and C_CVar.GetCVar and C_CVar.GetCVar("ActionButtonUseKeyDown") ~= nil then
+    click:RegisterForClicks("AnyUp", "AnyDown")
+  else
+    click:RegisterForClicks("AnyUp")
+  end
+  click:SetAttribute("type", "spell")
+  click:SetAttribute("unit", "player")
+  click:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+  click.roundParts = {}
+  click:SetScript("OnEnter", ShowClickTooltip)
+  click:SetScript("OnLeave", function()
+    GameTooltip:Hide()
+  end)
+  click:Hide()
+  clicks[index] = click
+  return click
+end
+
+local function HideClicks()
+  for _, click in ipairs(clicks) do
+    click:Hide()
+  end
+end
+
+-- Combat: the click overlays hide as combat starts, and come back when it ends. Made in Enable
+-- (through ns.CreateDisplay), never while the file loads.
+function ns.CreateCombatFrame()
+  local combatFrame = CreateFrame("Frame")
+  combatFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+  combatFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+  combatFrame:SetScript("OnEvent", function(_, event)
+    if event == "PLAYER_REGEN_DISABLED" then
+      -- still allowed while this event runs: the lockdown starts right after it
+      if not InCombatLockdown() then
+        HideClicks()
+      end
+    elseif ns.db then
+      ns.UpdateDisplay()
+    end
+  end)
+  ns.combatFrame = combatFrame
+end
+
+-- Out of combat only. shown: the entries shown, in icon order. A click casts the buff's spell
+-- (type spell) or uses its item (type item; on a weapon slot through target-slot).
+local function LayoutClicks(shown, size)
+  if InCombatLockdown() then
+    return
+  end
+  local used = 0
+  if not IsUnlocked() and ns.db.clickToCast then
+    for index, entry in ipairs(shown) do
+      local x, y = icons[index]:GetCenter()
+      local action = x and ns.ClickAction(entry)
+      if action then
+        used = used + 1
+        local click = GetClick(used)
+        click:SetSize(size, size)
+        click:ClearAllPoints()
+        click:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x, y)
+        click:SetFrameStrata(anchor:GetFrameStrata())
+        click:SetFrameLevel(icons[index]:GetFrameLevel() + 5)
+        ns.ApplyShape(click, ns.IsRound())
+        if action.item then
+          click:SetAttribute("type", "item")
+          click:SetAttribute("spell", nil)
+          click:SetAttribute("item", "item:" .. action.item)
+          click:SetAttribute("target-slot", action.slot)
+        else
+          click:SetAttribute("type", "spell")
+          click:SetAttribute("item", nil)
+          click:SetAttribute("target-slot", nil)
+          click:SetAttribute("spell", action.spell)
+        end
+        click.spellName = entry.name
+        click.action = action
+        click:Show()
+      end
+    end
+  end
+  for index = used + 1, #clicks do
+    clicks[index]:Hide()
+  end
+end
+
+local function ShouldShow(entry, state)
+  if entry.mode == "always" or IsUnlocked() then
+    return true
+  end
+  if not (state and state.known) then
+    return false
+  end
+  if entry.mode == "active" then
+    return state.active
+  end
+  return not state.active
+end
+
+local function UpdateTime(icon)
+  local state = icon.state
+  local expires = state and state.active and state.expires or 0
+  if expires > 0 then
+    local remaining = math.max(expires - GetTime(), 0)
+    icon.time:SetText(FormatTime(remaining))
+    if remaining < WARN_SECONDS then
+      icon.time:SetTextColor(1, 0.3, 0.3)
+    else
+      icon.time:SetTextColor(1, 1, 1)
+    end
+  else
+    icon.time:SetText("")
+  end
+end
+
+function ns.UpdateDisplay()
+  if not anchor then
+    return
+  end
+  local size = ns.db.iconSize
+  local shown = {}
+  for _, entry in ipairs(ns.db.tracked) do
+    if ShouldShow(entry, ns.StateOf(entry)) then
+      shown[#shown + 1] = entry
+    end
+  end
+
+  local rowWidth = math.max(#shown * size + math.max(#shown - 1, 0) * GAP, size)
+  anchor:SetSize(rowWidth, size)
+
+  for index, entry in ipairs(shown) do
+    local icon = GetIcon(index)
+    local state = ns.StateOf(entry)
+    local active = state and state.active
+    local missing = state and state.known and not active
+
+    icon:SetSize(size, size)
+    local round = ns.IsRound()
+    ns.ApplyShape(icon, round)
+    -- the stud sits on the corner of a square, and on the ring of a circle
+    local studInset = round and math.floor(size * 0.15 + 0.5) or 1
+    if icon.stud then
+      icon.stud:ClearAllPoints()
+      icon.stud:SetPoint("CENTER", icon, "TOPRIGHT", -studInset, -studInset)
+    end
+    icon:ClearAllPoints()
+    icon:SetPoint("CENTER", anchor, "CENTER", (index - (#shown + 1) / 2) * (size + GAP), 0)
+    icon.state = state
+    icon.entry = entry
+    icon.texture:SetTexture(ns.EntryIcon(entry))
+    icon.texture:SetDesaturated(not active)
+    -- Missing: the theme's red border and a red corner mark. Active: the theme's own border. Not
+    -- read yet (may or may not be on): grey.
+    if icon.stud then
+      icon.stud:SetShown(missing or false)
+    end
+    if missing then
+      ns.SetFrameColor(icon, ns.BadColor())
+      icon.texture:SetVertexColor(1, 0.5, 0.5)
+    elseif active then
+      ns.SetFrameColor(icon, nil)
+      icon.texture:SetVertexColor(1, 1, 1)
+    else
+      ns.SetFrameColor(icon, ns.GREY)
+      icon.texture:SetVertexColor(0.7, 0.7, 0.7)
+    end
+    -- An icon that uses an item shows how many you have: red 0 when it's gone (and no click).
+    local itemID = ns.ItemFor(entry)
+    if itemID then
+      local items = ns.ItemCount(itemID)
+      icon.count:SetText(items)
+      if items > 0 then
+        icon.count:SetTextColor(1, 1, 1)
+      else
+        icon.count:SetTextColor(1, 0.3, 0.3)
+      end
+    else
+      local count = active and state.count or 0
+      icon.count:SetText(count > 1 and count or "")
+      icon.count:SetTextColor(1, 1, 1)
+    end
+    UpdateTime(icon)
+    icon:Show()
+    if ns.pendingFlash[entry.name:lower()] then
+      Flash(icon)
+    end
+  end
+  for index = #shown + 1, #icons do
+    icons[index].state = nil
+    icons[index].entry = nil
+    icons[index]:Hide()
+  end
+  ns.pendingFlash = {}
+
+  local unlocked = IsUnlocked()
+  anchor:EnableMouse(unlocked)
+  mover:SetShown(unlocked)
+  LayoutClicks(shown, size)
+  ns.UpdateSelfDispel()
+end
+
+-- For your own dispel buttons (Dispel.lua), placed under the row.
+function ns.RowAnchor()
+  return anchor
+end
+ns.IsRowUnlocked = IsUnlocked
+
+-- Runs a few times per second: counts down, and checks again while the game hides buffs. A timer
+-- that runs out while they're hidden means "unknown", as the buff may have been refreshed.
+local sinceRescan, sinceWeapons = 0, 0
+function ns.Tick(elapsed)
+  -- weapon enchants have no event on every client: read them every second while tracked
+  sinceWeapons = sinceWeapons + elapsed
+  if sinceWeapons >= RESCAN_SECONDS then
+    sinceWeapons = 0
+    if ns.HasWeaponEntries() and ns.ScanWeapons() then
+      ns.UpdateDisplay()
+      return
+    end
+  end
+  if not ns.scanComplete then
+    sinceRescan = sinceRescan + elapsed
+    if sinceRescan >= RESCAN_SECONDS then
+      sinceRescan = 0
+      ns.Scan()
+      ns.UpdateDisplay()
+      if ns.scanComplete then
+        ns.RefreshOptions()
+      end
+      return
+    end
+  end
+
+  local now = GetTime()
+  local changed = false
+  for _, entry in ipairs(ns.db.tracked) do
+    local state = ns.StateOf(entry)
+    if state and state.active and state.expires and state.expires > 0 and state.expires <= now then
+      if ns.scanComplete or entry.slot then
+        ns.BuffDropped(entry)
+      end
+      state.known = ns.scanComplete or entry.slot ~= nil
+      state.active = false
+      state.count = 0
+      state.expires = 0
+      changed = true
+    end
+  end
+  if changed then
+    ns.UpdateDisplay()
+    return
+  end
+  for _, icon in ipairs(icons) do
+    if icon:IsShown() then
+      UpdateTime(icon)
+    end
+  end
+end
+
+function ns.SetLocked(locked)
+  ns.db.locked = locked
+  ns.UpdateDisplay()
+  ns.RefreshOptions()
+end
+
+function ns.SetIconSize(size)
+  ns.db.iconSize = math.min(math.max(size, ns.MIN_ICON_SIZE), ns.MAX_ICON_SIZE)
+  ns.UpdateDisplay()
+  ns.RefreshOptions()
+end
+
+function ns.ResetPosition()
+  ns.db.x, ns.db.y = nil, nil
+  ApplyPosition()
+  ns.UpdateDisplay()
+end
+
+function ns.CycleShape()
+  local current = ns.db.iconShape
+  for index, shape in ipairs(ns.SHAPES) do
+    if shape == current then
+      ns.db.iconShape = ns.SHAPES[index % #ns.SHAPES + 1]
+      break
+    end
+  end
+  if ns.db.iconShape == current then
+    ns.db.iconShape = ns.SHAPES[1] -- unknown saved value
+  end
+  ns.UpdateDisplay()
+  ns.PartyChanged()
+  ns.RefreshOptions()
+end
+
+function ns.SetClickToCast(enabled)
+  ns.db.clickToCast = enabled
+  ns.UpdateDisplay()
+end

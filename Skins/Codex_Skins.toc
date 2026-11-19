@@ -1,0 +1,28 @@
+## Interface: 16001
+## Title: Tylesser - Codex: game interface skins
+## Notes: Restyles the game's own interface (action bars, unit frames, minimap, chat, quests, tooltips, windows) in your Codex theme. Codex loads it when "Restyle the game's interface" is on.
+## Author: Tylesser
+## Version: @project-version@
+## Dependencies: Codex
+## LoadOnDemand: 1
+## X-License: MIT
+## IconTexture: Interface\AddOns\Codex\Media\Emblem
+
+Skin.lua
+ActionBars.lua
+UnitFrames.lua
+Raid.lua
+Nameplates.lua
+Auras.lua
+Cooldowns.lua
+Minimap.lua
+Chat.lua
+Tracker.lua
+DamageMeter.lua
+QuestLog.lua
+QuestPins.lua
+Tooltips.lua
+Menus.lua
+Windows.lua
+LootRoll.lua
+Run.lua
