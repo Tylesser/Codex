@@ -2,7 +2,9 @@
 
 The all-in-one Tylesser addon (started 2026-11-17). Every feature is a **module** that can be switched off;
 the look comes from one of five **themes**; restyling the game's own interface is a separate **skins** folder.
-Workspace conventions are in `E:/Games/Wow/CLAUDE.md`. Not on GitHub/CurseForge/Wago yet.
+Workspace conventions are in `E:/Games/Wow/CLAUDE.md`. Public repo Tylesser/Codex, CurseForge 1817747, Wago kNMP9RGz;
+first beta v1.0.0-beta1 on 2026-11-20. A tag with "beta" (`v1.0.0-beta2`) is a beta on both stores and a GitHub
+pre-release; the changelog heading is the version without the "v" (`## 1.0.0-beta2`).
 
 **Forever only** (the user's decision, 2026-11-17): every .toc says `## Interface: 16001` and the code needs no
 fallbacks for other clients. `ReloadUI` is protected on Forever: reloads go through the secure `/reload` macro
