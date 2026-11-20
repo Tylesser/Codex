@@ -419,14 +419,19 @@ end
 -- Kept per character (account-wide, so tooltips can say an alt can make an item) and only read from the
 -- profession window of your own character, never a linked or guild one.
 
+-- "Realm-Name" without a surname (ns.CharacterKey)
 function P.PlayerKey()
-  local name = UnitName("player")
-  return (GetRealmName() or "?") .. "-" .. (name or "?")
+  return ns.CharacterKey()
 end
 
 function P.Me()
   local db = P.DB()
   local key = P.PlayerKey()
+  -- older records of this character under another spelling of its name (with the surname) join this one
+  if not P.merged then
+    P.merged = true
+    ns.MergeCharacterRecords(db.characters, key)
+  end
   local me = db.characters[key]
   if not me then
     me = { recipes = {}, profs = {} }
@@ -434,7 +439,8 @@ function P.Me()
   end
   me.recipes = me.recipes or {}
   me.profs = me.profs or {}
-  me.name = UnitName("player")
+  me.name = ns.PlayerName()
+  ns.StoreFullName(me)
   me.class = select(2, UnitClass("player"))
   return me, key
 end
@@ -559,7 +565,7 @@ function P.CraftInfo(itemID)
         local priced = entry.fullCost > 0 or not entry.fullCostMissing
         local candidate = { cost = priced and entry.fullCost or nil, missing = entry.fullCostMissing,
           numMade = entry.numMade, recipe = record.name, prof = record.prof, key = key,
-          name = char.name or key:match("%-(.+)$") or key, mine = key == mine, reagents = entry.reagents }
+          name = ns.CharacterDisplayName(char, key), mine = key == mine, reagents = entry.reagents }
         if Better(candidate, best) then
           best = candidate
         end

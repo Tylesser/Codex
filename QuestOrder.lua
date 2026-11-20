@@ -5,7 +5,8 @@ local addonName, ns = ...
 -- first, then the quest log's order of zones); inside each, nearest first, then the quest log's order.
 --
 -- A quest is in your zone when its quest log header is the zone's name (the log groups quests under zone headers),
--- or the game puts it on your map (QuestInfo.isOnMap / C_QuestLog.IsOnMap). Distance: C_QuestLog.GetDistanceSqToQuest
+-- or the game puts it on your map (QuestInfo.isOnMap / C_QuestLog.IsOnMap, only while the quest system's map is
+-- yours: GetMapForQuestPOIs). Distance: C_QuestLog.GetDistanceSqToQuest
 -- where the game knows the quest's spot on your continent (many Classic quests have none: those keep their log
 -- order). Every value is read through Readable (no secret is compared).
 
@@ -141,11 +142,17 @@ function QO.Sorted(watched)
   local log = QO.LogInfo()
   local here = QO.ZoneNames()
   local entries, zones = {}, {}
+  -- "on the map" means on the quest system's map, which is the map the world map shows while it's open
+  -- (forever QuestLogMixin:SyncQuestSystemWithCurrentMap -> C_QuestLog.SetMapForQuestPOIs), not always yours:
+  -- trusted only when that map is the one you're on (the user's Un'Goro quests went under Desolace, 2026-11-21)
+  local poiMap = Num(Ask(API("GetMapForQuestPOIs")))
+  local myMap = C_Map and Num(Ask(C_Map.GetBestMapForUnit, "player"))
+  local trustMap = poiMap ~= nil and myMap ~= nil and poiMap == myMap
   for position, id in ipairs(watched) do
     local info = log[id] or {}
-    local onMap = info.onMap
-    if not onMap and API("IsOnMap") then
-      onMap = Ask(API("IsOnMap"), id) == true
+    local onMap = false
+    if trustMap then
+      onMap = info.onMap or (API("IsOnMap") and Ask(API("IsOnMap"), id) == true) or false
     end
     local zone = info.header and info.header:lower() or nil
     local entry = {

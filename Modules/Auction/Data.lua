@@ -60,7 +60,7 @@ end
 
 -- Realm name plus faction: classic auction houses are per faction.
 function A.RealmKey()
-  local realm = GetRealmName and GetRealmName() or "Realm"
+  local realm = ns.RealmName() -- (never "": Forever's GetRealmName gave "" for a session)
   local faction = UnitFactionGroup and UnitFactionGroup("player")
   return realm .. "-" .. (faction or "Neutral")
 end

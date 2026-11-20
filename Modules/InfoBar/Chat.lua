@@ -217,16 +217,14 @@ local function CreateCopy()
   local area = UI.Inset(copy)
   area:SetPoint("TOPLEFT", 16, -60)
   area:SetPoint("BOTTOMRIGHT", -16, 16)
-  local scroll, body = UI.ScrollArea(area)
+  -- the edit box is the scroll child itself: one frame further down it drew no text on Forever (UI.ScrollArea)
+  local scroll, box = UI.ScrollArea(area, "EditBox")
   scroll:SetPoint("TOPLEFT", 8, -6)
   scroll:SetPoint("BOTTOMRIGHT", -6, 6)
-  copy.scroll, copy.body = scroll, body
-
-  local box = CreateFrame("EditBox", nil, body)
+  copy.scroll, copy.body = scroll, box
   box:SetMultiLine(true)
   box:SetAutoFocus(false)
   box:SetMaxLetters(0)
-  box:SetPoint("TOPLEFT")
   UI.Font(box, "body", 13, "text")
   box:SetScript("OnEscapePressed", function()
     copy:Hide()
@@ -237,10 +235,7 @@ local function CreateCopy()
       self:SetText(copy.text or "")
     end
   end)
-  box:SetScript("OnSizeChanged", function(self)
-    body:SetHeight(math.max(I.Num(self:GetHeight()) or 0, I.Num(scroll:GetHeight()) or 0))
-    scroll:Update()
-  end)
+  -- (a multi-line edit box grows with its text; the scroll area's own OnSizeChanged updates its thumb)
   copy.box = box
   table.insert(UISpecialFrames, "CodexChatCopy")
 end
@@ -260,7 +255,6 @@ function I.ShowCopy()
   local measured = I.Num(copy.scroll:GetWidth())
   local width = (measured and measured > 100 and measured or 546) - 10
   copy.box:SetWidth(width)
-  copy.body:SetWidth(width)
   copy.box:SetText(copy.text)
   copy.box:SetFocus()
   copy.box:HighlightText()
@@ -269,10 +263,9 @@ function I.ShowCopy()
     local laidOut = I.Num(copy.scroll:GetWidth())
     if laidOut and laidOut > 100 then
       copy.box:SetWidth(laidOut - 10)
-      copy.body:SetWidth(laidOut - 10)
     end
-    copy.body:SetHeight(math.max(I.Num(copy.box:GetHeight()) or 0, I.Num(copy.scroll:GetHeight()) or 0))
-    copy.scroll:SetVerticalScroll(math.max(0, (I.Num(copy.body:GetHeight()) or 0) - (I.Num(copy.scroll:GetHeight()) or 0)))
+    pcall(copy.scroll.UpdateScrollChildRect, copy.scroll)
+    copy.scroll:SetVerticalScroll(math.max(0, (I.Num(copy.box:GetHeight()) or 0) - (I.Num(copy.scroll:GetHeight()) or 0)))
     copy.scroll:Update()
   end)
 end

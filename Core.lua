@@ -59,6 +59,175 @@ function ns.Say(text)
   print(ns.PREFIX .. text)
 end
 
+-- Characters ---------------------------------------------------------------------------------------------------
+-- Forever has surnames: UnitName("player") gave "Tylesser" in one session and "Tylesser Valerius" in another, so
+-- the same character got two records (the user's money tooltip, 2026-11-21). A character is its realm and its own
+-- name: the first word of the name, never the surname.
+
+-- The player's own name, without a surname.
+function ns.PlayerName()
+  local ok, name = pcall(UnitName, "player")
+  if not ok or type(name) ~= "string" or name == "" or (issecretvalue and issecretvalue(name)) then
+    return "?"
+  end
+  return name:match("^[^%s]+") or name
+end
+
+-- The realm's name. Forever's GetRealmName() returned "" for a whole session (2026-11-21: the character got a second
+-- record "-Tylesser" and the old one showed its realm as another realm's), so an empty answer falls back to the last
+-- realm seen (`CodexDB.lastRealm`, else the realm of the newest character record), never to "".
+local function Plain(text)
+  if type(text) ~= "string" or text == "" or text == "?" or (issecretvalue and issecretvalue(text)) then
+    return nil
+  end
+  return text
+end
+
+function ns.RealmName()
+  local ok, realm = pcall(GetRealmName)
+  realm = ok and Plain(realm) or nil
+  local db = ns.db
+  if realm then
+    if db then
+      db.lastRealm = realm
+    end
+    return realm
+  end
+  if db and Plain(db.lastRealm) then
+    return db.lastRealm
+  end
+  -- the newest record that knows its realm
+  local best, when
+  local characters = db and type(db.bags) == "table" and type(db.bags.characters) == "table" and db.bags.characters or {}
+  for _, record in pairs(characters) do
+    if type(record) == "table" and Plain(record.realm) and (tonumber(record.updated) or 0) > (when or -1) then
+      best, when = record.realm, tonumber(record.updated) or 0
+    end
+  end
+  if best and db then
+    db.lastRealm = best -- kept for the session: the merge below may empty the records' own realm fields
+  end
+  return best or "?"
+end
+
+-- The player's full name for display: Forever's UnitName returns the name and the surname as two values
+-- ("Tylesser", "Valerius"; print shows them with a space, which first looked like one value: the user's checks,
+-- 2026-11-21), joined with the game's separator as Codex's unit frames do (Skins/UnitFrames.lua FullName).
+-- Keys use ns.PlayerName (the first value).
+function ns.PlayerFullName()
+  local ok, name, surname = pcall(UnitName, "player")
+  local function Text(value)
+    return type(value) == "string" and value ~= "" and not (issecretvalue and issecretvalue(value)) and value or nil
+  end
+  name, surname = ok and Text(name) or nil, ok and Text(surname) or nil
+  if not name then
+    return ns.PlayerName()
+  end
+  if surname then
+    local consts = Constants and Constants.CharacterNameSeparatorConsts
+    local separator = consts and type(consts.CHARACTERNAME_SURNAME_SEPARATOR) == "string"
+      and consts.CHARACTERNAME_SURNAME_SEPARATOR or " "
+    return name .. separator .. surname
+  end
+  return name
+end
+
+-- Stores the full name on a character record: a name with the surname is kept once seen (the game may give the
+-- name without it early in a session; the user's tooltip showed "Tylesser" right after a reload, 2026-11-21).
+function ns.StoreFullName(record)
+  if type(record) ~= "table" then
+    return
+  end
+  local full = ns.PlayerFullName()
+  if full:find(" ", 1, true) or type(record.fullName) ~= "string" or record.fullName == "" then
+    record.fullName = full
+  end
+end
+
+-- A stored character's name to show: its full name when known, else its name, else the key's name part.
+function ns.CharacterDisplayName(record, key)
+  if type(record) == "table" then
+    if type(record.fullName) == "string" and record.fullName ~= "" then
+      return record.fullName
+    end
+    if type(record.name) == "string" and record.name ~= "" then
+      return record.name
+    end
+  end
+  return type(key) == "string" and (key:match("%-(.+)$") or key) or "?"
+end
+
+-- "Realm-Name" for any key or name: a surname after the first space is dropped, and an empty or unknown realm
+-- ("-Name", "?-Name") is this realm.
+function ns.NormalizeCharacterKey(key)
+  if type(key) ~= "string" then
+    return key
+  end
+  local realm, name = key:match("^(.*)%-(.-)$")
+  if not realm then
+    return key
+  end
+  if realm == "" or realm == "?" then
+    realm = ns.RealmName()
+  end
+  return realm .. "-" .. (name:match("^[^%s]+") or name)
+end
+
+-- This character's key.
+function ns.CharacterKey()
+  return ns.RealmName() .. "-" .. ns.PlayerName()
+end
+
+-- One record per character in a table keyed "Realm-Name": every other key with the same realm and first name is
+-- merged into `key` (the newer record by `updated` is kept whole; fields it lacks come from the older one) and
+-- removed. `also` = more tables keyed the same way (hidden flags) whose entries move with it. Returns how many
+-- records were merged in.
+function ns.MergeCharacterRecords(records, key, also)
+  if type(records) ~= "table" then
+    return 0
+  end
+  local merged = 0
+  -- (the keys first: a table may not get new keys while pairs walks it)
+  local others = {}
+  for other, record in pairs(records) do
+    if other ~= key and type(record) == "table" and ns.NormalizeCharacterKey(other) == key then
+      others[#others + 1] = other
+    end
+  end
+  for _, other in ipairs(others) do
+    local record = records[other]
+    do
+      local mine = records[key]
+      if type(mine) ~= "table" then
+        records[key] = record
+      else
+        local newer, older = mine, record
+        if (tonumber(record.updated) or 0) > (tonumber(mine.updated) or 0) then
+          newer, older = record, mine
+        end
+        for field, value in pairs(older) do
+          -- (an empty string counts as missing: the newer record may have been made with an empty realm)
+          if newer[field] == nil or (newer[field] == "" and value ~= "") then
+            newer[field] = value
+          end
+        end
+        records[key] = newer
+      end
+      records[other] = nil
+      for _, map in ipairs(also or {}) do
+        if type(map) == "table" and map[other] ~= nil then
+          if map[key] == nil then
+            map[key] = map[other]
+          end
+          map[other] = nil
+        end
+      end
+      merged = merged + 1
+    end
+  end
+  return merged
+end
+
 function ns.IsAddOnLoaded(name)
   if C_AddOns and C_AddOns.IsAddOnLoaded then
     return C_AddOns.IsAddOnLoaded(name)

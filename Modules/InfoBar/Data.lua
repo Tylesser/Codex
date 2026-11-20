@@ -301,17 +301,17 @@ Add({
     local bags = ns.db and ns.db.bags
     local characters = bags and type(bags.characters) == "table" and bags.characters or {}
     local hidden = bags and type(bags.hidden) == "table" and bags.hidden or {}
-    local realm = GetRealmName() or ""
-    local mine = realm .. "-" .. (UnitName("player") or "?")
+    local realm = ns.RealmName()
+    local mine = ns.CharacterKey()
     local list, total = {}, 0
     for key, char in pairs(characters) do
-      if type(char) == "table" and key ~= mine and not hidden[key] and Num(char.money) then
-        list[#list + 1] = { name = char.name or key, class = char.class, money = char.money,
-          realm = char.realm ~= realm and char.realm or nil }
+      if type(char) == "table" and ns.NormalizeCharacterKey(key) ~= mine and not hidden[key] and Num(char.money) then
+        list[#list + 1] = { name = ns.CharacterDisplayName(char, key), class = char.class, money = char.money,
+          realm = (type(char.realm) == "string" and char.realm ~= "" and char.realm ~= realm) and char.realm or nil }
       end
     end
     local money = MyMoney() or 0
-    list[#list + 1] = { name = UnitName("player") or "?", class = select(2, UnitClass("player")), money = money }
+    list[#list + 1] = { name = ns.PlayerFullName(), class = select(2, UnitClass("player")), money = money }
     table.sort(list, function(a, b)
       if a.money ~= b.money then
         return a.money > b.money

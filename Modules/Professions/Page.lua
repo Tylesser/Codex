@@ -51,7 +51,7 @@ local function CharacterText()
       profs[#profs + 1] = prof
     end
     table.sort(profs)
-    lines[#lines + 1] = ("%s: %d recipes |cff999999(%s)|r"):format(char.name or key, P.RecipeCount(char),
+    lines[#lines + 1] = ("%s: %d recipes |cff999999(%s)|r"):format(ns.CharacterDisplayName(char, key), P.RecipeCount(char),
       table.concat(profs, ", "))
   end
   if #lines == 0 then

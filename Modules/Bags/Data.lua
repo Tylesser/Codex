@@ -124,22 +124,31 @@ end
 
 -- Characters ----------------------------------------------------------------------------------------------
 
+-- "Realm-Name" without a surname (ns.CharacterKey: Forever's UnitName gave the surname in some sessions).
 function B.PlayerKey()
-  local name = UnitName("player") -- Forever returns the surname separately; the first value is the name
-  return (GetRealmName() or "?") .. "-" .. (name or "?")
+  return ns.CharacterKey()
 end
 
 -- This character's record, made on first use.
 function B.Me()
   local db = B.DB()
   local key = B.PlayerKey()
+  -- older records of this character under another spelling of its name (with the surname) join this one
+  if not B.merged then
+    B.merged = true
+    if ns.MergeCharacterRecords(db.characters, key, { db.hidden }) > 0 then
+      ns.Fire("BAGS_CHANGED", "characters")
+    end
+  end
   local me = db.characters[key]
   if not me then
     me = { bags = {} }
     db.characters[key] = me
   end
-  me.name = UnitName("player")
-  me.realm = GetRealmName()
+  me.name = ns.PlayerName()
+  ns.StoreFullName(me) -- shown in lists (the key keeps the first word)
+  me.realm = ns.RealmName()
+  me.guid = UnitGUID and UnitGUID("player") or me.guid
   me.class = select(2, UnitClass("player"))
   me.faction = UnitFactionGroup("player")
   return me, key
@@ -192,13 +201,14 @@ function B.ColoredName(key, withRealm)
   if not char then
     return key
   end
-  local name = char.name or key
+  -- this character: the name the game gives now (with the surname once it has it)
+  local name = key == B.PlayerKey() and ns.PlayerFullName() or ns.CharacterDisplayName(char, key)
   local color = RAID_CLASS_COLORS and char.class and RAID_CLASS_COLORS[char.class]
   if color then
     name = ("|cff%02x%02x%02x%s|r"):format(math.floor(color.r * 255 + 0.5), math.floor(color.g * 255 + 0.5),
       math.floor(color.b * 255 + 0.5), name)
   end
-  if withRealm ~= false and char.realm and char.realm ~= GetRealmName() then
+  if withRealm ~= false and type(char.realm) == "string" and char.realm ~= "" and char.realm ~= ns.RealmName() then
     name = name .. " |cff999999(" .. char.realm .. ")|r"
   end
   return name

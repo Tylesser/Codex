@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0-beta3
+
+- The fold arrows (Codex window sections, the quest tracker's zones, Commerce Authority's zones) are smooth now instead of jagged.
+- Fixed: a character could be listed twice (in the gold list, the bag window's characters and recipe knowledge) when the game gave no realm name for a session, or gave the name with the surname in one session and without it in another. The two records become one; nothing is lost. Character lists now show the full name with the surname. Auction prices stay with your realm in such a session too.
+- Fixed: Copy chat showed an empty box: the text is there now (on WoW Forever a text box nested in a scroll area isn't drawn).
+- Fixed: Codex quest tracker's quest item buttons couldn't be clicked (the quest's line took the click).
+- Fixed: Codex quest tracker put another zone's quests under your zone after you opened the world map on that zone.
+
 ## 1.0.0-beta2
 
 - Buffs: choose where and when the tracked buffs show: places (open world, cities and inns, dungeons, raids, battlegrounds and arenas), solo or in a party or raid group, and in or out of combat, for the whole row (Where the row shows) or for one buff (its Where button). For example: hidden in dungeons and raids, shown in a party out in the world.

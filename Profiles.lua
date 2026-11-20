@@ -139,7 +139,7 @@ local function List()
 end
 
 local function CharacterKey()
-  return (GetRealmName and GetRealmName() or "") .. "-" .. (UnitName and UnitName("player") or "")
+  return ns.CharacterKey()
 end
 
 -- The settings in CodexDB go back into their profile when the player logs out (only once profiles are used).
@@ -299,8 +299,8 @@ end
 function P.CharacterProfileName()
   local name = (UnitName and UnitName("player")) or "Character"
   local record = List()[name]
-  if record and record.owner and record.owner ~= CharacterKey() then
-    name = name .. " - " .. (GetRealmName and GetRealmName() or "")
+  if record and record.owner and ns.NormalizeCharacterKey(record.owner) ~= CharacterKey() then
+    name = name .. " - " .. ns.RealmName()
   end
   return name
 end

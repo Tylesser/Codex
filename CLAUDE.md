@@ -58,7 +58,7 @@ The user asked to be told whenever another part should get its own load-on-deman
   reload banner (`ns.pendingReload` + "RELOAD_STATE").
 - `Areas.lua` (2026-11-19, the user's "I need to go to multiple tabs to change all options on my action bar"; they
   picked this layout from options): every page but Home is one scrolling page of **foldable sections**; a section's
-  header has a drawn fold arrow (`UI.FoldArrow`, 1 px textures, never a letter), the name (never upper-cased), a tag
+  header has a drawn fold arrow (`UI.FoldArrow`, the smooth Media/FoldArrow.tga, never a letter), the name (never upper-cased), a tag
   and the feature's on/off **switch** (`UI.Switch`, a CheckButton); the body holds every option of that feature (no
   tabs, no sub-pages). Registry `ns.AddSection(area, { id, title, order, module | switch = { get, set, enabled },
   build(holder, width, section) -> { Height, Refresh }, height (fixed: pages whose lists fill their area) |
@@ -590,7 +590,8 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   `GetQuestLogLeaderBoard(i, logIndex, true)`, items `GetQuestLogSpecialItemInfo`, difficulty token from
   `GetQuestDifficultyColor` vs `QuestDifficultyColors`), Window.lua (`CodexQuestTracker`, rows = Buttons of ours,
   item buttons `CodexQuestTrackerItem<n>` = SecureActionButtonTemplate type item / "item:<id>" on UIParent anchored
-  to their row, made / moved / shown only out of combat; in a fight rows of the same `QT.Shape` are refilled in place,
+  to their row, frame level = the tracker's + 20 and the quest row's hit rect stops short of it (a row under it took the
+  clicks, 2026-11-21), made / moved / shown only out of combat; in a fight rows of the same `QT.Shape` are refilled in place,
   anything else waits for PLAYER_REGEN_ENABLED; Edit Mode handle via EditModeManagerFrame OnShow / OnHide; place
   `CodexDB.questtracker.point`, first from Blizzard's tracker's spot), Module.lua (settings width / background /
   yield / foldOthers / collapsed, folds per character `CodexCharDB.questtracker.folded[zone]`, clicks as Blizzard's
@@ -615,6 +616,26 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   quest" glow), 0.3 s after zone / subzone / watch changes, never in combat, ignoring its own events for 1 s.
   "Here" = the quest log header is the zone's name, or `isOnMap`. Nothing of the tracker is hooked (its item buttons
   are secure). Test `codex_trackersort_test.lua`.
+- **Realm and surname in character keys (2026-11-21):** the user's money tooltip listed their character twice: the
+  new record was "-Tylesser" because Forever's `GetRealmName()` returned "" for that session (the first guess,
+  "Tylesser Valerius" from a surname in `UnitName`, was the user's hint and is handled too). Every realm read is
+  `ns.RealmName()` (GetRealmName, else `CodexDB.lastRealm`, else the realm of the newest bag record, which is then
+  kept for the session; never "" or "?"), every character key `ns.CharacterKey()` (realm + `ns.PlayerName()`, the
+  name's first word / UnitName's first value; on Forever UnitName returns name and surname as **two values**: print
+  shows them with a space, which first looked like one value; `#UnitName("player")` was 8), shown
+  with `ns.CharacterDisplayName(record, key)` (`fullName` = `ns.PlayerFullName()`: both values joined with
+  `Constants.CharacterNameSeparatorConsts.CHARACTERNAME_SURNAME_SEPARATOR`, as Skins/UnitFrames.lua FullName; stored by
+  Bags and Professions: the user wants the surname in lists), compared through `ns.NormalizeCharacterKey` (empty or "?" realm = this realm); Bags and Professions merge other spellings once per session
+  (`ns.MergeCharacterRecords`: the newer record by `updated` kept, the older fills the gaps, hidden flags move).
+  Bags records also store `guid`. Test `codex_characters_test.lua`.
+- **The quest system's map is not always yours:** while the world map is open, Blizzard sets it to the shown map
+  (forever QuestLogMixin:SyncQuestSystemWithCurrentMap -> `C_QuestLog.SetMapForQuestPOIs`), and `isOnMap` /
+  `IsOnMap` answer for that map. QuestOrder trusts them only when `GetMapForQuestPOIs()` is the player's map (the
+  user's Un'Goro quests went under Desolace, 2026-11-21).
+- **Edit boxes in scroll areas:** an EditBox one frame below a ScrollFrame's scroll child draws no text on Forever
+  (Copy chat, 2026-11-21: the user's /run checks showed text, font, colour, size and visibility all right; moved onto
+  the window, or made the scroll child, the text showed). A scrolling edit box is the scroll child itself:
+  `UI.ScrollArea(parent, "EditBox")` (Profiles' TextArea already did this).
 - **Two namespaces:** Codex_Skins (and each theme folder) is its own addon with its own `ns`. Core code reaches
   skin code only through `TylesserCodex` (e.g. `TylesserCodex.SchoolTabLook`), never through `ns.S`.
 
@@ -667,6 +688,10 @@ mask, disc and swipe instead of Blizzard's jagged TempPortraitAlphaMask) only. `
 the "Codex art" proc look (default since 2026-11-20, the user's request), one original 128x256 coloured left-side
 piece per proc of ProcGlow's own list (the arc in the proc's colours, a drawn emblem, particles); keys and gallery
 order in ProcArt.lua `A.CODEX` (Clearcasting per class); the gallery is `A.Gallery()` ("Show all arts").
+
+`branding/source/arrow-art.py <codexDir>` (Pillow) renders `Media/FoldArrow.tga`: the smooth fold arrow of `UI.FoldArrow`
+(32 px white triangle, drawn at 8x, shown at 18 px and turned a quarter with SetRotation for "open"; it replaced
+arrows drawn from 1 px columns, which stepped: the user's "arrows are low quality", 2026-11-21).
 
 `branding/source/wedge-art.py <codexDir>` (Pillow) renders `Modules/Rings/Media/Wedge2-12.tga`: the ping-wheel look's
 selected-slice wedge per slice count (white, tinted gold; square so SetRotation keeps the shape). Forever's atlases

@@ -779,7 +779,7 @@ end
 local function UpdateHeader()
   local key = ViewedKey()
   local char = B.Character(key)
-  local name = char and char.name or UnitName("player")
+  local name = char and ns.CharacterDisplayName(char) or ns.PlayerFullName()
   local title = (view.bank and "Bank" or "Bags") .. (view.key and (" - " .. name) or "")
   frame.title:SetText(Theme().titlebar.upper and title:upper() or title)
   SetIconState(frame.mode, B.db.categories, true)

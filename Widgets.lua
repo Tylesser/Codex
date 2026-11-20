@@ -1092,10 +1092,17 @@ end
 
 -- A scrolling area: scroll (the ScrollFrame) and body (its child, size it to the content). A thin thumb on the
 -- right shows where you are when the body is taller than the area. Call scroll:Update() after resizing body.
-function UI.ScrollArea(parent)
+-- `kind` "EditBox": the scroll child is an edit box itself. On Forever an edit box nested one frame below the scroll
+-- child draws no text at all (the user's empty Copy chat, 2026-11-21: text, font, colour, size and visibility were
+-- all right; moved onto the window, or made the scroll child, it showed), so a scrolling edit box is the child.
+function UI.ScrollArea(parent, kind)
   local scroll = CreateFrame("ScrollFrame", nil, parent)
-  local body = CreateFrame("Frame", nil, scroll)
-  body:SetSize(100, 100)
+  local body = CreateFrame(kind == "EditBox" and "EditBox" or "Frame", nil, scroll)
+  if kind == "EditBox" then
+    body:SetWidth(100) -- no height: a multi-line edit box grows with its text
+  else
+    body:SetSize(100, 100)
+  end
   scroll:SetScrollChild(body)
   local theme = Theme(parent)
   local track = scroll:CreateTexture(nil, "OVERLAY")
@@ -1385,33 +1392,27 @@ end
 
 -- A fold arrow, drawn (never a letter): a small solid triangle of 1 px textures pointing right (folded) or down
 -- (open). arrow:SetOpen(on); arrow:SetColor(color).
+-- A fold arrow: Media/FoldArrow.tga (branding/source/arrow-art.py, a smooth triangle drawn at 8x and scaled down)
+-- pointing right when folded, turned a quarter to point down when open. The first one was drawn from 1 px texture
+-- columns, whose slanted edges stepped at the screen's pixels (the user's "arrows are low quality", 2026-11-21).
+-- The frame stays 9x9 for layouts; the texture is 18x18 round its middle (the triangle is about 8x10 of it).
+local FOLD_ARROW = "Interface\\AddOns\\Codex\\Media\\FoldArrow"
+
 function UI.FoldArrow(parent, color)
   local arrow = CreateFrame("Frame", nil, parent)
   arrow:SetSize(9, 9)
-  arrow.right, arrow.down = {}, {}
-  for step = 0, 4 do
-    -- pointing right: five columns, 9 to 1 px tall, centred on the middle line
-    local column = arrow:CreateTexture(nil, "ARTWORK")
-    column:SetSize(1, 9 - step * 2)
-    column:SetPoint("LEFT", arrow, "LEFT", 2 + step, 0)
-    arrow.right[#arrow.right + 1] = column
-    -- pointing down: five rows, 9 to 1 px wide, centred on the middle column
-    local row = arrow:CreateTexture(nil, "ARTWORK")
-    row:SetSize(9 - step * 2, 1)
-    row:SetPoint("TOP", arrow, "TOP", 0, -(2 + step))
-    arrow.down[#arrow.down + 1] = row
-  end
+  arrow.icon = arrow:CreateTexture(nil, "ARTWORK")
+  arrow.icon:SetTexture(FOLD_ARROW)
+  arrow.icon:SetSize(18, 18)
+  arrow.icon:SetPoint("CENTER")
   function arrow:SetColor(value)
-    Paint(self.right, value)
-    Paint(self.down, value)
+    self.icon:SetVertexColor(UI.Unpack(value))
   end
   function arrow:SetOpen(open)
     self.open = open and true or false
-    for _, piece in ipairs(self.right) do
-      piece:SetShown(not self.open)
-    end
-    for _, piece in ipairs(self.down) do
-      piece:SetShown(self.open)
+    -- a quarter turn clockwise for "open" (pointing down)
+    if self.icon.SetRotation then
+      self.icon:SetRotation(self.open and -math.pi / 2 or 0)
     end
   end
   arrow:SetColor(color or Theme(parent).muted)

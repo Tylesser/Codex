@@ -261,6 +261,9 @@ local function FillItem(button, row, data)
   button.count:SetText(item.charges and item.charges > 1 and item.charges or "")
   button:ClearAllPoints()
   button:SetPoint("TOPRIGHT", row, "TOPRIGHT", 0, 2)
+  -- above the tracker's rows: a row (a Button over the whole width) under it took the click (the user's
+  -- "can't click the quest item", 2026-11-21). Laid out out of combat only, so the level may change here.
+  button:SetFrameLevel((QT.frame and QT.frame:GetFrameLevel() or 1) + 20)
   button:Show()
   QT.ItemCooldown(button)
 end
@@ -287,6 +290,9 @@ local function FillRow(row, data)
   row.count:SetShown(kind == "zone")
   row.mark:SetShown(kind == "quest" and data.focused == true)
   UI.SetColor(row.mark, theme.accent)
+  if kind ~= "quest" then
+    row:SetHitRectInsets(0, 0, 0, 0)
+  end
   if kind == "zone" then
     row.arrow:SetOpen(not data.folded)
     row.arrow:SetColor(theme.accent)
@@ -295,6 +301,8 @@ local function FillRow(row, data)
     UI.Font(row.text, "body", 12.5, "accent")
     row.count:SetText(data.count)
   elseif kind == "quest" then
+    -- a quest with an item: the row's own clicks stop short of the item button
+    row:SetHitRectInsets(0, data.item and (ITEM + 4) or 0, 0, 0)
     row.text:SetPoint("TOPLEFT", row, "TOPLEFT", 4, 0)
     row.text:SetPoint("RIGHT", row, "RIGHT", data.item and -(ITEM + 4) or 0, 0)
     UI.Font(row.text, "body", 12, "text")
