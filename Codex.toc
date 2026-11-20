@@ -39,6 +39,7 @@ Modules\QuestKeys\QuestKeys.xml
 Modules\QuestTracker\QuestTracker.xml
 Modules\Dialogue\Dialogue.xml
 Modules\Vendor\Vendor.xml
+Modules\LootText\LootText.xml
 Modules\QoL\QoL.xml
 Modules\Highlight\Highlight.xml
 Modules\InfoBar\InfoBar.xml

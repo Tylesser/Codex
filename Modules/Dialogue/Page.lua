@@ -53,62 +53,121 @@ local function Box(parent, x, y, w, h, color, layer)
   return texture
 end
 
--- The little scene of each style (sky, ground, the NPC, the window) in the theme's colours; plain stand-ins.
+-- The little scene of each style: a painted evening meadow and an NPC with a quest mark (Media/PreviewScene.tga,
+-- PreviewNpc.tga, branding/source/dialogue-art.py), and over it the style's window in the theme's own colours with a
+-- round portrait, the name, text lines, choice rows with their number keys and the main button. They replaced flat
+-- boxes (the user's screenshot of these cards, 2026-11-21).
+local MEDIA = "Interface\\AddOns\\Codex\\Modules\\Dialogue\\Media\\"
+local CIRCLE = "Interface\\AddOns\\Codex\\Media\\Circle"
+local PORTRAIT = { 0.55, 0.40, 0.27 }
+
+local function Disc(parent, x, y, size, color, layer)
+  local texture = parent:CreateTexture(nil, layer or "OVERLAY")
+  texture:SetTexture(CIRCLE)
+  texture:SetPoint("TOPLEFT", x, -y)
+  texture:SetSize(size, size)
+  texture:SetVertexColor(color[1], color[2], color[3], color[4] or 1)
+  return texture
+end
+
+-- A round portrait with a ring in `ring`.
+local function Portrait(parent, x, y, size, ring)
+  Disc(parent, x - 1, y - 1, size + 2, ring, "OVERLAY")
+  local face = Disc(parent, x, y, size, PORTRAIT, "OVERLAY")
+  face:SetDrawLayer("OVERLAY", 2)
+end
+
+-- A choice row: a small key, a quest mark and a line of text.
+local function Choice(parent, x, y, width, key, mark, text)
+  Box(parent, x, y, 6, 6, key.line, "OVERLAY")
+  Box(parent, x + 1, y + 1, 4, 4, { key.fill[1], key.fill[2], key.fill[3], math.max(0.6, key.fill[4] or 1) }, "OVERLAY")
+  Box(parent, x + 9, y, 2, 6, mark, "OVERLAY")
+  Box(parent, x + 14, y + 2, width - 14, 2, text, "OVERLAY")
+end
+
+local function Lines(parent, x, y, widths, color, gap)
+  for index, width in ipairs(widths) do
+    Box(parent, x, y + (index - 1) * (gap or 5), width, 2, color, "OVERLAY")
+  end
+end
+
 local function DrawPreview(frame, key, w, h)
   local theme, tokens = ns.Theme(), D.Tokens()
-  local sky = frame:CreateTexture(nil, "BACKGROUND")
-  sky:SetPoint("TOPLEFT")
-  sky:SetPoint("TOPRIGHT")
-  sky:SetHeight(math.floor(h * 0.45))
-  T.Gradient(sky, "VERTICAL", { 0.42, 0.48, 0.56 }, { 0.23, 0.29, 0.40 }, 1, 1)
-  local ground = frame:CreateTexture(nil, "BACKGROUND")
-  ground:SetPoint("TOPLEFT", sky, "BOTTOMLEFT")
-  ground:SetPoint("BOTTOMRIGHT")
-  T.Gradient(ground, "VERTICAL", { 0.10, 0.14, 0.07 }, { 0.23, 0.29, 0.18 }, 1, 1)
-  local npcX = key == "a" and w - 50 or (key == "b" and math.floor(w / 2) - 11 or 40)
-  Box(frame, npcX, 26, 22, h - 34, { 0.10, 0.08, 0.07 })
-  local text = theme.text
-  if key == "a" then
-    local panel = Box(frame, 10, 10, 92, h - 18, theme.panel.to)
-    T.Gradient(panel, "VERTICAL", theme.panel.from, theme.panel.to, 1, 1)
-    local holder = CreateFrame("Frame", nil, frame)
-    holder:SetPoint("TOPLEFT", 10, -10)
-    holder:SetSize(92, h - 18)
-    UI.Rings(holder, theme.rings)
-    Box(frame, 17, 16, 15, 15, { 0.48, 0.35, 0.23 })
-    Box(frame, 38, 19, 46, 5, theme.bright, "OVERLAY")
-    Box(frame, 18, 39, 76, 3, { text[1], text[2], text[3], 0.5 }, "OVERLAY")
-    Box(frame, 18, 46, 60, 3, { text[1], text[2], text[3], 0.5 }, "OVERLAY")
-    Box(frame, 18, 57, 4, 6, D.MARK.gold, "OVERLAY")
-    Box(frame, 26, 58, 52, 3, { text[1], text[2], text[3], 0.7 }, "OVERLAY")
-    local btn = Box(frame, 67, h - 22, 26, 8, theme.button.to, "OVERLAY")
-    T.Gradient(btn, "VERTICAL", theme.button.from, theme.button.to, 1, 1)
-  elseif key == "b" then
-    Box(frame, w - 72, 30, 58, 26, theme.hud.fill)
-    local holder = CreateFrame("Frame", nil, frame)
-    holder:SetPoint("TOPLEFT", w - 72, -30)
-    holder:SetSize(58, 26)
-    UI.Rings(holder, theme.hud.rings)
-    local sub = tokens.sub
-    local bar = Box(frame, math.floor(w * 0.18), h - 30, math.floor(w * 0.64), 24, sub.to)
-    T.Gradient(bar, "VERTICAL", sub.from, sub.to, sub.from[4] or 1, sub.to[4] or 1)
-    Box(frame, math.floor(w * 0.18), h - 30, math.floor(w * 0.64), 1, sub.lines and sub.lines[1] or theme.accent, "OVERLAY")
-    Box(frame, math.floor(w * 0.15), h - 36, 18, 18, { 0.48, 0.35, 0.23 }, "OVERLAY")
+  -- the scene, cropped round the horizon to the picture's shape
+  local scene = frame:CreateTexture(nil, "BACKGROUND")
+  scene:SetAllPoints()
+  scene:SetTexture(MEDIA .. "PreviewScene")
+  local aspect = w / h
+  if aspect >= 2 then
+    local part = 2 / aspect
+    local top = math.max(0, 0.6 - part * 0.6)
+    scene:SetTexCoord(0, 1, top, top + part)
   else
-    local page = tokens.page
-    local paper = Box(frame, w - 86, 14, 74, h - 14, page.to)
+    local part = aspect / 2
+    scene:SetTexCoord(0.5 - part / 2, 0.5 + part / 2, 0, 1)
+  end
+  local npcHeight = h - 12
+  local npcX = key == "a" and w - 52 or (key == "b" and math.floor(w * 0.34) or 26)
+  local npc = frame:CreateTexture(nil, "ARTWORK")
+  npc:SetTexture(MEDIA .. "PreviewNpc")
+  npc:SetPoint("TOPLEFT", npcX, -4)
+  npc:SetSize(math.floor(npcHeight / 2), npcHeight)
+
+  local text, bright, accent = theme.text, theme.bright, theme.accent
+  local soft = { text[1], text[2], text[3], 0.55 }
+  local keyLook = tokens.key or { fill = { 1, 1, 1, 0.07 }, line = theme.muted }
+  if key == "a" then
+    local pw = math.min(112, math.floor(w * 0.56))
+    local panel = Box(frame, 8, 8, pw, h - 16, theme.panel.to)
+    T.Gradient(panel, "VERTICAL", theme.panel.from, theme.panel.to, 0.97, 0.97)
+    local holder = CreateFrame("Frame", nil, frame)
+    holder:SetPoint("TOPLEFT", 8, -8)
+    holder:SetSize(pw, h - 16)
+    UI.Rings(holder, theme.rings)
+    Portrait(frame, 15, 14, 14, accent)
+    Box(frame, 34, 16, math.floor(pw * 0.42), 4, bright, "OVERLAY")
+    Box(frame, 34, 23, math.floor(pw * 0.26), 2, theme.muted, "OVERLAY")
+    Lines(frame, 15, 35, { pw - 16, pw - 26, pw - 36 }, soft)
+    Choice(frame, 15, 53, pw - 30, keyLook, D.MARK.gold, { text[1], text[2], text[3], 0.85 })
+    Choice(frame, 15, 62, pw - 40, keyLook, D.MARK.blue, { text[1], text[2], text[3], 0.85 })
+    local button = Box(frame, 8 + pw - 34, h - 20, 26, 7, theme.button.to, "OVERLAY")
+    T.Gradient(button, "VERTICAL", theme.button.from, theme.button.to, 1, 1)
+    Box(frame, 8 + pw - 34, h - 14, 26, 1, accent, "OVERLAY")
+  elseif key == "b" then
+    local sub = tokens.sub
+    local x0, bw = math.floor(w * 0.10), math.floor(w * 0.80)
+    local bar = Box(frame, x0, h - 28, bw, 24, sub.to)
+    T.Gradient(bar, "VERTICAL", sub.from, sub.to, sub.from[4] or 1, sub.to[4] or 1)
+    Box(frame, x0, h - 28, bw, 1, sub.lines and sub.lines[1] or accent, "OVERLAY")
+    Portrait(frame, x0 - 4, h - 38, 20, accent)
+    Box(frame, x0 + 22, h - 23, math.floor(bw * 0.22), 3, accent, "OVERLAY")
+    Lines(frame, x0 + 22, h - 16, { math.floor(bw * 0.66), math.floor(bw * 0.5) }, soft)
+    -- the choices beside the NPC
+    local cw, cx = 64, math.max(x0, w - 78)
+    Box(frame, cx, 12, cw, 26, theme.hud.fill)
+    local holder = CreateFrame("Frame", nil, frame)
+    holder:SetPoint("TOPLEFT", cx, -12)
+    holder:SetSize(cw, 26)
+    UI.Rings(holder, theme.hud.rings)
+    Choice(frame, cx + 5, 17, cw - 12, keyLook, D.MARK.gold, { text[1], text[2], text[3], 0.85 })
+    Choice(frame, cx + 5, 27, cw - 20, keyLook, D.MARK.grey, { text[1], text[2], text[3], 0.85 })
+  else
+    local page, ink = tokens.page, tokens.ink
+    local pw = math.min(84, math.floor(w * 0.44))
+    local px = w - pw - 10
+    local paper = Box(frame, px, 12, pw, h - 12, page.to)
     T.Gradient(paper, "VERTICAL", page.from, page.to, 1, 1)
     local holder = CreateFrame("Frame", nil, frame)
-    holder:SetPoint("TOPLEFT", w - 86, -14)
-    holder:SetSize(74, h - 14)
+    holder:SetPoint("TOPLEFT", px, -12)
+    holder:SetSize(pw, h - 12)
     local line = page.lines and page.lines[1] or tokens.inkHead
     T.ColorLines(T.Outline(holder, 0, line, 1, "OVERLAY"), line, line[4])
-    Box(frame, w - 57, 7, 16, 16, { 0.48, 0.35, 0.23 }, "OVERLAY")
-    local ink = tokens.ink
-    Box(frame, w - 70, 36, 42, 4, { ink[1], ink[2], ink[3], 0.8 }, "OVERLAY")
-    Box(frame, w - 78, 48, 58, 3, { ink[1], ink[2], ink[3], 0.45 }, "OVERLAY")
-    Box(frame, w - 78, 55, 50, 3, { ink[1], ink[2], ink[3], 0.45 }, "OVERLAY")
-    Box(frame, w - 78, 67, 46, 3, { ink[1], ink[2], ink[3], 0.65 }, "OVERLAY")
+    Portrait(frame, px + math.floor(pw / 2) - 8, 4, 16, line)
+    local inkColor = { ink[1], ink[2], ink[3], 0.85 }
+    Box(frame, px + 10, 26, math.floor(pw * 0.55), 3, inkColor, "OVERLAY")
+    Lines(frame, px + 8, 35, { pw - 16, pw - 20, pw - 28 }, { ink[1], ink[2], ink[3], 0.45 })
+    Choice(frame, px + 8, 56, pw - 22, keyLook, D.MARK_INK.gold, inkColor)
+    Choice(frame, px + 8, 66, pw - 28, keyLook, D.MARK_INK.blue, inkColor)
   end
 end
 

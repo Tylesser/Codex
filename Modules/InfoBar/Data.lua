@@ -329,6 +329,17 @@ Add({
     local session = I.sessionMoney and money - I.sessionMoney or 0
     tip:Line("This session", (session < 0 and "-" or (session > 0 and "+" or "")) .. I.Coins(session), "muted",
       session < 0 and "bad" or (session > 0 and "good" or "muted"))
+    -- Loot text's session (Modules/LootText): what was looted since login, its worth per hour and the best drop
+    local loot = ns.loottext
+    if loot and loot.running and type(loot.Session) == "function" then
+      local s = loot.Session()
+      tip:Line("Looted", I.Coins(s.money), "muted", "bright")
+      tip:Line("Items' worth", I.Coins(s.value), "muted", "bright")
+      tip:Line("Per hour", I.Coins(s.perHour), "muted", "good")
+      if s.best and s.best.link then
+        tip:Line("Best drop", s.best.link, "muted", "bright")
+      end
+    end
     tip:Note("Click to open your bags.")
   end,
   Click = function()

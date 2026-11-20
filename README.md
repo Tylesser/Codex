@@ -66,6 +66,14 @@ Home shows a card for each feature with what it is doing right now; click a card
 - **Vendor**: at a merchant, sells your grey items and repairs your gear (guild funds first if you like), with
   one line in chat; "Also sell" and "Never sell" lists, Sell junk and Repair buttons on the merchant window, and
   Shift while opening the merchant skips it. If Leatrix Plus already does either, Codex leaves that to it.
+- **Loot text** (off until you switch it on): floating text for what you get. Items show how many you now have (with your other characters too)
+  and what they are worth (Codex's auction prices, else what a merchant pays); grey items add up on one Junk line.
+  Also money, reputation, experience (with how many more of the same reach the next level), honor, currencies and
+  skill-ups, each with its own switch. The same thing again adds to its line. Two looks: floating up from the middle
+  of the screen, or a list beside the chat; move it in Edit Mode. Valuable drops (from a price you pick) and purple
+  ones glow, with a sound if you like; a watch list of items you farm shows a banner and plays a sound when one
+  drops. It can hide the game's own loot toasts, and the info bar's gold tooltip shows what you looted this
+  session, its worth per hour and your best drop. `/codex loottext test` shows a sample.
 - **Quality of life**: small options, each with its own switch. Faster loot: with auto-loot on, everything is
   taken at once so the loot window barely flashes (items that need a roll, a confirmation or a free bag slot
   stay in the window). If FasterLoot or Leatrix Plus's faster loot is on, Codex leaves it to them. Quest info in

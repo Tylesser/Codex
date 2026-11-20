@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.0-beta4
+
+- The Codex window's pages have tabs now: each feature (or a few related ones) on its own tab instead of one long page of folded sections. Your last tab on each page is remembered.
+- Loot text: a third look, "Floating down".
+- Quest windows: the three style pictures are little painted scenes now (an NPC in a meadow and the window in your theme) instead of flat boxes.
+- New: **Loot text** (Bags and items > Loot text, off until you switch it on). Floating text for items (how many you now have, what they are worth), money, reputation, experience, honor, currencies and skill-ups, floating up or as a list beside the chat. Valuable and purple drops glow, a watch list announces the items you farm, the game's loot toasts can be hidden, and the info bar's gold tooltip shows this session's loot.
+- Echo of <seal> in combat: the glow and art now wait for the third stack in a fight too (before, the game hid the count, so they showed from the first stack). Codex counts the stacks from the cooldown manager's Unsealed Wrath icon (keep it tracked there, as before) and tells the echoes apart by the seal you have on.
+- Fixed: a Lua error at some writ hand-ins ("attempt to compare local 'name'"): when the game keeps the NPC's name hidden, that hand-in simply isn't used to learn where the customer stands.
+- **Resurrect the dead.** When a party or raid member dies (and hasn't released), their buff buttons give way to one button with your class's resurrection spell (Resurrection, Redemption, Ancestral Spirit, Rebirth...): click it to raise them. It dims while someone else is already resurrecting them. Like every party button it appears out of combat. Untick **Resurrect the dead** under Buffs > Party buff buttons to turn it off.
+- Codex art: the glow round the emblems no longer ends in a hard, square-looking edge (Hammer of Wrath's showed it most); every piece fades out softly towards its edges.
+
 ## 1.0.0-beta3
 
 - The fold arrows (Codex window sections, the quest tracker's zones, Commerce Authority's zones) are smooth now instead of jagged.

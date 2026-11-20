@@ -57,7 +57,14 @@ The user asked to be told whenever another part should get its own load-on-deman
   `ns.PAGE_WIDTH` (640) what a module's page gets inside its section (module builders read it). `ns.ToggleWindow()`,
   reload banner (`ns.pendingReload` + "RELOAD_STATE").
 - `Areas.lua` (2026-11-19, the user's "I need to go to multiple tabs to change all options on my action bar"; they
-  picked this layout from options): every page but Home is one scrolling page of **foldable sections**; a section's
+  picked this layout from options; **tabs since 2026-11-21**, the user of a page of folded sections: "this is not good
+  design, can we make collapsible panels tabs? keep collapsible panels in tabs if they are related"): each page has a
+  row of tabs (`ns.AREA_TABS`: { title, section ids }; unlisted sections get a tab of their own at the end; a page
+  with one section has none), `page.tabs`, `page.tabOf[id]`, `page.tab`, `page.SelectTab(id, keepScroll)`; a section
+  alone in its tab is `single` (open, no fold arrow, header click does nothing), related ones fold as before; the tab
+  per page is kept in `CodexDB.areaTabs[area]` (by title, in Profiles' SKIP_TOP); `ns.FocusSection` (ShowPage, search)
+  selects the section's tab first; `codex_areas_test` 4 checks every section is in one tab and every tab row fits.
+  Within a tab the page is a scroll of **foldable sections**; a section's
   header has a drawn fold arrow (`UI.FoldArrow`, the smooth Media/FoldArrow.tga, never a letter), the name (never upper-cased), a tag
   and the feature's on/off **switch** (`UI.Switch`, a CheckButton); the body holds every option of that feature (no
   tabs, no sub-pages). Registry `ns.AddSection(area, { id, title, order, module | switch = { get, set, enabled },
@@ -407,6 +414,24 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   the spellbook's FutureSpell items, then the game's data (all of it before a visit, after one only above the
   trainer's highest level). Known = IsPlayerSpell / IsSpellKnown / C_SpellBook.IsSpellKnown by ID, else name + rank
   in the book. Test `codex_futurespells_test.lua`.
+- `Modules/LootText` (`loottext`, "Loot text", area items, sectionOrder 35, default off (the user's choice); 2026-11-21, the user's
+  request after a look at BattleText Forever, ScrollingLoot, Lootline, Loot Pro and MSBT, none of whose code was
+  used; they picked every line kind, both looks, value + glow, watch list, hiding toasts and the session summary).
+  `ns.loottext` (LT), settings `CodexDB.loottext`; looks `style` float / down (added at the user's request) / list. Core.lua: sources checked in the forever API docs (ChatInfo /
+  CurrencyInfo documentation): items from CHAT_MSG_LOOT (own lines only, patterns built from the client's
+  LOOT_ITEM_*SELF* strings by `LT.Pattern`), money = PLAYER_MONEY rises (merchant / mail / AH / trade / guild bank
+  open: only with `otherMoney`, never in the session), reputation CHAT_MSG_COMBAT_FACTION_CHANGE
+  (FACTION_STANDING_*), XP = UnitXP rises (across a level too), honor CHAT_MSG_COMBAT_HONOR_GAIN, currencies
+  CURRENCY_DISPLAY_UPDATE's quantityChange, skills CHAT_MSG_SKILL (SecretInChatMessagingLockdown: secret text
+  skipped). Worth = `ns.auction.GetPrice`, else the sell price; counts = GetItemCount + other characters from
+  `ns.bags.ItemCounts`. Glow: `glowValue`, `glowEpic`, watched. Toasts: CVar `enableLootToasts`
+  (AlertFrameSystems.lua: LootAlertSystem ignores alerts while it is 0), player's value in `savedToasts`, put back
+  when the option or the module goes off (RELOAD_STATE). Display.lua: holder `CodexLootText`, pooled lines (icon,
+  outlined body font, GlowSquare glow), float (rise 150 px, never overlapping) or list (`maxLines`, newest at the
+  bottom); the same key merges (float only in a line's first second); banner `CodexLootTextBanner` for watched
+  items; Edit Mode mover like the personal bars (`posFloat` / `posList`). Page.lua: section, watch list (Shift-click
+  into the box), session (`LT.Session()`, also in InfoBar's gold tooltip). Test `codex_loottext_test.lua`; the
+  buffs test loads with `loottext = false` (its Edit Mode stand-in keeps one hook per script).
 - `Modules/Highlight` (default off; standalone = `NodeSight`, which has no licence, so only its API names were looked at):
   marks on the game's soft-target interact plate (CVars SoftTargetInteract/Arc/Range/NameplateInteract/IconGameObject set
   while an object part is on; the player's values in `CodexDB.highlight.saved`, put back when the parts or the module go off,
@@ -583,7 +608,17 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   spell from `C_CooldownViewer.GetCooldownViewerCooldownInfo(item.cooldownID)` (spellID / overrideSpellID /
   linkedSpellIDs) and a plain `item.isActive`. ProcGlow's `P.ViewerAuras` reads those; an unreadable count counts as
   reached only for entries with `secretStacks`. So a buff proc works in combat only when the player tracks that buff
-  in the cooldown manager.
+  in the cooldown manager. **Counting hidden stacks (2026-11-21):** Blizzard's viewer routes UNIT_AURA by the aura's
+  own instance (CooldownViewerMixin:OnUnitAura -> the item's `OnUnitAuraUpdatedEvent` for an update,
+  `OnUnitAuraRemovedEvent` when it goes; the UNIT_AURA payload itself is `SecretWhenAurasRestricted`). Per-item post
+  hooks (`P.HookStacks`) count: new buff 1, each update +1 up to `stacks` (one per GetTime: icon and bar of the same
+  buff both get the call), removed / inactive 0; a readable count always replaces the guess (`P.SeenStacks`);
+  `P.StacksReached`; no hooks = the old "active = reached". `/codex procglow` prints the counts and the seal.
+  Forever's cooldown manager has no item per echo: one **"Unsealed Wrath"** item (spell 1310735) is linked to every
+  Echo of <seal> (the user's report). `ViewerMatch` resolves such a multi-echo item to the echo of `P.lastSeal`
+  (`P.NoteSeal`: a readable seal buff in `P.ActiveAuras`, or a readable `UNIT_SPELLCAST_SUCCEEDED` spell; a seal
+  without an echo, the Crusader, clears it), unknown seal = nothing; a removal zeroes every echo. A pasted idea
+  counted every player UNIT_AURA in a fight, which counts every other buff and debuff too.
 - **Codex quest tracker (Modules/QuestTracker, module `questtracker`, area quests, 2026-11-20, the user's "show the
   zone names as groups", option 2 = our own tracker):** Data.lua (`ns.questtracker` = QT: `QT.Groups()` from
   `ns.QuestOrder.Sorted()` (root QuestOrder.lua, shared with TrackerSort), `QT.Rows`, `QT.Shape`; objectives
@@ -646,7 +681,7 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   Option: health bars in class colours (NPCs by reaction). Styles are picked from preview cards.
 - Damage meter: no minimize button (back only while minimized); segment button shows a glyph (swords / sigma).
 - Gathering-node marker: the pulsing glow + ring + turning sparkle, not the still ring with a glyph.
-- The Codex window by part of the game (2026-11-19, replaces Settings and its tabs; Rings, Quests / Map and Chat / Info bars got pages of their own the same day, the user found the combined pages too much): sidebar = search box, Home,
+- The Codex window by part of the game, with a tab row per page (tabs added 2026-11-21) (2026-11-19, replaces Settings and its tabs; Rings, Quests / Map and Chat / Info bars got pages of their own the same day, the user found the combined pages too much): sidebar = search box, Home,
   Action bars, Rings, Unit frames, Buffs, Bags and items, Quests, Map, Chat, Info bars, Tooltips, Trade | General,
   Look, Profiles; each page one scroll of foldable sections, the feature's switch in its header, all its options
   inside; each skins part's "Game default → Codex" picture inside its section.
@@ -687,11 +722,19 @@ mask, disc and swipe instead of Blizzard's jagged TempPortraitAlphaMask) only. `
 `branding/source/proc-codex-art.py <codexDir> [sheet.png]` (Pillow, no numpy) renders `Modules/QoL/Media/ProcArt/<key>.tga`:
 the "Codex art" proc look (default since 2026-11-20, the user's request), one original 128x256 coloured left-side
 piece per proc of ProcGlow's own list (the arc in the proc's colours, a drawn emblem, particles); keys and gallery
-order in ProcArt.lua `A.CODEX` (Clearcasting per class); the gallery is `A.Gallery()` ("Show all arts").
+order in ProcArt.lua `A.CODEX` (Clearcasting per class); the gallery is `A.Gallery()` ("Show all arts"). Every piece
+fades to 0 over 16 px towards the inner (right) edge and 6 px at the outer one (`edge_mask`), and emblems sit at x 70:
+a glow reaching the texture edge was cut there in a straight line (the user's "glow is cut and looks square",
+Hammer of Wrath, 2026-11-21).
 
 `branding/source/arrow-art.py <codexDir>` (Pillow) renders `Media/FoldArrow.tga`: the smooth fold arrow of `UI.FoldArrow`
 (32 px white triangle, drawn at 8x, shown at 18 px and turned a quarter with SetRotation for "open"; it replaced
 arrows drawn from 1 px columns, which stepped: the user's "arrows are low quality", 2026-11-21).
+
+`branding/source/dialogue-art.py <codexDir>` (Pillow) renders `Modules/Dialogue/Media/PreviewScene.tga` (512x256
+evening meadow) and `PreviewNpc.tga` (robed figure, quest mark): the backdrop of the Quest windows page's style
+pictures (Page.lua `DrawPreview`; the windows on it stay drawn in the theme's colours; they replaced flat boxes,
+the user's screenshot, 2026-11-21).
 
 `branding/source/wedge-art.py <codexDir>` (Pillow) renders `Modules/Rings/Media/Wedge2-12.tga`: the ping-wheel look's
 selected-slice wedge per slice count (white, tinted gold; square so SetRotation keeps the shape). Forever's atlases

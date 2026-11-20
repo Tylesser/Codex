@@ -1,8 +1,11 @@
 local addonName, ns = ...
 
 -- Areas: the sidebar is organised by part of the game (the user's choice, 2026-11-19: "I need to go to multiple tabs
--- to change all options on my action bar"). Each area is one scrolling page of foldable sections; a section starts
--- with its feature's on/off switch and holds every option of that feature, so nothing lives on tabs or sub-pages.
+-- to change all options on my action bar"). A section starts with its feature's on/off switch and holds every option
+-- of that feature. Since 2026-11-21 (the user, of a page of folded sections: "this is not good design, can we make
+-- collapsible panels tabs? keep collapsible panels in tabs if they are related") each page has a row of tabs
+-- (ns.AREA_TABS): a tab holds one section, shown open without a fold arrow, or a few related ones, foldable as
+-- before. A page with one section has no tab row. Sections no tab lists get a tab of their own (at the end).
 --
 -- Sections come from a registry: ns.AddSection(areaId, def). def:
 --   id        unique; a module's section uses the module's id, so ns.ShowPage(moduleId) lands on it
@@ -59,6 +62,53 @@ ns.AREA_BY_ID = {}
 for _, area in ipairs(ns.AREAS) do
   ns.AREA_BY_ID[area.id] = area
 end
+
+-- The tabs of each page: { title, section ids } in order. Related features share a tab (and fold there).
+ns.AREA_TABS = {
+  bars = {
+    { "Look", { "part-actionbars" } }, { "Visibility", { "barfade" } }, { "Proc glow", { "qol-procGlow" } },
+    { "Spells", { "qol-spellRanks", "qol-futureSpells" } }, { "Cooldown manager", { "part-cooldowns" } },
+  },
+  units = {
+    { "Player and target", { "part-unitframes" } }, { "Party", { "part-partyframes" } },
+    { "Raid", { "part-raidframes" } }, { "Nameplates", { "part-nameplates" } }, { "Personal bars", { "resource" } },
+  },
+  auras = {
+    { "Buff tracker", { "buffs" } }, { "Party buttons", { "buffs-party", "buffs-dispel" } },
+    { "Look", { "part-auras" } },
+  },
+  items = {
+    { "Bags", { "bags" } }, { "Stat Delta", { "statdelta" } },
+    { "Looting", { "qol-fasterLoot", "loottext", "part-lootroll" } },
+  },
+  quests = {
+    { "Quest windows", { "dialogue", "questkeys" } },
+    { "Tracker", { "questtracker", "part-tracker", "qol-trackerSort" } },
+    { "Quest log", { "part-questlog" } },
+  },
+  map = {
+    { "Minimap", { "part-minimap", "qol-addonButtons" } },
+    { "World map", { "qol-revealMap", "qol-zoneLevels", "qol-mapExtras", "part-questpins" } },
+    { "Highlights", { "highlight" } },
+  },
+  chat = { { "Chat", { "part-chat" } }, { "Damage meter", { "part-damagemeter" } } },
+  tooltips = {
+    { "Look", { "part-tooltips" } },
+    { "Extra lines", { "qol-questTooltips", "qol-gatherTooltips", "tooltipextras" } },
+  },
+  trade = {
+    { "Auction house", { "auction", "auction-lists", "auction-prices" } }, { "Professions", { "professions" } },
+    { "Commerce Authority", { "commerce" } }, { "Merchants", { "vendor", "vendorsearch" } },
+  },
+  general = {
+    { "Restyle", { "restyle", "part-windows", "part-menus", "part-floatingtext" } },
+    { "Move windows", { "movewindows" } }, { "Quality of life", { "qol" } }, { "Codex window", { "codexwindow" } },
+  },
+  look = {
+    { "Theme", { "theme" } }, { "Fonts", { "fonts" } }, { "Accent colour", { "accent" } }, { "Effects", { "effects" } },
+  },
+  profiles = { { "Profiles", { "profiles" } }, { "First-run setup", { "setup" } } },
+}
 
 -- Old page names that still open something: Settings and its tabs (ns.ShowSettings).
 local PAGE_ALIASES = { settings = "general", modules = "home", interface = "general", ui = "general" }
@@ -236,6 +286,11 @@ function ns.SectionFolded(id)
   return saved and true or false
 end
 
+-- A section alone in its tab is always open (it has no fold arrow).
+local function IsFolded(section)
+  return not section.single and ns.SectionFolded(section.def.id)
+end
+
 local pages = {} -- [areaId] = the area page (built)
 ns.areaPages = pages
 local EnsureBody, RefreshSection -- defined with the sections below
@@ -389,7 +444,7 @@ local function RefreshHeader(section)
     tag = state == "standalone" and "addon" or ""
   end
   section.tag:SetText(tag or "")
-  section.arrow:SetOpen(not ns.SectionFolded(def.id))
+  section.arrow:SetOpen(not IsFolded(section))
 end
 
 -- The line at the top of a body (why the feature waits, a button that fixes it).
@@ -514,7 +569,7 @@ end
 
 -- Places the body and returns the section's full height (header only while folded).
 local function MeasureSection(section)
-  local folded = ns.SectionFolded(section.def.id)
+  local folded = IsFolded(section)
   section.arrow:SetOpen(not folded)
   if folded then
     section.body:Hide() -- the line under the header stays: it parts the folded sections
@@ -579,7 +634,9 @@ local function BuildSectionFrame(page, def, width)
   section.title:SetText(def.title)
   -- the switch reads as the title's: a click on the header (not on the switch) folds or opens the section
   header:SetScript("OnClick", function()
-    ns.SetSectionFolded(def.id, not ns.SectionFolded(def.id))
+    if not section.single then
+      ns.SetSectionFolded(def.id, not ns.SectionFolded(def.id))
+    end
   end)
 
   section.line = UI.Divider(section)
@@ -608,7 +665,6 @@ local function BuildAreaPage(area, page)
   intro:SetText(area.desc or "")
   page.heading, page.intro = heading, intro
   local scroll, body = UI.ScrollArea(page)
-  scroll:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", 0, -12)
   scroll:SetPoint("BOTTOMRIGHT")
   body:SetWidth(width)
   page.scroll, page.body = scroll, body
@@ -625,18 +681,125 @@ local function BuildAreaPage(area, page)
     empty:SetPoint("TOPLEFT")
     empty:SetText("Nothing here yet.")
   end
+  -- the tabs: ns.AREA_TABS' groups that have sections here, then a tab for each section none of them lists
+  page.tabs, page.tabOf = {}, {}
+  local listed = {}
+  for index, spec in ipairs(ns.AREA_TABS[area.id] or {}) do
+    local tab = { id = area.id .. ":" .. index, title = spec[1], sections = {} }
+    for _, id in ipairs(spec[2]) do
+      local section = page.byId[id]
+      if section and not listed[id] then
+        listed[id] = true
+        tab.sections[#tab.sections + 1] = section
+      end
+    end
+    if #tab.sections > 0 then
+      page.tabs[#page.tabs + 1] = tab
+    end
+  end
+  for _, section in ipairs(page.sections) do
+    if not listed[section.def.id] then
+      page.tabs[#page.tabs + 1] = { id = section.def.id, title = section.def.title, sections = { section } }
+    end
+  end
+  for _, tab in ipairs(page.tabs) do
+    for _, section in ipairs(tab.sections) do
+      page.tabOf[section.def.id] = tab
+      section.tab = tab.id
+      section.single = #tab.sections == 1
+      section.arrow:SetShown(not section.single)
+    end
+  end
+  if #page.tabs > 1 then
+    local list = {}
+    for _, tab in ipairs(page.tabs) do
+      list[#list + 1] = { id = tab.id, text = tab.title }
+    end
+    page.tabBar = UI.Tabs(page, list, function(id)
+      page.SelectTab(id)
+    end)
+    page.tabBar:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", 0, -10)
+    page.tabBar:SetPoint("RIGHT", page, "RIGHT", -14, 0)
+    scroll:SetPoint("TOPLEFT", page.tabBar, "BOTTOMLEFT", 0, -10)
+  else
+    scroll:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", 0, -12)
+  end
   function page.Layout()
     local y = 0
     for _, section in ipairs(page.sections) do
-      section:ClearAllPoints()
-      section:SetPoint("TOPLEFT", body, "TOPLEFT", 0, -y)
-      local height = MeasureSection(section)
-      section:SetHeight(height)
-      section.y = y
-      y = y + height + GAP
+      if page.tab and section.tab ~= page.tab then
+        section:Hide()
+      else
+        section:Show()
+        section:ClearAllPoints()
+        section:SetPoint("TOPLEFT", body, "TOPLEFT", 0, -y)
+        local height = MeasureSection(section)
+        section:SetHeight(height)
+        section.y = y
+        y = y + height + GAP
+      end
     end
     body:SetHeight(math.max(10, y))
     scroll:Update()
+  end
+  -- a tab chosen: its sections refreshed and shown, from the top (the choice is kept per page, not in profiles)
+  local function MarkTab(id)
+    if not page.tabBar then
+      return
+    end
+    page.tabBar.current = id
+    local theme = ns.Theme()
+    for tabID, button in pairs(page.tabBar.buttons) do
+      local on = tabID == id
+      button.underline:SetShown(on)
+      button.label:SetTextColor(UI.Unpack(on and UI.SelectedText(theme) or theme.muted))
+    end
+  end
+  function page.SelectTab(id, keepScroll)
+    local found
+    for _, tab in ipairs(page.tabs) do
+      if tab.id == id then
+        found = tab
+      end
+    end
+    found = found or page.tabs[1]
+    if not found then
+      return
+    end
+    page.tab = found.id
+    if type(ns.db.areaTabs) ~= "table" then
+      ns.db.areaTabs = {}
+    end
+    ns.db.areaTabs[area.id] = found.title
+    MarkTab(found.id)
+    for _, section in ipairs(found.sections) do
+      RefreshSection(section)
+      if not IsFolded(section) then
+        EnsureBody(section)
+        if section.def.show then
+          local ok, err = pcall(section.def.show, section)
+          if not ok then
+            geterrorhandler()(err)
+          end
+        end
+      end
+    end
+    if not keepScroll then
+      scroll:SetVerticalScroll(0)
+    end
+    page.Layout()
+    C_Timer.After(0, page.Layout)
+  end
+  local saved = type(ns.db.areaTabs) == "table" and ns.db.areaTabs[area.id]
+  local first = page.tabs[1]
+  for _, tab in ipairs(page.tabs) do
+    if tab.title == saved then
+      first = tab
+    end
+  end
+  page.tab = first and first.id or nil
+  if first then
+    MarkTab(first.id)
   end
   -- the flash that marks what the search (or ShowPage) went to: the theme's accent, fading out
   local flash = CreateFrame("Frame", nil, body)
@@ -657,7 +820,11 @@ end
 local function ShowAreaPage(page)
   for _, section in ipairs(page.sections) do
     RefreshSection(section)
-    if section.built and section.def.show and not ns.SectionFolded(section.def.id) then
+    local here = not page.tab or section.tab == page.tab
+    if here and not IsFolded(section) then
+      EnsureBody(section)
+    end
+    if here and section.built and section.def.show and not IsFolded(section) then
       local ok, err = pcall(section.def.show, section)
       if not ok then
         geterrorhandler()(err)
@@ -774,6 +941,9 @@ function ns.FocusSection(id, widget, flash)
   local section, page = ns.SectionFrame(id)
   if not section then
     return nil
+  end
+  if section.tab and page.tab ~= section.tab and page.SelectTab then
+    page.SelectTab(section.tab, true)
   end
   if ns.SectionFolded(id) then
     if type(ns.db.folded) ~= "table" then

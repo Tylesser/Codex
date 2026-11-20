@@ -33,7 +33,7 @@ local MAX_NAME = 32
 -- What is never part of a profile -------------------------------------------------------------------------
 
 local SKIP_TOP = { profiles = true, profileActive = true, sharedProfile = true, setupDone = true, setupStep = true,
-  window = true, folded = true, trainerSpells = true }
+  window = true, folded = true, areaTabs = true, trainerSpells = true }
 -- folded: which sections of the Codex window are folded (Areas.lua), not a setting; trainerSpells: the prices your
 -- class trainers asked (Modules/QoL/FutureSpells.lua), data
 local SKIP_PATH = {

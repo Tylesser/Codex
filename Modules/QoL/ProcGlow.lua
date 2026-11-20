@@ -72,7 +72,7 @@ P.SEALS = { "Seal of Righteousness", "Seal of the Crusader", "Seal of Command", 
 for _, echo in ipairs({ { "Fury", 1311701 }, { "Command", 1311703 }, { "Righteousness", 1311704 },
   { "Justice", 1311705 }, { "Light", 1328198 }, { "Wisdom", 1328206 } }) do
   P.AURAS[#P.AURAS + 1] = { name = "Echo of " .. echo[1], ids = { echo[2] }, class = "PALADIN", stacks = 3,
-    secretStacks = true, notActive = true, spells = P.SEALS }
+    secretStacks = true, notActive = true, spells = P.SEALS, seal = "Seal of " .. echo[1] }
 end
 
 -- The game's own sounds: { key, text, SOUNDKIT name, its ID, group } (names and IDs from
@@ -1166,16 +1166,20 @@ function P.ActiveAuras()
     local id, name = Num(aura.spellId), Str(aura.name)
     if name then
       active.names[Lower(name)] = true
+      P.NoteSeal(name)
     end
     local match = (id and P.auraIDs[id]) or (name and P.auraNames[Lower(name)])
     if match and match.stacks then
       local count = aura.applications
       if count ~= nil and not Readable(count) then
-        if not match.secretStacks then
-          match = nil -- hidden, and this proc can't do without it
+        if not match.secretStacks or not P.StacksReached(match) then
+          match = nil -- hidden, and this proc can't do without it (or the counted stacks aren't there yet)
         end
-      elseif (Num(count) or 0) < match.stacks then
-        match = nil
+      else
+        P.SeenStacks(match, Num(count) or 0)
+        if (Num(count) or 0) < match.stacks then
+          match = nil
+        end
       end
     end
     if match then
@@ -1205,7 +1209,7 @@ local function ViewerMatch(item)
   if type(info) ~= "table" then
     return nil
   end
-  local found
+  local found, several
   local ids = { info.overrideSpellID, info.spellID }
   for _, id in ipairs(type(info.linkedSpellIDs) == "table" and info.linkedSpellIDs or {}) do
     ids[#ids + 1] = id
@@ -1213,14 +1217,133 @@ local function ViewerMatch(item)
   for index = 1, 2 + (type(info.linkedSpellIDs) == "table" and #info.linkedSpellIDs or 0) do
     local id = Num(ids[index])
     local match = id and P.auraIDs[id]
-    if match then
-      if found and found ~= match then
-        return nil -- two listed buffs on one item: which one is on can't be told
-      end
+    if match and found and found ~= match then
+      several = true
+    elseif match then
       found = match
     end
   end
+  if several then
+    -- one item for several listed buffs: Forever's "Unsealed Wrath" item is linked to every Echo of <seal> (the
+    -- user's /codex procglow, 2026-11-21). Its own aura can't be read in a fight; the echo is the one of your seal
+    -- (P.lastSeal: the seal buff read while it can be, or the seal you cast). Unknown seal: nothing is guessed.
+    local seal = P.lastSeal and P.echoBySeal[P.lastSeal]
+    return seal and P.ItemLinks(info, seal) and seal or nil
+  end
   return found
+end
+
+-- Does this item's info list the aura entry's spell?
+function P.ItemLinks(info, match)
+  local ids = { info.overrideSpellID, info.spellID }
+  for _, id in ipairs(type(info.linkedSpellIDs) == "table" and info.linkedSpellIDs or {}) do
+    ids[#ids + 1] = id
+  end
+  for index = 1, 2 + (type(info.linkedSpellIDs) == "table" and #info.linkedSpellIDs or 0) do
+    local id = Num(ids[index])
+    if id and P.auraIDs[id] == match then
+      return true
+    end
+  end
+  return false
+end
+
+-- Seal name -> its echo's aura entry; P.lastSeal = the seal you have on, as far as can be told.
+P.echoBySeal = {}
+for _, aura in ipairs(P.AURAS) do
+  if aura.seal then
+    P.echoBySeal[aura.seal] = aura
+  end
+end
+
+local SEAL_NAMES = {}
+for _, name in ipairs(P.SEALS) do
+  SEAL_NAMES[name] = true
+end
+
+function P.NoteSeal(name)
+  if type(name) == "string" and SEAL_NAMES[name] then
+    P.lastSeal = name -- a seal without an echo (the Crusader) clears it: P.echoBySeal has none
+  end
+end
+
+-- Stack counts in a fight (the user's question, 2026-11-21: "can we use this for in-combat Echo"): the count is a
+-- secret then, but the cooldown manager is told about each change of the buff it shows, and only of that buff:
+-- its UNIT_AURA handler finds the item by the aura's own instance (forever Blizzard_CooldownViewer
+-- CooldownViewerMixin:OnUnitAura) and calls the item's OnUnitAuraUpdatedEvent for an update (a stack gained, or the
+-- buff refreshed) and OnUnitAuraRemovedEvent when it goes. Post hooks on those two count without reading anything
+-- hidden: a new buff = 1, each update +1 (up to the entry's `stacks`), removed or not active = 0, and a readable
+-- count (outside a fight) always replaces the guess. A pasted idea counted every UNIT_AURA of the player in a fight,
+-- which also counts every other buff and debuff. Entries without hooks (no such method on the item) keep the old
+-- rule: active = reached.
+P.stackGuess = {} -- [aura entry] = { count, at, hooked }
+P.hookedItems = {}
+
+local function Guess(match)
+  local guess = P.stackGuess[match]
+  if not guess then
+    guess = { count = 0 }
+    P.stackGuess[match] = guess
+  end
+  return guess
+end
+
+-- A hidden count: reached when counted that far, or always when nothing counts it (no hooks: the old rule).
+function P.StacksReached(match)
+  local guess = P.stackGuess[match]
+  return not (guess and guess.hooked) or guess.count >= (match.stacks or 0)
+end
+
+function P.SeenStacks(match, count)
+  Guess(match).count = count
+end
+
+local function CountedMatch(item)
+  local match = ViewerMatch(item)
+  if match and match.stacks and match.secretStacks then
+    return match
+  end
+end
+
+local function OnItemAuraUpdated(item)
+  local match = P.started and CountedMatch(item)
+  if not match then
+    return
+  end
+  local guess = Guess(match)
+  local now = GetTime()
+  if guess.at == now then
+    return -- the same change seen by a second item (an icon and a bar of the same buff)
+  end
+  guess.at = now
+  guess.count = math.min(match.stacks, math.max(guess.count, 1) + 1)
+  P.UpdateSoon()
+end
+
+local function OnItemAuraRemoved(item)
+  local match = P.started and CountedMatch(item)
+  if match then
+    Guess(match).count = 0
+    if match.seal then
+      for _, echo in pairs(P.echoBySeal) do
+        Guess(echo).count = 0 -- one item for every echo: whichever was on is gone
+      end
+    end
+    P.UpdateSoon()
+  end
+end
+
+function P.HookStacks(item, match)
+  if P.hookedItems[item] then
+    Guess(match).hooked = true
+    return
+  end
+  if type(item.OnUnitAuraUpdatedEvent) == "function" and type(item.OnUnitAuraRemovedEvent) == "function" then
+    P.hookedItems[item] = true
+    hooksecurefunc(item, "OnUnitAuraUpdatedEvent", OnItemAuraUpdated)
+    hooksecurefunc(item, "OnUnitAuraRemovedEvent", OnItemAuraRemoved)
+    Guess(match).hooked = true
+  end
 end
 
 function P.ViewerAuras(active)
@@ -1231,19 +1354,31 @@ function P.ViewerAuras(active)
       pcall(function()
         for item in pool:EnumerateActive() do
           local on = rawget(item, "isActive")
-          if Readable(on) and on == true then
-            local match = ViewerMatch(item)
-            if match and not active[match] then
-              local cached = rawget(item, "auraDataCached")
-              local count = type(cached) == "table" and cached.applications or nil
-              if match.stacks and Readable(count) then
-                if (Num(count) or 0) >= match.stacks then
-                  active[match] = true
-                end
-              elseif not match.stacks or match.secretStacks then
+          local match = Readable(on) and ViewerMatch(item)
+          if match and match.stacks and match.secretStacks then
+            P.HookStacks(item, match)
+          end
+          if match and on == true and not active[match] then
+            local cached = rawget(item, "auraDataCached")
+            local count = type(cached) == "table" and cached.applications or nil
+            if match.stacks and Readable(count) then
+              P.SeenStacks(match, Num(count) or 0)
+              if (Num(count) or 0) >= match.stacks then
+                active[match] = true
+              end
+            elseif not match.stacks then
+              active[match] = true
+            elseif match.secretStacks then
+              local guess = Guess(match)
+              if guess.count < 1 then
+                guess.count = 1 -- it is on: at least one
+              end
+              if not guess.hooked or guess.count >= match.stacks then
                 active[match] = true
               end
             end
+          elseif match and on == false and match.secretStacks then
+            Guess(match).count = 0
           end
         end
       end)
@@ -1532,7 +1667,7 @@ end
 
 -- Start / stop ---------------------------------------------------------------------------------------------------
 
-local function OnEvent(_, event, unit)
+local function OnEvent(_, event, unit, ...)
   if P.art then
     P.art.OnEvent(event, unit) -- the spells the game lights (unit = their spell ID)
   end
@@ -1544,6 +1679,12 @@ local function OnEvent(_, event, unit)
   elseif event == "UNIT_HEALTH" then
     if unit == "target" then
       P.Update()
+    end
+  elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
+    -- a seal you cast: which echo the Unsealed Wrath item shows (the ID may be secret: then nothing changes)
+    local spellID = Num(select(2, ...))
+    if unit == "player" and spellID then
+      P.NoteSeal(SpellName(spellID))
     end
   elseif event == "SPELLS_CHANGED" then
     P.lookup = nil
@@ -1580,6 +1721,11 @@ function P.Report()
     return Readable(value) and tostring(value) or "?"
   end
   local db = Q.DB()
+  Say(("your seal (for the echoes): %s"):format(P.lastSeal or "not known yet"))
+  for match, guess in pairs(P.stackGuess) do
+    Say(("%s: %d of %d stacks (%s)"):format(match.name, guess.count, match.stacks or 0,
+      guess.hooked and "counted from the cooldown manager" or "not counted: active = reached"))
+  end
   Say(("proc glow %s, cooldown manager %s, Codex's glow instead of the game's %s, style %s"):format(
     db[KEY] and "on" or "off", db[CDM_KEY] and "on" or "off", P.ReplaceGame() and "on" or "off", Show(P.Wanted())))
   for _, name in ipairs(P.VIEWERS) do
@@ -1655,6 +1801,7 @@ function P.Start()
   end
   pcall(events.RegisterUnitEvent, events, "UNIT_AURA", "player")
   pcall(events.RegisterUnitEvent, events, "UNIT_HEALTH", "target")
+  pcall(events.RegisterUnitEvent, events, "UNIT_SPELLCAST_SUCCEEDED", "player") -- seals (only paladins have any)
   pcall(events.RegisterEvent, events, "ADDON_LOADED")
   P.Scan()
 end

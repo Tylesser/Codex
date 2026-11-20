@@ -20,7 +20,8 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 W, H, S = 128, 256, 4  # final size; drawn at S times
 CX, CY, R = 230, 128, 190  # the arc (as ProcSide.tga)
-EX, EY = 76, 128  # the emblem's middle, just inside the arc
+EX, EY = 70, 128  # the emblem's middle, just inside the arc (76 put long rays against the inner edge)
+EDGE_FADE = 16  # px: every piece fades to nothing towards the texture's inner (right) edge, 6 px at the outer one
 EMBLEM = 1.3  # emblem shapes are drawn in units of this many px
 
 
@@ -418,7 +419,25 @@ def render(key, emblem, core, glow, arc, kind, seed):
     out.alpha_composite(layer(glow, scaled(mark_glow, 2.2)))
     out.alpha_composite(layer(arc, mark))
     out.alpha_composite(layer(core, scaled(inner, 0.9)))
+    # a glow reaching the texture's edge was cut there in a straight line (the user's "glow is cut and looks
+    # square", Hammer of Wrath, 2026-11-21): fade every piece out towards both edges
+    alpha = out.getchannel("A")
+    out.putalpha(ImageChops.multiply(alpha, edge_mask()))
     return out.resize((W, H), Image.LANCZOS)
+
+
+def edge_mask():
+    """1 inside, falling to 0 over EDGE_FADE px at the inner (right) edge and 6 px at the outer one."""
+    row = []
+    for x in range(W * S):
+        px = (x + 0.5) / S
+        right = min(1.0, (W - px) / EDGE_FADE)
+        left = min(1.0, px / 6)
+        t = max(0.0, min(right, left))
+        row.append(int(255 * t * t * (3 - 2 * t)))  # smoothstep
+    strip = Image.new("L", (W * S, 1))
+    strip.putdata(row)
+    return strip.resize((W * S, H * S))
 
 
 def main():
