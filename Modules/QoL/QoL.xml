@@ -9,6 +9,7 @@
   <Script file="MapExtrasData.lua"/>
   <Script file="MapExtras.lua"/>
   <Script file="AddonButtons.lua"/>
+  <Script file="TrackerSort.lua"/>
   <Script file="ProcGlow.lua"/>
   <Script file="ProcArt.lua"/>
   <Script file="Ranks.lua"/>

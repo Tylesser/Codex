@@ -1,9 +1,11 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/">
   <Script file="Core.lua"/>
+  <Script file="Conditions.lua"/>
   <Script file="Display.lua"/>
   <Script file="Party.lua"/>
   <Script file="Dispel.lua"/>
   <Script file="Options.lua"/>
+  <Script file="ConditionsOptions.lua"/>
   <Script file="PartyOptions.lua"/>
   <Script file="DispelOptions.lua"/>
   <Script file="Module.lua"/>

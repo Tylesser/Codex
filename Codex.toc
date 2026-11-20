@@ -14,6 +14,7 @@
 Tylesser.lua
 Core.lua
 Gathering.lua
+QuestOrder.lua
 Theme.lua
 Widgets.lua
 Window.lua
@@ -35,6 +36,7 @@ Modules\VendorSearch\VendorSearch.xml
 Modules\BarFade\BarFade.xml
 Modules\StatDelta\StatDelta.xml
 Modules\QuestKeys\QuestKeys.xml
+Modules\QuestTracker\QuestTracker.xml
 Modules\Dialogue\Dialogue.xml
 Modules\Vendor\Vendor.xml
 Modules\QoL\QoL.xml

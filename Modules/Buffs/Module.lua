@@ -21,8 +21,16 @@ local function SetupDB()
   ns.db = db
 end
 
+-- where and when the row shows (Conditions.lua): only a redraw, no rescan (group updates come often in a raid)
+local CONDITION_EVENTS = { ZONE_CHANGED_NEW_AREA = true, PLAYER_UPDATE_RESTING = true, GROUP_ROSTER_UPDATE = true }
+
 local function OnEvent(self, event, arg)
   if not ns.db then
+    return
+  end
+  if CONDITION_EVENTS[event] then
+    ns.UpdateDisplay()
+    ns.RefreshConditions()
     return
   end
   if event == "GET_ITEM_INFO_RECEIVED" then
@@ -60,6 +68,9 @@ local function CreateEventFrame()
   eventFrame:RegisterUnitEvent("UNIT_INVENTORY_CHANGED", "player") -- weapon enchants, where nothing else fires
   pcall(eventFrame.RegisterEvent, eventFrame, "WEAPON_ENCHANT_CHANGED") -- Retail only
   pcall(eventFrame.RegisterEvent, eventFrame, "MINIMAP_UPDATE_TRACKING") -- Find Minerals etc. switched
+  for event in pairs(CONDITION_EVENTS) do
+    eventFrame:RegisterEvent(event)
+  end
   eventFrame:SetScript("OnEvent", OnEvent)
 
   local sinceTick = 0

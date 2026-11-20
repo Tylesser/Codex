@@ -202,7 +202,9 @@ label is bound to the page's right edge and wraps (it ran past the window before
 register events, hook anything or create frames. `standalone` = the old Tylesser addon of the same feature:
 while it is loaded Codex leaves the feature to it (the player can force Codex's copy).
 
-- `Modules/Buffs`: Buff Tracker ported in (standalone = `BuffTracker`).
+- `Modules/Buffs`: Buff Tracker ported in (standalone = `BuffTracker`). Conditions.lua / ConditionsOptions.lua
+  (2026-11-20): where and when the row shows (places, group, combat; per row or per buff), the same body as
+  Buff Tracker's (see its CLAUDE.md); the window is on Codex widgets (`CodexBuffConditions`).
 - `Modules/Auction`: Codex's own auction house engine (scans, price database, tooltips, shopping lists). No
   dependency on Auctionator/TSM/Auctioneer. Forever uses the modern `C_AuctionHouse` API.
 - `Modules/Bags`: Codex's bag window (standalone = `Baganator`; never read or copy Baganator/Syndicator, they are
@@ -582,6 +584,37 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   linkedSpellIDs) and a plain `item.isActive`. ProcGlow's `P.ViewerAuras` reads those; an unreadable count counts as
   reached only for entries with `secretStacks`. So a buff proc works in combat only when the player tracks that buff
   in the cooldown manager.
+- **Codex quest tracker (Modules/QuestTracker, module `questtracker`, area quests, 2026-11-20, the user's "show the
+  zone names as groups", option 2 = our own tracker):** Data.lua (`ns.questtracker` = QT: `QT.Groups()` from
+  `ns.QuestOrder.Sorted()` (root QuestOrder.lua, shared with TrackerSort), `QT.Rows`, `QT.Shape`; objectives
+  `GetQuestLogLeaderBoard(i, logIndex, true)`, items `GetQuestLogSpecialItemInfo`, difficulty token from
+  `GetQuestDifficultyColor` vs `QuestDifficultyColors`), Window.lua (`CodexQuestTracker`, rows = Buttons of ours,
+  item buttons `CodexQuestTrackerItem<n>` = SecureActionButtonTemplate type item / "item:<id>" on UIParent anchored
+  to their row, made / moved / shown only out of combat; in a fight rows of the same `QT.Shape` are refilled in place,
+  anything else waits for PLAYER_REGEN_ENABLED; Edit Mode handle via EditModeManagerFrame OnShow / OnHide; place
+  `CodexDB.questtracker.point`, first from Blizzard's tracker's spot), Module.lua (settings width / background /
+  yield / foldOthers / collapsed, folds per character `CodexCharDB.questtracker.folded[zone]`, clicks as Blizzard's
+  OnBlockHeaderClick, menu via `UI.ShowMenu`, starts 1 s after login). Height: `QT.MaxHeight()` = `db.height`, else Blizzard's tracker's own height times
+  its scale (it is its Edit Mode Height when moved, down to the screen bottom in its default place: forever
+  ObjectiveTrackerContainerMixin:UpdateHeight), never past the screen bottom; rows are measured, placed from
+  `QT.scrollRow` until it runs out, the rest hidden with "More above / below" lines; the mouse wheel (frame, header,
+  rows) scrolls 2 rows a step, out of combat only (in a fight the shown range is part of the shape: no reflow); the
+  user's first in-game look filled the whole screen (2026-11-20). **Blizzard's tracker is parked, never hidden
+  or re-parented** (FlareUI's comment, forever: Hide / SetParent run its OnHide tainted and its next update fails on
+  secret auras): `SetScaleBase` (Edit Mode's override keeps the widget's own) 0.001 + alpha 0, post hooks on its
+  SetScale / SetAlpha park it again a frame later. `UseQuestLogSpecialItem` is protected, so items never go through
+  Blizzard's buttons. Steps aside (`QT.Yielding`) when another addon parked the tracker first (scale < 0.01 at our
+  start: FlareUI's tracker) or, with `yield`, while a non-quest module has `hasContents` (QT.OTHER_MODULES; a 2 s
+  ticker watches): Unpark + hide ours. Switching the module needs a reload. Test `codex_questtracker_test.lua`; the
+  mock's `LoadCodex` keeps the module off unless `opts.questTracker` (it parks Blizzard's tracker and refreshes on
+  many events, which other tests count).
+- **Quest tracker order (Modules/QoL/TrackerSort.lua, `trackerSort`, 2026-11-20):** Blizzard's tracker shows the
+  watch list in watch-index order (QuestObjectiveTrackerMixin:BuildQuestWatchInfos; callings first) and calls
+  `C_QuestLog.SortQuestWatches()` on zone changes, which left Forever's list in no zone order. Codex reorders the
+  watch list itself (RemoveQuestWatch / AddQuestWatch from the first quest out of place, same frame, so no "new
+  quest" glow), 0.3 s after zone / subzone / watch changes, never in combat, ignoring its own events for 1 s.
+  "Here" = the quest log header is the zone's name, or `isOnMap`. Nothing of the tracker is hooked (its item buttons
+  are secure). Test `codex_trackersort_test.lua`.
 - **Two namespaces:** Codex_Skins (and each theme folder) is its own addon with its own `ns`. Core code reaches
   skin code only through `TylesserCodex` (e.g. `TylesserCodex.SchoolTabLook`), never through `ns.S`.
 

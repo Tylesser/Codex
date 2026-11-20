@@ -26,8 +26,9 @@ Home shows a card for each feature with what it is doing right now; click a card
 
 ## Modules
 
-- **Buffs**: a row of the buffs you choose (when missing, when active or always), click-to-buff, weapon
-  enchants, and click-to-buff and dispel buttons by your party frames. Formerly the Buff Tracker addon.
+- **Buffs**: a row of the buffs you choose (when missing, when active or always), shown only where and when you
+  want (places such as dungeons and raids, solo or in a group, in or out of combat; for the whole row or per buff),
+  click-to-buff, weapon enchants, and click-to-buff and dispel buttons by your party frames. Formerly the Buff Tracker addon.
 - **Auction House**: scans the auction house and keeps a price history, shows prices in item tooltips, and
   shops from your own lists. No other auction addon needed.
 - **Bags**: one bag window for all your bags, grouped into categories (small ones side by side; or in bag order) with a search box,
@@ -102,7 +103,8 @@ Home shows a card for each feature with what it is doing right now; click a card
   spells show without prices. Gathering skill in tooltips: herb and ore nodes say the skill they need,
   also on the minimap. Zone levels on the world map: each zone's level range beside its name, and the herbs and ores
   found there. Addon buttons in a list: the minimap's addon buttons are hidden, and clicking the moon above the
-  minimap lists them. `/codex qol`.
+  minimap lists them. Quest tracker order: the quests of the zone you are in go to the top of the quest tracker,
+  nearest first, and the others follow grouped by zone. `/codex qol`.
 - **Highlights** (off until you switch it on): a pulsing ring and the name on the herb, ore, chest or fishing pool
   you are next to (green, orange, gold, blue), a "!" on quest objects and quest mobs, and glowing quest items in
   your bags. Sets the game's interact-target options while on and gives yours back when off. If NodeSight is
@@ -117,6 +119,13 @@ Home shows a card for each feature with what it is doing right now; click a card
   that cost gold or marks, or when a reward must be chosen), open a lone vendor, banker, trainer or flight master at
   once, fade the game's interface while you talk; hold Shift to talk normally. Off keeps the game's own windows.
   If DialogueUI is installed, Codex leaves the NPC windows to it.
+- **Codex quest tracker**: Codex's own quest tracker in your theme. Your tracked quests sit under a heading per
+  zone, the zone you are in first and the nearest quest first; click a zone to fold it, click a quest to open it,
+  Shift-click to stop tracking it, right-click for focus, the map and sharing. Quest items have their own button.
+  It is as tall as the game's own tracker (or the height you pick), and the mouse wheel scrolls what doesn't fit.
+  Move it while Edit Mode is open. While the game's tracker has something besides quests (a dungeon scenario, a
+  tracked recipe or achievement), the game's tracker comes back for that time. If another addon already replaces
+  the game's tracker, Codex leaves it alone.
 - **Quest keys**: Space presses Complete Quest, Continue or Accept and picks quests from an NPC's list, in the
   game's quest windows and in Codex's.
 

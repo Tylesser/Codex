@@ -299,6 +299,7 @@ Q.SECTIONS = {
   fasterLoot = { area = "items", order = 30, title = "Faster loot" },
   questTooltips = { area = "tooltips", order = 20, title = "Quest info in tooltips" },
   gatherTooltips = { area = "tooltips", order = 30, title = "Gathering skill in tooltips" },
+  trackerSort = { area = "quests", order = 35, title = "Quest tracker order" },
   addonButtons = { area = "map", order = 15, title = "Addon buttons on the minimap", folded = true },
   revealMap = { area = "map", order = 20, title = "Reveal unexplored areas", folded = true },
   zoneLevels = { area = "map", order = 30, title = "Zone levels on the world map", folded = true },

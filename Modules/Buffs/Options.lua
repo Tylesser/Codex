@@ -151,7 +151,7 @@ local function CreateTrackedRow(row)
   row.name:SetWordWrap(false)
 
   -- second line: the item a click uses, and the combat alert
-  row.use = UI.Button(row, 186, 20)
+  row.use = UI.Button(row, 150, 20)
   row.use:SetPoint("TOPLEFT", 30, -27)
   row.use:RegisterForClicks("LeftButtonUp", "RightButtonUp")
   row.use:SetScript("OnClick", function(self, button)
@@ -172,6 +172,17 @@ local function CreateTrackedRow(row)
   end)
   row.alert:SetScript("OnEnter", AlertTooltip)
   row.alert:SetScript("OnLeave", Hide)
+
+  -- where and when it shows (ConditionsOptions.lua): the row's rules, or its own
+  row.where = UI.Button(row, 54, 20, "Where")
+  row.where:SetPoint("TOPRIGHT", -2, -27)
+  row.where:SetScript("OnClick", function(self)
+    ns.OpenConditions(self:GetParent().item, self)
+  end)
+  row.where:SetScript("OnEnter", function(self)
+    ns.ConditionsTooltip(self, self:GetParent().item)
+  end)
+  row.where:SetScript("OnLeave", Hide)
 end
 
 local function UpdateTrackedRow(row, entry)
@@ -180,6 +191,13 @@ local function UpdateTrackedRow(row, entry)
   row.mode:SetText(ns.MODE_LABELS[entry.mode])
   row.use:SetText(ItemLabel(entry))
   row.alert:SetChecked(entry.alert or false)
+  -- the theme's good colour: the buff has its own rules (the tooltip says which)
+  local theme = codex.InkTheme and codex.InkTheme() or codex.Theme()
+  local color = entry.conditions and theme.good or (theme.button and theme.button.text) or theme.accent
+  row.where.textColor = entry.conditions and theme.good or nil
+  if row.where.label then
+    row.where.label:SetTextColor(color[1], color[2], color[3])
+  end
 end
 
 -- A row to add (row.item = { name, icon, tag, weaponSlot }).
@@ -275,6 +293,7 @@ local function RefreshMain()
 end
 
 function ns.RefreshOptions()
+  ns.RefreshConditions()
   if not (panel and panel:IsVisible()) then
     return
   end
@@ -349,8 +368,20 @@ local function BuildTrackedTab(tab)
   trackedTitle:SetPoint("TOPLEFT", 0, -74)
 
   -- "Add Mage basics": the class buffs you know (Core.lua, ns.PRESETS). Hidden for other classes.
-  presetButton = UI.Button(tab, LEFT_WIDTH, 22)
-  presetButton:SetPoint("TOPLEFT", 0, -94)
+  -- where and when the whole row shows (ConditionsOptions.lua)
+  local rowWhere = UI.Button(tab, 140, 22, "Where the row shows")
+  rowWhere:SetPoint("TOPLEFT", 0, -94)
+  rowWhere:SetScript("OnClick", function(self)
+    ns.OpenConditions("row", self)
+  end)
+  rowWhere:SetScript("OnEnter", function(self)
+    ns.ConditionsTooltip(self, "row")
+  end)
+  rowWhere:SetScript("OnLeave", Hide)
+  ns.rowWhereButton = rowWhere
+
+  presetButton = UI.Button(tab, LEFT_WIDTH - 146, 22)
+  presetButton:SetPoint("TOPLEFT", 146, -94)
   presetButton:SetScript("OnClick", function()
     ns.AddPreset()
   end)

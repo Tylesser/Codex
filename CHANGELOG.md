@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-beta2
+
+- Buffs: choose where and when the tracked buffs show: places (open world, cities and inns, dungeons, raids, battlegrounds and arenas), solo or in a party or raid group, and in or out of combat, for the whole row (Where the row shows) or for one buff (its Where button). For example: hidden in dungeons and raids, shown in a party out in the world.
+- New module, **Codex quest tracker** (Quests page, on by default): Codex's own quest tracker in your theme. Your tracked quests sit under a heading per zone, the zone you are in first and the nearest quest first; click a zone to fold it, click a quest to open it, Shift-click to stop tracking, right-click for focus, the map, sharing and more. Quest items have their own button. It is as tall as the game's own tracker (or the height you pick); quests that don't fit scroll with the mouse wheel. Move it while Edit Mode is open. While the game's tracker has something besides quests (a dungeon scenario, a tracked recipe or achievement), it comes back for that time and Codex's steps aside. If another addon already replaces the game's tracker, Codex leaves it alone.
+- Quest tracker order (Quests page, on by default): the quests of the zone you are in go to the top of the quest tracker, nearest first, and the others follow grouped by zone. Sorted again when you change zone or subzone, never during a fight.
+
 ## 1.0.0-beta1
 
 First beta of Tylesser - Codex, the all-in-one interface for WoW Forever.
