@@ -191,6 +191,8 @@ Action bars, the chat on Chat, and so on).
 
 Found a bug or have an idea? Tell us at https://tylesser.com/feedback/ (in game: `/codex feedback`).
 
+No GitHub account? Join the [Tylesser Discord](https://discord.gg/n2rEB6mRxF) and post in #bug-reports or #ideas with the addon's tag; each post is copied to GitHub and the bot answers with the link.
+
 ## Releasing (maintainers)
 
 Tag `vX.Y.Z` after moving the changes into a `## X.Y.Z` section of CHANGELOG.md. The packager builds one zip
