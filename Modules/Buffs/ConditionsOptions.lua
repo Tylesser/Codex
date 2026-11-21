@@ -7,7 +7,7 @@ local UI = codex.UI
 -- buff's "Where" button (that buff: its own rules, or the row's). Where / Group: tick what to show in; Combat: one of
 -- three. A buff following the row shows the row's choices greyed.
 
-local WIDTH, HEIGHT = 430, 300
+local WIDTH, HEIGHT = 430, 330
 local window
 
 local function Target()
@@ -106,6 +106,23 @@ local function Build()
     last = check
   end
 
+  -- one setting for every buff (Conditions.lua ns.Unwanted): off by default
+  window.warn = MakeCheck("Warn me when a buff with rules is on where they say no", function(self)
+    ns.SetWarnUnwanted(self:GetChecked() and true or false)
+  end)
+  window.warn:SetPoint("BOTTOMLEFT", 12, 32)
+  window.warn:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine("Warn me to remove it")
+    GameTooltip:AddLine("A tracked buff with rules (its own or the row's) that is on where they say no shows in the "
+      .. "row with \"remove\" under it, and chat names it once. Click the icon to remove the buff (out of combat). "
+      .. "For all buffs.", 1, 1, 1, true)
+    GameTooltip:Show()
+  end)
+  window.warn:SetScript("OnLeave", function()
+    GameTooltip:Hide()
+  end)
+
   window.summary = UI.Text(window, "body", 11, "muted")
   window.summary:SetPoint("BOTTOMLEFT", 16, 14)
   window.summary:SetPoint("BOTTOMRIGHT", -16, 14)
@@ -139,6 +156,7 @@ function ns.RefreshConditions()
   for _, check in ipairs(window.combat) do
     Ready(check, check.key == combat)
   end
+  window.warn:SetChecked(ns.db.warnUnwanted and true or false)
   local text = ns.ConditionsText(Conditions())
   window.summary:SetText(isEntry and not editable and ("Same as the whole row: " .. text) or text)
 end

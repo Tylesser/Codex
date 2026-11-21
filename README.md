@@ -26,7 +26,8 @@ Home shows a card for each feature with what it is doing right now; click a card
 ## Modules
 
 - **Buffs**: a row of the buffs you choose (when missing, when active or always), shown only where and when you
-  want (places such as dungeons and raids, solo or in a group, in or out of combat; for the whole row or per buff),
+  want (places such as dungeons and raids, solo or in a group, in or out of combat; for the whole row or per buff;
+  optionally a warning, with a click to remove it, when a buff is on where its rules say no),
   click-to-buff, weapon enchants, and click-to-buff and dispel buttons by your party frames. Formerly the Buff Tracker addon.
 - **Auction House**: scans the auction house and keeps a price history, shows prices in item tooltips, and
   shops from your own lists. No other auction addon needed. "From Auctionator" copies Auctionator's saved
