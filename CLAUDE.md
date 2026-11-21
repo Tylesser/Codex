@@ -525,6 +525,9 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   such state only through Blizzard's own UI (its menu), or say it can't be done. Blizzard mixin methods on a frame
   of ours are fine only when they touch nothing but that frame: `TabSystemButtonArtMixin:SetSquareMode` writes a
   file-local of the tab file (read again by Blizzard's own tabs), so it is never called (Future spells' tab).
+- **Forbidden frames:** some UIParent children are forbidden to addon code; on them even `IsShown` / `GetAlpha` error
+  ("Attempt to access forbidden object"). Walking `UIParent:GetChildren()` (Dialogue's fade): call `IsForbidden` first,
+  each check in pcall (`FadeCandidate`, 2026-11-21, the user's error in beta4).
 - **Text with colour codes:** strip `|c........` / `|r` before measuring or matching length (the quest count's
   numbers are colour-coded).
 - **Sell price** on Forever is a plain text line (`GameTooltip_OnTooltipAddMoney`: "Sell Price: <money>"), not a

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.0-beta5
+
+- Fixed: a Lua error ("calling 'IsShown' on bad self") when a quest window opened in style B or C with "Fade the game's interface" on.
+
 ## 1.0.0-beta4
 
 - The Codex window's pages have tabs now: each feature (or a few related ones) on its own tab instead of one long page of folded sections. Your last tab on each page is remembered.

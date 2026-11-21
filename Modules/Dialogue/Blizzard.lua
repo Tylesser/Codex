@@ -151,6 +151,23 @@ local function Keep(frame)
   return false
 end
 
+-- A shown, plain (not forbidden) UIParent child we may fade.
+local function FadeCandidate(frame)
+  if type(frame.IsForbidden) ~= "function" or type(frame.IsShown) ~= "function" or type(frame.SetAlpha) ~= "function" then
+    return false
+  end
+  local ok, forbidden = pcall(frame.IsForbidden, frame)
+  if not ok or forbidden then
+    return false
+  end
+  local okShown, shown = pcall(frame.IsShown, frame)
+  if not okShown or not shown then
+    return false
+  end
+  local okKeep, keep = pcall(Keep, frame)
+  return okKeep and not keep
+end
+
 function D.FadeWanted()
   local db = D.DB()
   return D.Owns() and db.fade and (db.style == "b" or db.style == "c") and not InCombatLockdown()
@@ -204,8 +221,9 @@ function D.FadeGameUI()
     return
   end
   for _, frame in ipairs({ UIParent:GetChildren() }) do
-    if type(frame) == "table" and not faded[frame] and frame.IsShown and frame:IsShown() and frame.SetAlpha
-      and not (frame.IsForbidden and frame:IsForbidden()) and not Keep(frame) then
+    -- forbidden frames first: even IsShown on one errors from addon code (the user's error, 2026-11-21: a forbidden
+    -- UIParent child broke the fade at the first quest window in style B / C); each check in pcall
+    if type(frame) == "table" and not faded[frame] and FadeCandidate(frame) then
       faded[frame] = restoring[frame] or Current(frame)
       restoring[frame] = faded[frame]
       Animate(frame, 0)
