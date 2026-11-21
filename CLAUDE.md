@@ -553,6 +553,10 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
 - **Forbidden frames:** some UIParent children are forbidden to addon code; on them even `IsShown` / `GetAlpha` error
   ("Attempt to access forbidden object"). Walking `UIParent:GetChildren()` (Dialogue's fade): call `IsForbidden` first,
   each check in pcall (`FadeCandidate`, 2026-11-21, the user's error in beta4).
+- **`UnitIsUnit` can return a secret boolean** (forever UnitDocumentation: `SecretWhenUnitComparisonRestricted`),
+  e.g. an aura's `sourceUnit` against "player" in a raid; `== true`, `not` or `if` on it errors (the user's report,
+  2026-11-21, Buffs ReadBuffs). Compare units only through `ns.SameUnit(a, b)` (Buffs Core.lua and Buff Tracker's:
+  true / false / nil = unknown) or `H.Ask` + `== true`; decide what "unknown" means at each call.
 - **Text with colour codes:** strip `|c........` / `|r` before measuring or matching length (the quest count's
   numbers are colour-coded).
 - **Sell price** on Forever is a plain text line (`GameTooltip_OnTooltipAddMoney`: "Sell Price: <money>"), not a

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+- Paladin blessings: the party buttons use Greater Blessings only in a raid. In a party (or alone) they cast the normal Blessing, which costs no Symbol of Kings.
+- Fixed: a Lua error in a raid ("attempt to compare local 'same' (a secret boolean value)") while the party buttons read who cast a buff. When the game keeps the answer secret, the caster now counts as unknown.
+
 ## 1.0.0
 
 Codex leaves beta: the first full release.
