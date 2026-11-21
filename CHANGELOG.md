@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.0
+
+Codex leaves beta: the first full release.
+
+- New: **Bind keys by hovering** (Action bars > Buttons, or `/codex bind`). Point at an action button and press a key to bind it; Escape clears the button's keys. Done saves, Cancel puts your old keys back. Not in a fight.
+- New: **Numbers on cooldowns** (Action bars > Buttons, off until you switch it on): the time left on every button and buff that is cooling down. Switching it off gives back the game setting you had.
+- New: **Learn all at trainers** (Trade > Trainers): a Learn all button on the class trainer's window learns every spell you can learn now and afford, cheapest first. Professions are left to you.
+- Info bars: two new things a slot can show. **Experience per hour**, with the time to your next level. **Gear set**: the set you wear; click it to put on another.
+- Shopping lists: **From Auctionator** copies Auctionator's saved shopping lists into Codex (exact names stay exact). Lists you already have get only the terms they lack.
+- Fixed: on the Rings page the help text ran into the Ring size row.
+
 ## 1.0.0-beta5
 
 - Fixed: a Lua error ("calling 'IsShown' on bad self") when a quest window opened in style B or C with "Fade the game's interface" on.

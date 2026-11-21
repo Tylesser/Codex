@@ -548,6 +548,82 @@ function A.RemoveTerm(list, term)
   return false
 end
 
+-- Import from Auctionator (2026-11-21): its saved shopping lists (the global AUCTIONATOR_SHOPPING_LISTS while
+-- Auctionator is loaded: { { name, items = { search strings }, isTemporary }, ... }; only that data is read). A
+-- search string's first field (up to ";") is the term, in double quotes for an exact name. Temporary lists are
+-- left out; a list whose name Codex already has gets only the terms it lacks.
+
+-- term text, exact from one of Auctionator's search strings, or nil
+function A.ParseAuctionatorTerm(search)
+  if type(search) ~= "string" then
+    return nil
+  end
+  local first = search:match("^([^;]*)") or ""
+  first = first:match("^%s*(.-)%s*$")
+  local quoted = first:match('^"(.*)"$')
+  local text = Clean(quoted or first)
+  if text == "" then
+    return nil
+  end
+  return text, quoted ~= nil
+end
+
+-- Auctionator's lists worth importing (not temporary, at least one term), or an empty table.
+function A.AuctionatorLists()
+  local out = {}
+  local saved = rawget(_G, "AUCTIONATOR_SHOPPING_LISTS")
+  if type(saved) ~= "table" then
+    return out
+  end
+  for _, list in ipairs(saved) do
+    if type(list) == "table" and not list.isTemporary and type(list.name) == "string" and type(list.items) == "table"
+      and #list.items > 0 then
+      out[#out + 1] = list
+    end
+  end
+  return out
+end
+
+-- Copies them in. Returns lists made, lists added to, terms added.
+function A.ImportAuctionator()
+  local made, merged, added = 0, 0, 0
+  for _, source in ipairs(A.AuctionatorLists()) do
+    local name = Clean(source.name)
+    local target
+    for _, list in ipairs(A.Lists()) do
+      if list.name == name then
+        target = list
+      end
+    end
+    local before = target and #target.terms or 0
+    if not target then
+      target = { name = name ~= "" and name or "Auctionator", terms = {} }
+      table.insert(A.Lists(), target)
+      made = made + 1
+    end
+    local have = {}
+    for _, term in ipairs(target.terms) do
+      have[term.text:lower() .. (term.exact and "|exact" or "")] = true
+    end
+    for _, search in ipairs(source.items) do
+      local text, exact = A.ParseAuctionatorTerm(search)
+      local key = text and (text:lower() .. (exact and "|exact" or ""))
+      if key and not have[key] then
+        have[key] = true
+        table.insert(target.terms, { text = text, exact = exact or nil })
+        added = added + 1
+      end
+    end
+    if before > 0 and #target.terms > before then
+      merged = merged + 1
+    end
+  end
+  if made + added > 0 then
+    A.Changed("lists")
+  end
+  return made, merged, added
+end
+
 -- Public API (TylesserCodex.GetAuctionPrice(itemLinkOrID) -> copper, time seen, count).
 ns.API.GetAuctionPrice = function(item)
   return A.GetPrice(item)

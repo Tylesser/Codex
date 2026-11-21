@@ -68,6 +68,7 @@ ns.AREA_TABS = {
   bars = {
     { "Look", { "part-actionbars" } }, { "Visibility", { "barfade" } }, { "Proc glow", { "qol-procGlow" } },
     { "Spells", { "qol-spellRanks", "qol-futureSpells" } }, { "Cooldown manager", { "part-cooldowns" } },
+    { "Buttons", { "qol-hoverBind", "qol-cooldownNumbers" } },
   },
   units = {
     { "Player and target", { "part-unitframes" } }, { "Party", { "part-partyframes" } },
@@ -99,6 +100,7 @@ ns.AREA_TABS = {
   trade = {
     { "Auction house", { "auction", "auction-lists", "auction-prices" } }, { "Professions", { "professions" } },
     { "Commerce Authority", { "commerce" } }, { "Merchants", { "vendor", "vendorsearch" } },
+    { "Trainers", { "qol-trainerAll" } },
   },
   general = {
     { "Restyle", { "restyle", "part-windows", "part-menus", "part-floatingtext" } },

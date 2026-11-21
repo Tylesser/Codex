@@ -516,12 +516,11 @@ function R.BuildPage(page)
   end
   view.preview = preview
 
-  -- sizes
-  local sizeTop = gridBottom - 150
+  -- sizes: under the hint, however many lines it wraps to
   local radiusLabel = Label(page, "Ring size")
-  radiusLabel:SetPoint("TOPLEFT", right, sizeTop - 4)
+  radiusLabel:SetPoint("TOPLEFT", view.hint, "BOTTOMLEFT", 0, -16)
   view.radius = UI.Stepper(page, 48)
-  view.radius:SetPoint("TOPLEFT", right + 70, sizeTop)
+  view.radius:SetPoint("TOPLEFT", view.hint, "BOTTOMLEFT", 70, -12)
   view.radius.less:SetScript("OnClick", function()
     R.SetSize("radius", R.DB().radius - R.RADIUS.step)
   end)
@@ -540,7 +539,7 @@ function R.BuildPage(page)
   end)
   -- the look: Blizzard's ping wheel (default) or Codex's own disc
   view.style = UI.Check(page, "Blizzard's ping wheel look")
-  view.style:SetPoint("TOPLEFT", right, sizeTop - 30)
+  view.style:SetPoint("TOPLEFT", view.hint, "BOTTOMLEFT", 0, -42)
   view.style:SetScript("OnClick", function(self)
     local ping = self:GetChecked() and true or false
     R.Edit(nil, function()

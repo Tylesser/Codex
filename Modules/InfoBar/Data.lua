@@ -685,6 +685,157 @@ Add({
   end,
 })
 
+-- Experience per hour (2026-11-21) -----------------------------------------------------------------------------
+-- What this session earned: each look adds the XP gained since the last one (across a level up: the rest of the
+-- old level plus the new XP). Per hour from the session's start (at least a minute, so the first kill doesn't
+-- read as a million an hour), time to level = what is left / that rate.
+
+I.xpSession = nil
+
+function I.XPRate()
+  local level, xp, max = I.Experience()
+  local now = Num(Ask(GetTime)) or 0
+  local s = I.xpSession
+  if not xp then
+    return { level = level, maxed = true }
+  end
+  if not s then
+    s = { start = now, gained = 0, level = level, xp = xp, max = max }
+    I.xpSession = s
+  elseif level == s.level and xp >= s.xp then
+    s.gained = s.gained + (xp - s.xp)
+  elseif level > s.level then
+    s.gained = s.gained + math.max(0, s.max - s.xp) + xp
+  end
+  s.level, s.xp, s.max = level, xp, max
+  local hours = math.max(now - s.start, 60) / 3600
+  local rate = s.gained / hours
+  local left = max - xp
+  return { level = level, gained = s.gained, rate = rate, left = left, seconds = now - s.start,
+    toLevel = rate > 0 and left / rate * 3600 or nil }
+end
+
+-- "1 h 20 m", "12 m", "under a minute"
+function I.Duration(seconds)
+  seconds = math.floor((seconds or 0) + 0.5)
+  if seconds < 60 then
+    return "under a minute"
+  end
+  local hours, minutes = math.floor(seconds / 3600), math.floor(seconds / 60) % 60
+  if hours > 0 then
+    return minutes > 0 and ("%d h %d m"):format(hours, minutes) or ("%d h"):format(hours)
+  end
+  return ("%d m"):format(minutes)
+end
+
+Add({
+  id = "xprate", name = "Experience per hour", icon = "Star",
+  events = { "PLAYER_XP_UPDATE", "PLAYER_LEVEL_UP" },
+  Value = function()
+    local r = I.XPRate()
+    if r.maxed then
+      return "XP/h", "max level", "muted"
+    end
+    if r.gained <= 0 then
+      return "XP/h", "--", "muted"
+    end
+    return "XP/h", Group(r.rate), "bright", r.toLevel and ("level in " .. I.Duration(r.toLevel)) or nil, "muted"
+  end,
+  Tooltip = function(tip)
+    local r = I.XPRate()
+    tip:Title("Experience per hour", "Level " .. r.level)
+    if r.maxed then
+      tip:Line(r.level >= MaxLevel() and "You are at the highest level." or "Experience gain is switched off.", nil,
+        "muted")
+      return
+    end
+    tip:Line("This session", Group(r.gained) .. " in " .. I.Duration(r.seconds), "muted", "bright")
+    tip:Line("Per hour", r.gained > 0 and Group(r.rate) or "--", "muted", "bright")
+    tip:Line("To level", Group(r.left), "muted", "bright")
+    tip:Line("Next level in", r.toLevel and I.Duration(r.toLevel) or "--", "muted", "good")
+    tip:Note("Counted from your login (or since the bar first showed it).")
+  end,
+})
+
+-- Gear set (2026-11-21) ---------------------------------------------------------------------------------------
+-- Forever's character window has the game's equipment manager (Camelot PaperDollFrame.EquipmentManagerPane,
+-- C_EquipmentSet in the forever API docs). This shows the set you wear; a click lists your sets to put one on
+-- (out of combat: the game refuses gear changes in a fight).
+
+function I.GearSets()
+  local list = {}
+  if not (C_EquipmentSet and C_EquipmentSet.GetEquipmentSetIDs) then
+    return list
+  end
+  local ids = Ask(C_EquipmentSet.GetEquipmentSetIDs)
+  for _, id in ipairs(type(ids) == "table" and ids or {}) do
+    local name, icon, setID, isEquipped, numItems, numEquipped, _, numLost = Ask(C_EquipmentSet.GetEquipmentSetInfo, id)
+    if Str(name) then
+      list[#list + 1] = { id = Num(setID) or id, name = name, icon = icon, equipped = isEquipped and true or false,
+        items = Num(numItems) or 0, worn = Num(numEquipped) or 0, lost = Num(numLost) or 0 }
+    end
+  end
+  table.sort(list, function(a, b)
+    return a.name < b.name
+  end)
+  return list
+end
+
+function I.WearSet(id)
+  if InCombat() or not (C_EquipmentSet and C_EquipmentSet.UseEquipmentSet) then
+    return false
+  end
+  return Ask(C_EquipmentSet.UseEquipmentSet, id) and true or false
+end
+
+Add({
+  id = "gearset", name = "Gear set", icon = "Armor",
+  events = { "EQUIPMENT_SETS_CHANGED", "PLAYER_EQUIPMENT_CHANGED", "EQUIPMENT_SWAP_FINISHED" },
+  Value = function()
+    local sets = I.GearSets()
+    if #sets == 0 then
+      return "Set", "none", "muted"
+    end
+    for _, set in ipairs(sets) do
+      if set.equipped then
+        return "Set", set.name, "bright"
+      end
+    end
+    return "Set", "mixed", "muted"
+  end,
+  Tooltip = function(tip)
+    local sets = I.GearSets()
+    tip:Title("Gear sets")
+    if #sets == 0 then
+      tip:Line("No sets yet: make one in the character window's equipment manager.", nil, "muted")
+      return
+    end
+    for _, set in ipairs(sets) do
+      local state = set.equipped and "worn" or (set.lost > 0 and (set.lost .. " missing") or
+        (set.worn .. " / " .. set.items))
+      tip:Line(set.name, state, set.equipped and "good" or "text", set.lost > 0 and "bad" or "muted")
+    end
+    tip:Note(InCombat() and "Not in a fight." or "Click to put on a set.")
+  end,
+  Click = function()
+    if InCombat() then
+      return
+    end
+    local items = { { text = "Put on a set", title = true } }
+    for _, set in ipairs(I.GearSets()) do
+      items[#items + 1] = { text = set.name, checked = set.equipped, func = function()
+        I.WearSet(set.id)
+      end }
+    end
+    if #items == 1 then
+      items[#items + 1] = { text = "No sets yet", disabled = true }
+    end
+    local anchor = GetMouseFoci and Ask(GetMouseFoci)
+    anchor = type(anchor) == "table" and anchor[1] or UIParent
+    ns.UI.ShowMenu(anchor, items)
+  end,
+})
+
 -- Reputation -------------------------------------------------------------------------------------------------
 
 -- name, reaction (1-8), value within the standing, the standing's size, factionID

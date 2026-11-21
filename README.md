@@ -4,8 +4,7 @@ An all-in-one interface for **WoW Forever**: every Tylesser tool in one addon, i
 restyled game interface, bags, quest windows, ring menus, info bars and more. Each feature is a module you can
 switch off; a module that is off does nothing at all.
 
-**Beta:** Codex is new and large. Expect rough edges, and please report what you find (see Feedback below).
-It is made for WoW Forever only.
+It is made for WoW Forever only. Found something that doesn't work? Please report it (see Feedback below).
 
 ## Finding your options
 
@@ -30,7 +29,8 @@ Home shows a card for each feature with what it is doing right now; click a card
   want (places such as dungeons and raids, solo or in a group, in or out of combat; for the whole row or per buff),
   click-to-buff, weapon enchants, and click-to-buff and dispel buttons by your party frames. Formerly the Buff Tracker addon.
 - **Auction House**: scans the auction house and keeps a price history, shows prices in item tooltips, and
-  shops from your own lists. No other auction addon needed.
+  shops from your own lists. No other auction addon needed. "From Auctionator" copies Auctionator's saved
+  shopping lists into Codex while Auctionator is installed.
 - **Bags**: one bag window for all your bags, grouped into categories (small ones side by side; or in bag order) with a search box,
   identical items stacked into one button with the total (shown one by one at the bank, trade, mailbox,
   vendors and auction house);
@@ -112,7 +112,12 @@ Home shows a card for each feature with what it is doing right now; click a card
   also on the minimap. Zone levels on the world map: each zone's level range beside its name, and the herbs and ores
   found there. Addon buttons in a list: the minimap's addon buttons are hidden, and clicking the moon above the
   minimap lists them. Quest tracker order: the quests of the zone you are in go to the top of the quest tracker,
-  nearest first, and the others follow grouped by zone. `/codex qol`.
+  nearest first, and the others follow grouped by zone. Bind keys by hovering (Action bars > Buttons, or
+  `/codex bind`): point at an action button and press a key to bind it, Escape clears it; Done saves, Cancel puts
+  your old keys back. Numbers on cooldowns (off until you switch it on): the time left on every cooling-down
+  button and buff, in your theme's font with the restyle on. Learn all at trainers (Trade > Trainers): a Learn all
+  button on the class trainer's window learns every spell you can learn and afford, cheapest first; professions
+  are left to you. `/codex qol`.
 - **Highlights** (off until you switch it on): a pulsing ring and the name on the herb, ore, chest or fishing pool
   you are next to (green, orange, gold, blue), a "!" on quest objects and quest mobs, and glowing quest items in
   your bags. Sets the game's interact-target options while on and gives yours back when off. If NodeSight is
@@ -146,7 +151,8 @@ Home shows a card for each feature with what it is doing right now; click a card
   leaves rings to it. `/codex rings`, `/codex ring <name>`.
 - **Info bars**: a bar along the top or bottom of the screen and a panel under the chat with what you want to keep an
   eye on: gold (across your characters), bag space, location, experience, reputation, professions, clock, frame
-  rate and latency, guild and friends online, durability and ammo. Right-click a slot to choose what it shows. The
+  rate and latency, guild and friends online, durability, ammo, experience per hour (with the time to your next
+  level) and your gear set (click it to put on another). Right-click a slot to choose what it shows. The
   chat panel's corner buttons hide the chat and copy its recent lines. Moves the game's frames out of the bar's way.
 - **Personal bars** (off until you switch it on): health and power under your character, with the five-second
   rule, the mana and energy tick, druid mana, combo points, your seal's time and swing timers; under the character

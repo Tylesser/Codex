@@ -295,6 +295,28 @@ local function BuildLists(body)
   listsLabel:SetPoint("TOPLEFT", 0, -2)
   listsLabel:SetText("LISTS")
 
+  -- Auctionator's saved lists, while it is loaded and has some (A.ImportAuctionator)
+  lists.import = UI.Button(body, 130, 18, "From Auctionator")
+  lists.import:SetPoint("TOPRIGHT", body, "TOPLEFT", leftWidth, 0)
+  lists.import:SetShown(#A.AuctionatorLists() > 0)
+  lists.import:SetScript("OnClick", function()
+    local made, merged, added = A.ImportAuctionator()
+    if added == 0 then
+      ns.Say("Auctionator's lists are already in Codex.")
+    else
+      ns.Say(("From Auctionator: %d new %s, %d %s added to, %d %s."):format(made, made == 1 and "list" or "lists",
+        merged, merged == 1 and "list" or "lists", added, added == 1 and "term" or "terms"))
+    end
+  end)
+  lists.import:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine("Import from Auctionator")
+    GameTooltip:AddLine("Copies Auctionator's saved shopping lists into Codex (exact names stay exact). Lists "
+      .. "you already have here get only the terms they lack. Auctionator's lists stay as they are.", 1, 1, 1, true)
+    GameTooltip:Show()
+  end)
+  lists.import:SetScript("OnLeave", GameTooltip_Hide)
+
   lists.listList = UI.List(body, {
     rowHeight = 22,
     CreateRow = function(row)

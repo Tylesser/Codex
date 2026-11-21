@@ -3,8 +3,9 @@
 The all-in-one Tylesser addon (started 2026-11-17). Every feature is a **module** that can be switched off;
 the look comes from one of five **themes**; restyling the game's own interface is a separate **skins** folder.
 Workspace conventions are in `E:/Games/Wow/CLAUDE.md`. Public repo Tylesser/Codex, CurseForge 1817747, Wago kNMP9RGz;
-first beta v1.0.0-beta1 on 2026-11-20. A tag with "beta" (`v1.0.0-beta2`) is a beta on both stores and a GitHub
-pre-release; the changelog heading is the version without the "v" (`## 1.0.0-beta2`).
+first beta v1.0.0-beta1 on 2026-11-20, **1.0.0 (out of beta) on 2026-11-21** (the user's choice). A tag with "beta"
+(`v1.0.0-beta2`) is a beta on both stores and a GitHub pre-release, a plain tag (`v1.0.1`) a release; the changelog
+heading is the version without the "v" (`## 1.0.1`).
 
 **Forever only** (the user's decision, 2026-11-17): every .toc says `## Interface: 16001` and the code needs no
 fallbacks for other clients. `ReloadUI` is protected on Forever: reloads go through the secure `/reload` macro
@@ -213,7 +214,10 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   (2026-11-20): where and when the row shows (places, group, combat; per row or per buff), the same body as
   Buff Tracker's (see its CLAUDE.md); the window is on Codex widgets (`CodexBuffConditions`).
 - `Modules/Auction`: Codex's own auction house engine (scans, price database, tooltips, shopping lists). No
-  dependency on Auctionator/TSM/Auctioneer. Forever uses the modern `C_AuctionHouse` API.
+  dependency on Auctionator/TSM/Auctioneer. Forever uses the modern `C_AuctionHouse` API. "From Auctionator" (2026-11-21,
+  `A.ImportAuctionator`): reads only the data global `AUCTIONATOR_SHOPPING_LISTS` (`{ name, items, isTemporary }`,
+  an item = search string, first field before ";" is the term, quoted = exact); temporary lists skipped, same-name
+  lists get only missing terms; the button beside "Lists" shows only while there is something to import.
 - `Modules/Bags`: Codex's bag window (standalone = `Baganator`; never read or copy Baganator/Syndicator, they are
   All Rights Reserved). Data per character in `CodexDB.bags.characters["Realm-Name"]` (slots as
   `{ link, count, quality }`, bank from the last visit, equipped, money). Own bags are
@@ -414,6 +418,24 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   the spellbook's FutureSpell items, then the game's data (all of it before a visit, after one only above the
   trainer's highest level). Known = IsPlayerSpell / IsSpellKnown / C_SpellBook.IsSpellKnown by ID, else name + rank
   in the book. Test `codex_futurespells_test.lua`.
+  **2026-11-21 round (the user's "DO ALL" of the suggestion list), test `codex_qol_extras_test.lua`:** Numbers on
+  cooldowns (CooldownNumbers.lua, `cooldownNumbers`, default off): CVar `countdownForCooldowns` (forever
+  Blizzard_SettingsDefinitions_Frame/ActionBars.lua) to "1", the player's value in `cooldownNumbersBefore`, given back
+  when off; queued to PLAYER_REGEN_ENABLED in a fight. Bind keys by hovering (HoverBind.lua, `hoverBind`, `Q.hoverBind`,
+  `/codex bind`, option button "Start binding"): **Forever's Quick Keybind mode is not opened from addon code** (its
+  OnShow runs ActionButtonUtil.ShowAllActionButtonGrids on the secure buttons from our stack). Our own mode: banner
+  `CodexHoverBindBanner` (Done = SaveBindings(GetCurrentBindingSet()), Cancel = LoadBindings), a cover button of ours
+  `CodexHoverBindCover` laid over the hovered frame with a `commandName` (GetMouseFoci; ActionBar.lua sets
+  commandName = commandNamePrefix .. "BUTTON" .. i), keys / extra mouse buttons / wheel through
+  GetConvertedKeyOrButton, IsKeyPressIgnoredForBinding, CreateKeyChordStringUsingMetaKeyState and
+  SetBinding(key, action, C_KeyBindings.GetBindingContextForAction(action)), as Blizzard_Settings_Shared/
+  Blizzard_Keybindings.lua does; Escape clears every key of the command; PLAYER_REGEN_DISABLED ends it and saves.
+  Learn all at trainers (Trainer.lua, `trainerAll`, `Q.trainer`, section on Trade > Trainers): a UI.Button of ours on
+  ClassTrainerFrame left of ClassTrainerTrainButton (made at ADDON_LOADED Blizzard_TrainerUI / TRAINER_SHOW);
+  `TA.Plan(money)` = "available" services from GetTrainerServiceInfo (Forever returns name, type, icon, level,
+  subtext, category), not professions (GetTrainerServiceCost's isProfession), cheapest first within the money;
+  bought in the click from the highest index down (indices never shift mid-click). Whether BuyTrainerService takes
+  several calls in one click is not tested in game yet: if only one is learned per click, the button still counts down.
 - `Modules/LootText` (`loottext`, "Loot text", area items, sectionOrder 35, default off (the user's choice); 2026-11-21, the user's
   request after a look at BattleText Forever, ScrollingLoot, Lootline, Loot Pro and MSBT, none of whose code was
   used; they picked every line kind, both looks, value + glow, watch list, hiding toasts and the session summary).
@@ -447,6 +469,9 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   `CodexDB.bags.characters`, bags, location, XP, reputation, professions, clock, fps/ms, guild, friends, durability,
   ammo); right-click a slot = "Show in this slot"; hide chat (alpha only) and copy chat (`/codex copychat`).
   Settings `CodexDB.infobar`; icons from `branding/source/infobar-art.js`. Test `codex_infobar_test.lua`.
+  Texts added 2026-11-21: `xprate` (`I.XPRate()`: session XP summed at each look, across a level up; per hour from at
+  least a minute; `I.Duration`) and `gearset` (`I.GearSets()` from C_EquipmentSet, Forever's character window has the
+  equipment manager; click = `UI.ShowMenu` of sets, `I.WearSet(id)` out of combat). Tested in `codex_qol_extras_test`.
 - `Modules/Resource` (default off, "Personal bars"): health/power under the character, five-second-rule spark,
   mana/energy tick, druid mana, combo pips, seal timer, swing timers (PLAYER_SWING / PLAYER_SWING_RANGE_UPDATE /
   UNIT_ATTACK_SPEED; there is no combat log for addons on Forever). Settings `CodexDB.resource`, mover while Edit
