@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.0
+
+- Commerce Authority: the **Waylaid Crates** you still have to fill show in the window under Deliveries, with the cheapest way to fill each. At the auction house a click searches for everything that fills it; elsewhere it puts the cheapest fill on the Codex buy list.
+- Commerce Authority: when a writ's item is cheaper to craft than to buy, a click at the auction house searches for its **materials** instead of the item, and the buy list holds the materials.
+- Proc glow is also its own addon now, **Tylesser - Proc Glow**, for players who don't use Codex. While it is loaded, Codex leaves proc glow to it.
+- The game's **cast bar** in Codex's look (with the unit frame restyle): a flat fill in your theme's accent (grey when the cast can't be interrupted, red when interrupted), the spell's name inside the bar and the **time left** on its right. Its place and size stay with Edit Mode.
+
 ## 1.3.0
 
 - Unit frames: set the **width and height apart** in Edit Mode: Shift + mouse wheel over a frame's box for the width, Ctrl + wheel for the height (the plain wheel still sizes the whole frame). Shift + right-click puts all three back.

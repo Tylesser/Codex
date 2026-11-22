@@ -50,7 +50,8 @@ Home shows a card for each feature with what it is doing right now; click a card
   Supply and Logistics. Writ tooltips show the reputation, what the writ asks for, its auction price, the cost per
   100 reputation and who takes it; crate tooltips the Merchant's Favor and the cheapest way to fill them; the
   vendors that take Merchant's Favor mark what you can buy. `/codex commerce` (or `/aca`) opens a window with your
-  standing, Merchant's Favor, your writs grouped by who takes them (with waypoints), the next standings and the
+  standing, Merchant's Favor, your writs grouped by who takes them (with waypoints) and the crates you have to fill
+  (click one at the auction house to search for what fills it), the next standings and the
   cheapest reputation by writ, NPC or zone, with a buy list for the Codex shopping lists; "All NPCs" lists every
   NPC who takes writs. Codex learns what your turn-ins really give. Uses Codex's own auction prices and the
   Professions module's craft costs. Formerly Tylesser - Commerce Authority.

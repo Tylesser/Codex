@@ -30,8 +30,8 @@ local S = ns.S
 -- out of combat).
 -- Incoming heals show on the health bars: your own heal brighter, the others' paler, shields after them, each an
 -- overlay bar that starts where the health fill ends (no maths on health values: they may be secret).
--- Blizzard's player cast bar (PlayerCastingBarFrame) stays as it is; its totem timers (TotemFrame, which lives in
--- PlayerFrame) move under our player frame.
+-- Blizzard's player cast bar (PlayerCastingBarFrame) keeps its place, size and logic but wears Codex's look with
+-- the time left (CastBar.Style); its totem timers (TotemFrame, which lives in PlayerFrame) move under our frame.
 
 local WHITE = "Interface\\Buttons\\WHITE8X8"
 local CIRCLE = "Interface\\AddOns\\Codex\\Media\\Circle" -- smooth 256px circle (TempPortraitAlphaMask looked jagged)
@@ -467,24 +467,24 @@ S.UnitFrameScale = ScaleOf
 -- Mode: Shift + wheel = width, Ctrl + wheel = height): CodexDB.skins.frameShape[unit] = { w = 1.2, h = 0.9 } (party
 -- members share "party"). Width = the bars' length (the frame grows away from its portrait), height = the bars'
 -- thickness. Laid out by Layout through SizedSpec.
-local SHAPE_LIMITS = { w = { 0.6, 2 }, h = { 0.6, 2.5 } }
-local function ShapeKey(unit)
+local Shape = { LIMITS = { w = { 0.6, 2 }, h = { 0.6, 2.5 } } } -- (one local: this file is at Lua's 200-local limit)
+function Shape.Key(unit)
   if type(unit) == "string" and unit:find("^party%d") then
     return "party"
   end
   return unit
 end
-local function ShapeOf(unit)
+function Shape.Of(unit)
   local skins = type(CodexDB) == "table" and type(CodexDB.skins) == "table" and CodexDB.skins
-  local saved = skins and type(skins.frameShape) == "table" and skins.frameShape[ShapeKey(unit)]
+  local saved = skins and type(skins.frameShape) == "table" and skins.frameShape[Shape.Key(unit)]
   local function Read(key)
     local value = type(saved) == "table" and tonumber(saved[key])
-    local limits = SHAPE_LIMITS[key]
+    local limits = Shape.LIMITS[key]
     return value and math.max(limits[1], math.min(limits[2], value)) or 1
   end
   return Read("w"), Read("h")
 end
-S.UnitFrameShape = ShapeOf
+S.UnitFrameShape = Shape.Of
 
 -- scale: the frame's own (its offsets are in its scale's units, the saved position in UIParent's)
 local function SetPosition(frame, pos, scale)
@@ -1649,12 +1649,12 @@ end
 -- were built (bars style: on the health bar's top edge instead).
 local ICON_KEYS = { "rest", "combat", "leader", "role", "raidIcon" }
 
--- The frame's spec at its saved width and height (ShapeOf): a copy over the board's own (1 / 1: the board's).
+-- The frame's spec at its saved width and height (Shape.Of): a copy over the board's own (1 / 1: the board's).
 -- Width: dx more bar; with the portrait on the frame's right the portrait (and its pieces, on f.origin) moves dx
 -- out too. Height: the bars' thickness (barScale); the panel's backdrop and the frame grow with it.
 local function SizedSpec(f)
   local base = f.spec
-  local wide, tall = ShapeOf(f.unit)
+  local wide, tall = Shape.Of(f.unit)
   f.originX = 0
   if wide == 1 and tall == 1 then
     return base
@@ -2180,6 +2180,119 @@ local function WarnCastBar()
   end
 end
 
+-- Blizzard's player cast bar in Codex's look (2026-11-22, the user's screenshot of a craft: "apply our design to
+-- here also add time"). Forever's PlayerCastingBarFrame (Blizzard_UIPanels_Game Shared/CastingBarFrame.lua, Mainline
+-- CastingBarFrame.xml) keeps its logic, place and size (an Edit Mode system in the bottom frame stack, which lays
+-- out by height: never resized). Its art and effects are hidden (kept hidden on Show; animations only change alpha);
+-- the fill per cast type comes from UpdateBarFillTexture: a post hook paints ours (the accent, CAST_LOCKED when it
+-- can't be interrupted, the theme's bad colour when interrupted); the name goes inside the bar (post hook on SetLook,
+-- which places it); the time left is ours, from the bar's own value / maxValue (plain numbers for your own casts).
+local CastBar = {} -- (one local: this file is at Lua's 200-local limit)
+CastBar.ART = { "Border", "TextBorder", "Background", "DropShadow", "BorderShield", "Spark", "Flash", "ChargeFlash",
+  "StandardGlow", "CraftGlow", "ChannelShadow", "Flakes01", "Flakes02", "Flakes03", "Shine", "EnergyGlow", "BaseGlow",
+  "WispGlow", "Sparkles01", "Sparkles02", "InterruptGlow", "ChargeGlow" }
+
+function CastBar.Fill(bar)
+  local theme = S.Theme()
+  local kind = bar.barType
+  local color = kind == "interrupted" and theme.bad or kind == "uninterruptable" and CAST_LOCKED or theme.accent
+  local texture = bar:GetStatusBarTexture()
+  if S.IsRegion(texture) and bar.BorderMask and texture.RemoveMaskTexture then
+    pcall(texture.RemoveMaskTexture, texture, bar.BorderMask)
+  end
+  bar:SetStatusBarTexture(WHITE)
+  Paint(bar, { { color[1] * 0.6, color[2] * 0.6, color[3] * 0.6 }, color })
+end
+
+function CastBar.Text(bar)
+  local text = bar.Text
+  if not S.IsRegion(text) then
+    return
+  end
+  BodyFont(text, 10, BAR_FONT, "OUTLINE")
+  text:ClearAllPoints()
+  text:SetWidth(0)
+  text:SetPoint("LEFT", bar, "LEFT", 4, 0)
+  text:SetPoint("RIGHT", bar, "RIGHT", -34, 0)
+  text:SetJustifyH("LEFT")
+  if text.SetWordWrap then
+    text:SetWordWrap(false)
+  end
+end
+
+function CastBar.Time(bar)
+  local time = bar.codexTime
+  if not time then
+    return
+  end
+  local value, max = bar.value, bar.maxValue
+  if (bar.casting or bar.channeling) and CanRead(value) and CanRead(max) and type(value) == "number"
+    and type(max) == "number" then
+    local left = bar.casting and max - value or value
+    time:SetFormattedText("%.1f", math.max(0, left))
+  else
+    time:SetText("")
+  end
+end
+
+function CastBar.Style()
+  local bar = S.Get("PlayerCastingBarFrame")
+  if not S.Usable(bar) or not S.Once(bar, "codexcast") then
+    return
+  end
+  for _, key in ipairs(CastBar.ART) do
+    local region = bar[key]
+    if S.IsRegion(region) then
+      region:SetAlpha(0)
+      region:Hide()
+      hooksecurefunc(region, "Show", function(self)
+        self:Hide()
+      end)
+    end
+  end
+  local back = bar:CreateTexture(nil, "BACKGROUND", nil, -8)
+  back:SetAllPoints(bar)
+  S.SetColor(back, BAR_BACK)
+  local top = CreateFrame("Frame", nil, bar)
+  top:SetAllPoints(bar)
+  top:SetFrameLevel((bar:GetFrameLevel() or 1) + 5)
+  local line = S.Theme().titlebar.line
+  S.Outline(top, bar, 0, 1, BLACK, "BORDER")
+  S.Outline(top, bar, -1, 1, { line[1], line[2], line[3], 0.75 }, "BORDER")
+  if S.IsRegion(bar.Icon) then
+    local icon = bar.Icon
+    icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    -- the line round the icon only while the game shows the icon (Edit Mode's "Show icon"; an empty square
+    -- stayed beside the bar with it off: the user's screenshot, 2026-11-22)
+    local lines = S.Outline(top, icon, -1, 1, BLACK, "BORDER")
+    local function Follow()
+      local shown = icon:IsShown() and true or false
+      for _, line in ipairs(lines) do
+        line:SetShown(shown)
+      end
+    end
+    for _, method in ipairs({ "Show", "Hide", "SetShown" }) do
+      hooksecurefunc(icon, method, Follow)
+    end
+    Follow()
+  end
+  if S.IsRegion(bar.Text) and bar.Text.SetParent then
+    bar.Text:SetParent(top) -- over our lines
+  end
+  local time = top:CreateFontString(nil, "OVERLAY")
+  SetFont(time, BAR_FONT, 10, "OUTLINE")
+  time:SetPoint("RIGHT", bar, "RIGHT", -4, 0)
+  time:SetJustifyH("RIGHT")
+  TextColor(time, { 1, 1, 1 })
+  bar.codexTime = time
+  CastBar.Fill(bar)
+  CastBar.Text(bar)
+  S.HookMethod(bar, "UpdateBarFillTexture", CastBar.Fill)
+  S.HookMethod(bar, "SetLook", CastBar.Text)
+  bar:HookScript("OnUpdate", Safe(CastBar.Time))
+  S.HookMethod(bar, "UpdateCastTimeText", CastBar.Time)
+end
+
 -- Party frames are Codex's unless the part is off or the player uses raid-style party frames (Edit Mode's
 -- "Use Raid-Style Party Frames"; the older CVar as a fallback).
 function RaidStyleParty()
@@ -2238,7 +2351,7 @@ local function FitMover(f)
   mover:ClearAllPoints()
   mover:SetPoint("TOPLEFT", f.button, "TOPLEFT", 0, 0)
   if f.moverLabel then
-    local wide, tall = ShapeOf(f.unit)
+    local wide, tall = Shape.Of(f.unit)
     local text = math.abs(scale - 1) < 0.001 and f.spec.label
       or ("%s  %d%%"):format(f.spec.label, math.floor(scale * 100 + 0.5))
     if wide ~= 1 or tall ~= 1 then
@@ -2300,10 +2413,10 @@ local function SetShape(f, key, value)
   end
   CodexDB.skins = CodexDB.skins or {}
   CodexDB.skins.frameShape = type(CodexDB.skins.frameShape) == "table" and CodexDB.skins.frameShape or {}
-  local unit = ShapeKey(f.unit)
+  local unit = Shape.Key(f.unit)
   local saved = CodexDB.skins.frameShape[unit] or {}
   if value then
-    local limits = SHAPE_LIMITS[key]
+    local limits = Shape.LIMITS[key]
     value = math.floor(math.max(limits[1], math.min(limits[2], value)) / SCALE_STEP + 0.5) * SCALE_STEP
     value = math.floor(value * 100 + 0.5) / 100 -- (1.2, not 1.2000000000000002)
     if math.abs(value - 1) < 0.001 then
@@ -2382,7 +2495,7 @@ local function BuildMover(f)
       return
     end
     local step = delta > 0 and SCALE_STEP or -SCALE_STEP
-    local wide, tall = ShapeOf(f.unit)
+    local wide, tall = Shape.Of(f.unit)
     if IsShiftKeyDown and IsShiftKeyDown() then
       SetShape(f, "w", wide + step) -- just the width
     elseif IsControlKeyDown and IsControlKeyDown() then
@@ -2394,7 +2507,7 @@ local function BuildMover(f)
   mover:SetScript("OnEnter", Safe(function(self)
     GameTooltip:SetOwner(self, "ANCHOR_TOP")
     GameTooltip:AddLine(f.spec.label)
-    local wide, tall = ShapeOf(f.unit)
+    local wide, tall = Shape.Of(f.unit)
     GameTooltip:AddLine("Drag to move. Mouse wheel: size (" .. math.floor(ScaleOf(f.unit) * 100 + 0.5) .. "%).", 1, 1, 1, true)
     GameTooltip:AddLine(("Shift + wheel: width (%d%%). Ctrl + wheel: height (%d%%)."):format(
       math.floor(wide * 100 + 0.5), math.floor(tall * 100 + 0.5)), 1, 1, 1, true)
@@ -2658,6 +2771,7 @@ local function Build()
   AdoptTotems()
   WarnCastBar()
   S.HookGlobal("PlayerFrame_AttachCastBar", WarnCastBar)
+  S.Run("unitframes", CastBar.Style)
   if #lostBars > 0 then
     print(PREFIX .. "this class bar sat on the player frame, which Codex replaces, and is hidden with it: "
       .. table.concat(lostBars, ", ") .. ". Turn off \"Player, target, pet and focus frames\" in Codex to get it back.")

@@ -26,8 +26,10 @@ local A = {}
 P.art = A
 
 A.KEY, A.LOOK_KEY, A.SIZE_KEY, A.ALPHA_KEY = "procArt", "procArtLook", "procArtSize", "procArtAlpha"
-A.ARC = "Interface\\AddOns\\" .. addonName .. "\\Modules\\QoL\\Media\\ProcSide"
-A.ICON_MASK = "Interface\\AddOns\\" .. addonName .. "\\Modules\\QoL\\Media\\ProcIconMask"
+local BRAND = ns.PROC_BRAND or "Codex" -- (the standalone: "Proc Glow")
+local MEDIA = ns.PROC_MEDIA or ("Interface\\AddOns\\" .. addonName .. "\\Modules\\QoL\\Media\\")
+A.ARC = MEDIA .. "ProcSide"
+A.ICON_MASK = MEDIA .. "ProcIconMask"
 A.LONG, A.SHORT = 256 * 0.8, 128 * 0.8
 -- the icon look: { y, size, alpha } in the 128x256 side file, each just inside the arc (the circle round (230, 128)
 -- with radius 190 that ProcSide.tga draws)
@@ -76,14 +78,14 @@ P.ART = {
 -- Clearcasting looks different per class.
 A.CLEARCASTING = { MAGE = "arcane_missiles", DRUID = "omen" }
 
-A.LOOKS = { { "codex", "Codex art" }, { "game", "The game's art" }, { "icon", "The spell's icon" },
+A.LOOKS = { { "codex", (ns.PROC_ART_NAME or "Codex art") }, { "game", "The game's art" }, { "icon", "The spell's icon" },
   { "arc", "An arc in the glow colour" } }
 
 -- Codex art (the default look since 2026-11-20, the user's request): an original piece per proc Codex knows, the
 -- arc in the proc's colours with its emblem (branding/source/proc-codex-art.py writes Media/ProcArt/<key>.tga, the
 -- left side; the right one is the same file mirrored). Procs without a piece (what the game lights itself) get the
 -- spell's icon on the arc. In gallery order: { key, proc name, class }.
-A.CODEX_DIR = "Interface\\AddOns\\" .. addonName .. "\\Modules\\QoL\\Media\\ProcArt\\"
+A.CODEX_DIR = MEDIA .. "ProcArt\\"
 A.CODEX = {
   { "overpower", "Overpower", "Warrior" }, { "revenge", "Revenge", "Warrior" }, { "execute", "Execute", "Warrior" },
   { "victory_rush", "Victory Rush", "Warrior" }, { "riposte", "Riposte", "Rogue" },
@@ -738,7 +740,7 @@ function A.Gallery()
   local UI = ns.UI
   local frame = A.gallery
   if not frame then
-    frame = CreateFrame("Frame", "CodexProcArtGallery", UIParent)
+    frame = CreateFrame("Frame", (ns.PROC_FRAMES or "Codex") .. "ProcArtGallery", UIParent)
     frame:SetFrameStrata("DIALOG")
     frame:SetClampedToScreen(true)
     frame:SetMovable(true)
@@ -752,13 +754,13 @@ function A.Gallery()
     UI.Panel(frame, { cornerSize = 14 })
     local title = UI.Text(frame, "head", 15, "accent")
     title:SetPoint("TOPLEFT", 16, -14)
-    title:SetText("Codex art")
+    title:SetText(ns.PROC_ART_NAME or "Codex art")
     local note = UI.Text(frame, "body", 11, "muted")
     note:SetPoint("LEFT", title, "RIGHT", 12, -1)
-    note:SetText("The art beside your character for each proc Codex knows. Other procs show their icon on the arc.")
+    note:SetText("The art beside your character for each proc " .. BRAND .. " knows. Other procs show their icon on the arc.")
     local close = UI.CloseButton(frame)
     close:SetPoint("TOPRIGHT", -10, -10)
-    table.insert(UISpecialFrames, "CodexProcArtGallery")
+    table.insert(UISpecialFrames, (ns.PROC_FRAMES or "Codex") .. "ProcArtGallery")
     frame.cells = {}
     for index, entry in ipairs(A.CODEX) do
       local col, row = (index - 1) % GALLERY_COLS, math.floor((index - 1) / GALLERY_COLS)

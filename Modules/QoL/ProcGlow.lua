@@ -458,10 +458,12 @@ end
 
 -- Glow frames ----------------------------------------------------------------------------------------------------
 
-local MEDIA = "Interface\\AddOns\\" .. addonName .. "\\Modules\\QoL\\Media\\"
+-- (the standalone Tylesser - Proc Glow sets ns.PROC_MEDIA / PROC_CIRCLE / PROC_RING: its files are flat in Media)
+local BRAND = ns.PROC_BRAND or "Codex" -- (the standalone: "Proc Glow")
+local MEDIA = ns.PROC_MEDIA or ("Interface\\AddOns\\" .. addonName .. "\\Modules\\QoL\\Media\\")
 local WHITE = "Interface\\Buttons\\WHITE8X8"
-local CIRCLE = "Interface\\AddOns\\" .. addonName .. "\\Media\\Circle"
-local RING = "Interface\\AddOns\\" .. addonName .. "\\Modules\\Buffs\\Media\\Ring"
+local CIRCLE = ns.PROC_CIRCLE or ("Interface\\AddOns\\" .. addonName .. "\\Media\\Circle")
+local RING = ns.PROC_RING or ("Interface\\AddOns\\" .. addonName .. "\\Modules\\Buffs\\Media\\Ring")
 P.anchors = setmetatable({}, { __mode = "k" }) -- [frame] = the region a glow on it goes round (cooldown icons)
 P.cdmItems = setmetatable({}, { __mode = "k" }) -- [cooldown manager item] = true
 
@@ -1745,7 +1747,7 @@ function P.Report()
     Say(("%s: %d of %d stacks (%s)"):format(match.name, guess.count, match.stacks or 0,
       guess.hooked and "counted from the cooldown manager" or "not counted: active = reached"))
   end
-  Say(("proc glow %s, cooldown manager %s, Codex's glow instead of the game's %s, style %s"):format(
+  Say(("proc glow %s, cooldown manager %s, " .. BRAND .. "'s glow instead of the game's %s, style %s"):format(
     db[KEY] and "on" or "off", db[CDM_KEY] and "on" or "off", P.ReplaceGame() and "on" or "off", Show(P.Wanted())))
   for _, name in ipairs(P.VIEWERS) do
     local viewer = _G[name]
@@ -1848,7 +1850,7 @@ function P.Stop()
 end
 
 function P.Enable()
-  if Q.DB()[KEY] then
+  if Q.On(KEY) then -- (on, and not left to the standalone Tylesser - Proc Glow: Q.On knows Elsewhere)
     P.Start()
   end
 end
@@ -2007,6 +2009,12 @@ Q.AddToggle({
     .. "keeps the game's glow. With the art on, the "
     .. "game's proc art shows on both sides of your character too (two swords for Blade of Justice).",
   order = 50,
+  -- (Codex: left to the standalone Tylesser - Proc Glow while it is loaded; the standalone has no ns.IsAddOnLoaded)
+  Elsewhere = function()
+    if ns.IsAddOnLoaded and ns.PROC_BRAND == nil and ns.IsAddOnLoaded("ProcGlow") then
+      return "Tylesser - Proc Glow"
+    end
+  end,
   Enable = P.Enable,
   Changed = P.Changed,
   options = {
@@ -2030,7 +2038,7 @@ Q.AddToggle({
           P.Scan()
         end
       end },
-    { key = GAME_KEY, name = "On the cooldown manager, Codex's glow instead of the game's", default = true,
+    { key = GAME_KEY, name = "On the cooldown manager, " .. BRAND .. "'s glow instead of the game's", default = true,
       desc = "The game's own proc glow is square and doesn't fit the rounded icons; this shows the glow style above there instead.",
       Changed = function()
         if P.started then

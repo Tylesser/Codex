@@ -40,8 +40,29 @@ function C.PlanPurchases()
   return plan
 end
 
--- The names to search for writs (cheapest-list entries): each writ, then the items they ask for that are
--- cheaper to buy than to craft (one name each).
+-- What to buy for a writ's items (2026-11-22, the user's request: search the materials of what you craft): the item
+-- itself when buying is cheaper, its materials when crafting is (C.CraftReagents), else nothing. Calls
+-- add(name, quantity) for each; `count` = how many of the item the writs ask for. (Commerce Authority's twin.)
+function C.ItemsFor(writID, writ, count, add)
+  local _, how = C.WantedItemCost(writID)
+  local itemID = C.WantedItem(writ)
+  if how == "craft" and itemID then
+    local reagents, made = C.CraftReagents(itemID)
+    if reagents then
+      local crafts = math.ceil(count / math.max(made or 1, 1))
+      for _, reagent in ipairs(reagents) do
+        add(C.ItemName(reagent.itemID), reagent.count * crafts)
+      end
+      return
+    end
+  end
+  if itemID or writ[3] then
+    add((itemID and C.ItemName(itemID)) or writ[3], count)
+  end
+end
+
+-- The names to search for writs (cheapest-list entries): each writ, then the items they ask for (the materials,
+-- for items cheaper to craft; one name each).
 function C.BuyNames(picks)
   local names, seen = {}, {}
   local function Add(name)
@@ -54,11 +75,11 @@ function C.BuyNames(picks)
   for _, entry in ipairs(picks) do
     local writ = C.WRITS[entry.writID]
     Add(C.ItemName(entry.writID) or ("Craftsman's Writ: " .. writ[3]))
-    local _, how = C.WantedItemCost(entry.writID)
-    local itemID = C.WantedItem(writ)
-    if how == "buy" and itemID then
-      items[#items + 1] = C.ItemName(itemID) or writ[3]
-    end
+    C.ItemsFor(entry.writID, writ, C.WritCount(entry.writID, writ), function(name)
+      if name then
+        items[#items + 1] = name
+      end
+    end)
   end
   for _, name in ipairs(items) do
     Add(name)
@@ -92,6 +113,90 @@ local function MakeList(picks)
   end
   A.Changed("lists")
   return list
+end
+
+-- The buy list for one kind of crate (an entry of C.CratesToFill): the cheapest priced fill item, in the Codex list
+-- (replaced), with how many it takes in chat (enough for all of them, less what your bags hold).
+function C.CreateCrateBuyList(crate)
+  local A = Auction()
+  local option = crate and crate.options[1]
+  if not A then
+    ns.Say("the buy list needs Codex's Auction House module; switch it on in the Codex window.")
+    return false
+  end
+  if not option then
+    ns.Say("no known fill for " .. (crate and crate.info.name or "that crate") .. ".")
+    return false
+  end
+  local need = math.max(option.count * crate.count - option.owned, 0)
+  if need == 0 then
+    ns.Say(("your bags already hold enough %s to fill %s."):format(option.name, crate.info.name))
+    return false
+  end
+  local list
+  for _, existing in ipairs(A.Lists()) do
+    if existing.name == C.SHOPPING_LIST then
+      list = existing
+      break
+    end
+  end
+  list = list or A.NewList(C.SHOPPING_LIST)
+  for index = #list.terms, 1, -1 do
+    list.terms[index] = nil
+  end
+  local term = A.AddTerm(list, option.name, true, nil)
+  if term then
+    term.noRecipes = true
+  end
+  A.Changed("lists")
+  ns.Say(("shopping list \"%s\": %s, %d to fill %d %s."):format(C.SHOPPING_LIST, option.name, need, crate.count,
+    crate.info.name))
+  return true
+end
+
+-- Searches the open auction house for everything that fills a crate (an entry of C.CratesToFill), cheapest first:
+-- Codex's auction panel, else the game's search box with the cheapest. Returns true when a search started.
+function C.SearchCrate(crate)
+  if not (crate and C.AuctionHouseOpen()) then
+    return false
+  end
+  if InCombatLockdown and InCombatLockdown() then
+    ns.Say("auction searches wait until the fight is over.")
+    return false
+  end
+  local terms = {}
+  for _, option in ipairs(crate.options) do
+    terms[#terms + 1] = option.name
+  end
+  if #terms == 0 then
+    ns.Say("no known fill for " .. crate.info.name .. ".")
+    return false
+  end
+  local A = ns.auction
+  if A and A.running and A.open and A.SearchList then
+    local list = { name = C.SHOPPING_LIST, terms = {} }
+    for _, name in ipairs(terms) do
+      list.terms[#list.terms + 1] = { text = name, exact = true, noRecipes = true }
+    end
+    local ok, started = pcall(A.SearchList, list)
+    if ok and started then
+      if A.ShowPanel then
+        pcall(A.ShowPanel)
+      end
+      ns.Say(("searching the auction house: what fills %s (%d item%s)."):format(crate.info.name, #terms,
+        #terms == 1 and "" or "s"))
+      return true
+    end
+  end
+  local ok, started = pcall(C.BlizzardSearch, terms[1])
+  if ok and started then
+    if #terms > 1 then
+      ns.Say(("searching for %s; switch Codex's Auction House module on to search all %d fills in turn."):format(
+        terms[1], #terms))
+    end
+    return true
+  end
+  return false
 end
 
 local function Where()
@@ -158,6 +263,7 @@ local function BlizzardSearch(term)
   end
   return false
 end
+C.BlizzardSearch = BlizzardSearch -- (the crate search above calls it)
 
 -- Searches the open auction house for writs you don't hold yet, and the items asked for by those and by your
 -- writs that aren't ready. `held` from C.HeldWrits. With Codex's Auction House module every name in turn (results
@@ -187,8 +293,7 @@ function C.SearchWrits(writIDs, held)
       writCount = writCount + 1
     end
     if writ and not (mine and mine.ready) then
-      local itemID = C.WantedItem(writ)
-      Add((itemID and C.ItemName(itemID)) or writ[3])
+      C.ItemsFor(writID, writ, C.WritCount(writID, writ), Add)
     end
   end
   if #terms == 0 then
@@ -206,8 +311,8 @@ function C.SearchWrits(writIDs, held)
       if A.ShowPanel then
         pcall(A.ShowPanel)
       end
-      ns.Say(("searching the auction house: %d writ%s and the items they ask for."):format(writCount,
-        writCount == 1 and "" or "s"))
+      ns.Say(("searching the auction house: %d writ%s and the items they ask for (the materials for those you "
+        .. "craft)."):format(writCount, writCount == 1 and "" or "s"))
       return true
     end
     if ok and why then

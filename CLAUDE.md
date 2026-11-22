@@ -499,6 +499,7 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   untouched; else 0.5-1.15. CVars `useUiScale` 1 + `uiScale` (the game's floor 0.64) and `UIParent:SetScale` below
   that, again at PLAYER_ENTERING_WORLD / UI_SCALE_CHANGED / DISPLAY_SIZE_CHANGED; waits for PLAYER_REGEN_ENABLED in a
   fight. `ns.SetUIScale`, `ns.UIScale`, `ns.PixelPerfectScale` (768 / physical height). Tested in `codex_test`.
+- Proc glow twin (2026-11-22): the standalone `Addons/ProcGlow` (Tylesser - Proc Glow) uses `Modules/QoL/ProcGlow.lua` and `ProcArt.lua` byte for byte; copy them there after every change (`pg_test.lua` fails otherwise). They read media paths / names from `ns.PROC_*` (nil in Codex). The toggle's `Elsewhere` leaves the feature to the standalone while it is loaded.
 - What's new (WhatsNew.lua + generated WhatsNewData.lua, 2026-11-22): `python branding/source/whats_new.py .`
   after every CHANGELOG change and **before each release tag** (codex_test fails when the data's first section
   doesn't match CHANGELOG.md). `CodexDB.whatsNewSeen` (in Profiles' SKIP_TOP) = last version shown; at login + 4 s,
@@ -532,6 +533,12 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   `S.SetUnitFrameShape`, `S.UnitFrameShape`; Profiles skip `skins.frameShape`.
 - Action button cooldowns (Skins/ActionBars.lua ActionSlot): `cooldown` / `lossOfControlCooldown` / `chargeCooldown`
   SetAllPoints(icon); Forever's template insets them 3 px (2 for charges), which left the swipe short of the slot.
+- **Skins/UnitFrames.lua is at Lua's 200-local limit** for its main chunk (2026-11-22): new helpers go into a table
+  (`CastBar`, `Shape`), never new top-level locals. `node tools/harness/check.js` reports "too many local variables".
+- Player cast bar (`CastBar.Style`, run from the unit frames' Build): PlayerCastingBarFrame keeps its logic, place and
+  size (bottom-managed Edit Mode system: never resized); art in `CastBar.ART` hidden (and on Show), our fill after
+  `UpdateBarFillTexture` (accent / CAST_LOCKED / bad by `barType`), `Text` inside the bar after `SetLook`, time ours
+  from `value` / `maxValue` on OnUpdate. Test 3d2 in `codex_ui_unitframes_test`.
 - Never use a game global as a fallback colour (`HOSTILE or {...}`: HOSTILE is the string "Hostile"); the nameplate
   test's mock SetColorTexture is strict now.
 - Unit frame bar gradient (`CodexDB.skins.barGradient` "horizontal" / nil): `Paint` reads it; `TylesserCodex.RepaintBars`.

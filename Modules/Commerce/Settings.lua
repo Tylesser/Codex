@@ -200,6 +200,25 @@ function C.CraftCost(itemID)
   end
 end
 
+-- The materials of one craft of an item (Codex's Professions: the cheapest choice of each, { itemID, count }) and how
+-- many one craft makes, or nil (the twin of Commerce Authority's ns.CraftReagents, which reads Profit Sort).
+function C.CraftReagents(itemID)
+  local _, craft = C.CraftCost(itemID)
+  if type(craft) ~= "table" or type(craft.reagents) ~= "table" or #craft.reagents == 0 then
+    return nil
+  end
+  local reagents = {}
+  for _, reagent in ipairs(craft.reagents) do
+    local id = reagent.chosenItemID or reagent.itemID
+    if id and reagent.count and reagent.count > 0 then
+      reagents[#reagents + 1] = { itemID = id, count = reagent.count }
+    end
+  end
+  if #reagents > 0 then
+    return reagents, craft.numMade or 1
+  end
+end
+
 -- Money and numbers ------------------------------------------------------------------------------------------
 
 -- Codex's coin text, or "--" for nil.

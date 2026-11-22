@@ -428,6 +428,34 @@ function C.BagCounts()
   return counts
 end
 
+-- The Waylaid Crates in your bags that still need filling, one entry per kind (2026-11-22, the user's request: click
+-- a crate to search the auction house for what fills it): { itemID, count, info, favor, options (CrateFillOptions,
+-- cheapest first), ready (your bags hold enough of one option for all of them) }, sorted by name. (Twin of
+-- Commerce Authority's ns.CratesToFill.)
+function C.CratesToFill(counts)
+  counts = counts or C.BagCounts()
+  local list = {}
+  for itemID, count in pairs(counts) do
+    local name = C.ItemName(itemID)
+    local favor, _, info = C.CrateFavor(itemID, name)
+    if favor and info and not info.filled then
+      local options = C.CrateFillOptions(info, counts)
+      local ready = false
+      for _, option in ipairs(options) do
+        if option.owned >= option.count * count then
+          ready = true
+        end
+      end
+      list[#list + 1] = { itemID = itemID, count = count, info = info, favor = favor, options = options,
+        ready = ready }
+    end
+  end
+  table.sort(list, function(a, b)
+    return a.info.name < b.info.name
+  end)
+  return list
+end
+
 -- What your bags hold for the Commerce Authority:
 -- { writs, writRep, sealedWrits, sealedRep, crates (filled), crateFavor, toFill (empty crates), fillFavor }.
 function C.BagSummary(counts)
