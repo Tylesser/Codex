@@ -142,7 +142,9 @@ function S.RefreshPage()
   end
   local name = S.PresetName()
   if name then
-    view.presetStatus:SetText("Score: " .. name)
+    local which = S.HasTwoTalentGroups()
+      and (S.ActiveTalentGroup() == 2 and " (your secondary talents)" or " (your primary talents)") or ""
+    view.presetStatus:SetText("Score" .. which .. ": " .. name)
   else
     view.presetStatus:SetText("The score is off. Pick a preset (or type a number of points) to turn it on.")
   end

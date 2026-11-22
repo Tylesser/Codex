@@ -70,6 +70,8 @@ local function OnEvent(frame, event, arg)
       S.QueueRefresh(true)
     end
     skills = signature
+  elseif event == "ACTIVE_TALENT_GROUP_CHANGED" or event == "PLAYER_TALENT_UPDATE" then
+    S.SyncTalentScore() -- one upgrade score per talent group (Score.lua)
   elseif event == "PLAYER_REGEN_ENABLED" then
     frame:UnregisterEvent("PLAYER_REGEN_ENABLED")
     S.RefreshArrows()
@@ -83,7 +85,10 @@ function S.Enable()
   for _, event in ipairs({ "PLAYER_EQUIPMENT_CHANGED", "PLAYER_LEVEL_UP", "UNIT_LEVEL", "SKILL_LINES_CHANGED" }) do
     events:RegisterEvent(event)
   end
+  pcall(events.RegisterEvent, events, "ACTIVE_TALENT_GROUP_CHANGED")
+  pcall(events.RegisterEvent, events, "PLAYER_TALENT_UPDATE") -- the talents first known after a login
   events:SetScript("OnEvent", OnEvent)
+  S.SyncTalentScore() -- a swap made while the module was off
   S.eventFrame = events
   S.HookTooltips()
   S.HookArrows()

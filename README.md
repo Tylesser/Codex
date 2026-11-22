@@ -26,9 +26,10 @@ Home shows a card for each feature with what it is doing right now; click a card
 ## Modules
 
 - **Buffs**: a row of the buffs you choose (when missing, when active or always), shown only where and when you
-  want (places such as dungeons and raids, solo or in a group, in or out of combat; for the whole row or per buff;
-  optionally a warning, with a click to remove it, when a buff is on where its rules say no),
-  click-to-buff, weapon enchants, and click-to-buff and dispel buttons by your party frames. Formerly the Buff Tracker addon.
+  want (places such as dungeons and raids, solo or in a group, primary or secondary talents, in or out of combat;
+  for the whole row or per buff; optionally a warning, with a click to remove it, when a buff is on where its rules
+  say no), click-to-buff, weapon enchants, and click-to-buff and dispel buttons by your party frames (a camp buff
+  that doesn't stack with a class buff counts as having it). Formerly the Buff Tracker addon.
 - **Auction House**: scans the auction house and keeps a price history, shows prices in item tooltips, and
   shops from your own lists. No other auction addon needed. "From Auctionator" copies Auctionator's saved
   shopping lists into Codex while Auctionator is installed.
@@ -62,15 +63,15 @@ Home shows a card for each feature with what it is doing right now; click a card
   Faded bars come back while you drag a spell. Every bar starts on Always. `/codex barfade`.
 - **Stat Delta**: hold Shift over an item to see what you gain or lose against the gear you wear, green for a
   gain and red for a loss, including what your class gets from other stats (Attack Power from Strength, Health
-  from Stamina, ...). Optional upgrade score with rough presets per class and role, and green arrows on upgrades in
-  your bags and on quest rewards. `/codex statdelta`. Formerly the Stat Delta addon.
+  from Stamina, ...). Optional upgrade score with rough presets per class and role (one for each talent group), and
+  green arrows on upgrades in your bags and on quest rewards. `/codex statdelta`. Formerly the Stat Delta addon.
 - **Vendor**: at a merchant, sells your grey items and repairs your gear (guild funds first if you like), with
   one line in chat; "Also sell" and "Never sell" lists, Sell junk and Repair buttons on the merchant window, and
   Shift while opening the merchant skips it. If Leatrix Plus already does either, Codex leaves that to it.
 - **Loot text** (off until you switch it on): floating text for what you get. Items show how many you now have (with your other characters too)
   and what they are worth (Codex's auction prices, else what a merchant pays); grey items add up on one Junk line.
-  Also money, reputation, experience (with how many more of the same reach the next level), honor, currencies and
-  skill-ups, each with its own switch. The same thing again adds to its line. Two looks: floating up from the middle
+  Also money, reputation, experience (with how many more of the same reach the next level), honor, currencies,
+  skill-ups and Legacy points, each with its own switch. The same thing again adds to its line. Two looks: floating up from the middle
   of the screen, or a list beside the chat; move it in Edit Mode. Valuable drops (from a price you pick) and purple
   ones glow, with a sound if you like; a watch list of items you farm shows a banner and plays a sound when one
   drops. It can hide the game's own loot toasts, and the info bar's gold tooltip shows what you looted this
@@ -110,7 +111,8 @@ Home shows a card for each feature with what it is doing right now; click a card
   you can learn now, what the next level brings and what everything adds up to, next to your money. Codex notes
   the prices when you visit your class trainer (shared by your characters of the same class); until then the
   spells show without prices. Gathering skill in tooltips: herb and ore nodes say the skill they need,
-  also on the minimap. Zone levels on the world map: each zone's level range beside its name, and the herbs and ores
+  also on the minimap. Zone levels on the world map: each zone's level range beside its name (WoW Forever's own
+  ranges, new zones included), and the herbs and ores
   found there. Addon buttons in a list: the minimap's addon buttons are hidden, and clicking the moon above the
   minimap lists them. Quest tracker order: the quests of the zone you are in go to the top of the quest tracker,
   nearest first, and the others follow grouped by zone. Bind keys by hovering (Action bars > Buttons, or
@@ -153,7 +155,8 @@ Home shows a card for each feature with what it is doing right now; click a card
 - **Info bars**: a bar along the top or bottom of the screen and a panel under the chat with what you want to keep an
   eye on: gold (across your characters), bag space, location, experience, reputation, professions, clock, frame
   rate and latency, guild and friends online, durability, ammo, experience per hour (with the time to your next
-  level) and your gear set (click it to put on another). Right-click a slot to choose what it shows. The
+  level), Legacy points (with what you can spend and the next reward) and your gear set (click it to put on another,
+  or to pick a set for each talent group: switching talents puts it on). Right-click a slot to choose what it shows. The
   chat panel's corner buttons hide the chat and copy its recent lines. Moves the game's frames out of the bar's way.
 - **Personal bars** (off until you switch it on): health and power under your character, with the five-second
   rule, the mana and energy tick, druid mana, combo points, your seal's time and swing timers; under the character

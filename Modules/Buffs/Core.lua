@@ -86,10 +86,10 @@ local function GetBuff(unit, index)
   if not UnitAura then
     return nil -- no aura API at all (test mocks; Retail has C_UnitAuras above)
   end
-  local name, icon, count, _, duration, expirationTime, source = UnitAura(unit, index, "HELPFUL")
+  local name, icon, count, _, duration, expirationTime, source, _, _, spellId = UnitAura(unit, index, "HELPFUL")
   if name then
     return { name = name, icon = icon, applications = count, duration = duration, expirationTime = expirationTime,
-      sourceUnit = source }
+      sourceUnit = source, spellId = spellId }
   end
 end
 
@@ -134,6 +134,7 @@ function ns.ReadBuffs(unit)
           count = Plain(aura.applications) or 0,
           expires = Plain(aura.expirationTime) or 0,
           mine = mine,
+          spellId = Plain(aura.spellId), -- (camp buffs, Party.lua ns.CAMP_BUFFS)
         }
       end
     end

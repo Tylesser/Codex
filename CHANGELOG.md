@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0
+
+- New: **talents in "Where buffs show"**. Show a tracked buff only with your primary or your secondary talents (dual spec). Switching talents updates the row.
+- New: **one upgrade score for each talent group** (Stat Delta). Switching talents brings back that group's preset and points; the first switch starts from a copy. The score line says which talents it is for.
+- New: **a gear set for your talents** (Info bars, Gear set slot). Click the slot to pick a set for your primary and for your secondary talents; switching talents puts it on (out of combat).
+- New Info bar slot: **Legacy points**. Your account's points, what this character has left to spend, and the next reward.
+- Loot text: a line when you earn **Legacy points** (with its own switch).
+- Party buttons: a member with a **camp buff** (Boosted Stamina from a First Aid Kit, Boosted Intellect, Boosted Attack Power...) already has the class buff it stands in for, as the two don't stack, so no button offers that buff.
+- Zone levels on the world map use **WoW Forever's own level ranges** (as its Looking for Group tool shows them) instead of Classic's, and include Riverglades, Mount Hyjal and Zephras Isle.
+- Dungeons on the map: added **Krol'dok Stronghold, The Drowned City and The Shaper's Terrace**; town services updated.
+- Fixed: Future spells for **Skyborne** characters. Spells for some races only (such as the mage's city teleports and portals) were missing or wrong for them.
+
 ## 1.0.2
 
 - New, optional: **warn me to remove a buff** that is on where its rules say no (tick it in the "Where buffs show" window). Its icon shows in red with "remove" under it, chat names it once, and a click on the icon removes it (out of combat). Off by default.

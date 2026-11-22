@@ -761,6 +761,10 @@ Add({
 -- Forever's character window has the game's equipment manager (Camelot PaperDollFrame.EquipmentManagerPane,
 -- C_EquipmentSet in the forever API docs). This shows the set you wear; a click lists your sets to put one on
 -- (out of combat: the game refuses gear changes in a fight).
+-- A set can go with each talent group (dual spec; 2026-11-22): switching talents puts it on. Forever's own gear
+-- manager can't tie a set to talents (its set menu only has Edit; C_EquipmentSet's spec calls are for Retail's
+-- specializations), so the choice is Codex's own, per character: CodexCharDB.talentSets[group] = set ID. The swap
+-- is watched by the module (Bar.lua I.Enable), so it works whether or not the slot is on a bar.
 
 function I.GearSets()
   local list = {}
@@ -788,9 +792,63 @@ function I.WearSet(id)
   return Ask(C_EquipmentSet.UseEquipmentSet, id) and true or false
 end
 
+-- The active talent group (1 or 2), nil while the game doesn't know it yet.
+function I.TalentGroup()
+  if not (C_SpecializationInfo and C_SpecializationInfo.GetActiveSpecGroup) then
+    return nil
+  end
+  if C_SpecializationInfo.IsInitialized and Ask(C_SpecializationInfo.IsInitialized) == false then
+    return nil
+  end
+  local group = Num(Ask(C_SpecializationInfo.GetActiveSpecGroup))
+  return group and (group == 2 and 2 or 1) or nil
+end
+
+function I.TwoTalentGroups()
+  local count = GetNumSpecGroups and Num(Ask(GetNumSpecGroups))
+  return count ~= nil and count > 1
+end
+
+-- The set that goes with a talent group (nil = none), and setting it.
+function I.TalentSet(group)
+  local sets = ns.char and ns.char.talentSets
+  return type(sets) == "table" and sets[group] or nil
+end
+
+function I.SetTalentSet(group, id)
+  if not ns.char then
+    return
+  end
+  ns.char.talentSets = ns.char.talentSets or {}
+  ns.char.talentSets[group] = id
+end
+
+-- After a talent switch (ACTIVE_TALENT_GROUP_CHANGED's curr, prev): put on the set that goes with the new talents,
+-- when it isn't worn already. Only a real switch: an event with curr == prev (as at a login) changes nothing.
+function I.WearTalentSet(curr, prev)
+  curr, prev = Num(curr), Num(prev)
+  if curr and prev and curr == prev then
+    return false
+  end
+  local group = I.TalentGroup()
+  local id = group and I.TalentSet(group)
+  if not id then
+    return false
+  end
+  for _, set in ipairs(I.GearSets()) do
+    if set.id == id then
+      return not set.equipped and I.WearSet(id) or false
+    end
+  end
+  return false
+end
+
+local TALENT_NAMES = { "primary", "secondary" }
+
 Add({
   id = "gearset", name = "Gear set", icon = "Armor",
-  events = { "EQUIPMENT_SETS_CHANGED", "PLAYER_EQUIPMENT_CHANGED", "EQUIPMENT_SWAP_FINISHED" },
+  events = { "EQUIPMENT_SETS_CHANGED", "PLAYER_EQUIPMENT_CHANGED", "EQUIPMENT_SWAP_FINISHED",
+    "ACTIVE_TALENT_GROUP_CHANGED" },
   Value = function()
     local sets = I.GearSets()
     if #sets == 0 then
@@ -815,7 +873,20 @@ Add({
         (set.worn .. " / " .. set.items))
       tip:Line(set.name, state, set.equipped and "good" or "text", set.lost > 0 and "bad" or "muted")
     end
-    tip:Note(InCombat() and "Not in a fight." or "Click to put on a set.")
+    if I.TwoTalentGroups() then
+      local active = I.TalentGroup()
+      for group, label in ipairs(TALENT_NAMES) do
+        local name = "none"
+        for _, set in ipairs(sets) do
+          if set.id == I.TalentSet(group) then
+            name = set.name
+          end
+        end
+        tip:Line("With " .. label .. " talents" .. (group == active and " (now)" or ""), name, "muted",
+          name == "none" and "muted" or "text")
+      end
+    end
+    tip:Note(InCombat() and "Not in a fight." or "Click to put on a set or pick one for your talents.")
   end,
   Click = function()
     if InCombat() then
@@ -829,10 +900,98 @@ Add({
     end
     if #items == 1 then
       items[#items + 1] = { text = "No sets yet", disabled = true }
+    elseif I.TwoTalentGroups() then
+      local sets = I.GearSets()
+      for group, label in ipairs(TALENT_NAMES) do
+        items[#items + 1] = { text = "With " .. label .. " talents", title = true }
+        items[#items + 1] = { text = "No set", checked = I.TalentSet(group) == nil, func = function()
+          I.SetTalentSet(group, nil)
+        end }
+        for _, set in ipairs(sets) do
+          items[#items + 1] = { text = set.name, checked = I.TalentSet(group) == set.id, func = function()
+            I.SetTalentSet(group, set.id)
+          end }
+        end
+      end
     end
     local anchor = GetMouseFoci and Ask(GetMouseFoci)
     anchor = type(anchor) == "table" and anchor[1] or UIParent
     ns.UI.ShowMenu(anchor, items)
+  end,
+})
+
+-- Legacy points (2026-11-22) --------------------------------------------------------------------------------------
+-- Forever's Legacy System (Blizzard_LegacySystem, forever branch): your account's points are the renown level of
+-- the Legacy reward track (Constants.LegacyConsts.LEGACY_REWARD_TRACK_FACTION_ID, 2802) and its rewards come from
+-- C_MajorFactions.GetRenownLevels / GetRenownRewardsForLevel; the points this character has left to spend are the
+-- Legacy trees' trait currency (C_Traits.GetTreeCurrencyInfo on LEGACY_TREE_PROFESSIONS_ID, as
+-- Blizzard_LegacySystemUtil reads it). No click: the game opens its Legacy window itself.
+
+local LEGACY = Constants and Constants.LegacyConsts or {}
+local LEGACY_FACTION = LEGACY.LEGACY_REWARD_TRACK_FACTION_ID or 2802
+local LEGACY_TREE = LEGACY.LEGACY_TREE_PROFESSIONS_ID or 1187
+
+-- { points, unspent (nil = unknown), nextLevel, nextReward } or nil (no Legacy data in this game).
+function I.Legacy()
+  if not (C_MajorFactions and C_MajorFactions.GetCurrentRenownLevel) then
+    return nil
+  end
+  local points = Num(Ask(C_MajorFactions.GetCurrentRenownLevel, LEGACY_FACTION))
+  if not points then
+    return nil
+  end
+  local unspent
+  if C_Traits and C_Traits.GetConfigIDByTreeID and C_Traits.GetTreeCurrencyInfo then
+    local config = Num(Ask(C_Traits.GetConfigIDByTreeID, LEGACY_TREE))
+    local info = config and Ask(C_Traits.GetTreeCurrencyInfo, config, LEGACY_TREE, false)
+    local first = type(info) == "table" and info[1]
+    unspent = type(first) == "table" and Num(first.quantity) or nil
+  end
+  local nextLevel, nextReward
+  local levels = C_MajorFactions.GetRenownLevels and Ask(C_MajorFactions.GetRenownLevels, LEGACY_FACTION)
+  for _, level in ipairs(type(levels) == "table" and levels or {}) do
+    local at = type(level) == "table" and Num(level.level)
+    if at and at > points then
+      local rewards = C_MajorFactions.GetRenownRewardsForLevel
+        and Ask(C_MajorFactions.GetRenownRewardsForLevel, LEGACY_FACTION, at)
+      local reward = type(rewards) == "table" and rewards[1]
+      if type(reward) == "table" then
+        nextLevel, nextReward = at, Str(reward.name) or "a reward"
+        break
+      end
+    end
+  end
+  return { points = points, unspent = unspent, nextLevel = nextLevel, nextReward = nextReward }
+end
+
+Add({
+  id = "legacy", name = "Legacy points", icon = "Star",
+  events = { "MAJOR_FACTION_RENOWN_LEVEL_CHANGED", "TRAIT_TREE_CURRENCY_INFO_UPDATED", "TRAIT_CONFIG_UPDATED" },
+  Value = function()
+    local legacy = I.Legacy()
+    if not legacy then
+      return "Legacy", "--", "muted"
+    end
+    if legacy.unspent and legacy.unspent > 0 then
+      return "Legacy", tostring(legacy.points), "bright", legacy.unspent .. " to spend", "good"
+    end
+    return "Legacy", tostring(legacy.points), "bright"
+  end,
+  Tooltip = function(tip)
+    local legacy = I.Legacy()
+    tip:Title("Legacy")
+    if not legacy then
+      tip:Line("No Legacy data yet.", nil, "muted")
+      return
+    end
+    tip:Line("Points earned (account)", tostring(legacy.points), "text", "bright")
+    if legacy.unspent then
+      tip:Line("To spend on this character", tostring(legacy.unspent), "text", legacy.unspent > 0 and "good" or "muted")
+    end
+    if legacy.nextLevel then
+      tip:Line("Next reward at " .. legacy.nextLevel, legacy.nextReward, "text", "accent")
+    end
+    tip:Note("Legacy challenges earn points for every character on your account.")
   end,
 })
 

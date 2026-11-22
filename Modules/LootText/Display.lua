@@ -29,6 +29,7 @@ LT.ICONS = {
   skill = "Interface\\Icons\\INV_Misc_Book_11",
   honor = "Interface\\Icons\\INV_BannerPVP_02",
   currency = "Interface\\Icons\\INV_Misc_Coin_17",
+  legacy = "Interface\\Icons\\INV_Misc_Book_09",
 }
 
 -- The game's own sounds (SOUNDKIT names and IDs from Blizzard_SharedXML/Mainline/SoundKitConstants.lua).
@@ -145,6 +146,13 @@ function LT.LineText(data)
       data.icon or LT.ICONS.currency
   elseif kind == "skill" then
     return ("|cff%s%s %d|r"):format(Hex("accent", "80c0ff"), data.name, data.rank or 0), LT.ICONS.skill
+  elseif kind == "legacy" then
+    local text = ("|cff%s+%s Legacy %s|r"):format(Hex("good", "40c040"), Number(data.amount),
+      data.amount == 1 and "point" or "points")
+    if data.total then
+      text = text .. ("|cff%s (%s in all)|r"):format(muted, Number(data.total))
+    end
+    return text, LT.ICONS.legacy
   end
   return tostring(data.name or ""), nil
 end
@@ -298,6 +306,9 @@ local function Merge(old, new)
   end
   if new.left then
     old.left = new.left
+  end
+  if new.total then
+    old.total = new.total -- Legacy points: the newest total
   end
   old.glow = old.glow or new.glow
   old.watched = old.watched or new.watched

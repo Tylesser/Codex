@@ -88,11 +88,16 @@ local function Level()
   return Num(Ask(UnitLevel, "player")) or 1
 end
 
--- The player's race as a bit of the DB2 race masks (1 << (raceID - 1)); nil when unknown.
+-- The player's race as a bit of the DB2 race masks: ns.RACE_BITS (race ID -> bit; Forever's Skyborne are race 95
+-- and 96 with bits 32 and 33, so not 1 << (raceID - 1)); nil when unknown.
 local function RaceBit()
   local _, _, id = Ask(UnitRace, "player")
   id = Num(id)
-  return id and id >= 1 and 2 ^ (id - 1) or nil
+  local bit = id and ns.RACE_BITS and ns.RACE_BITS[id]
+  if not bit and id and id >= 1 and id <= 11 then
+    bit = id - 1
+  end
+  return bit and 2 ^ bit or nil
 end
 
 local function HasBit(mask, bit)

@@ -23,6 +23,7 @@ local KINDS = {
   { key = "honor", name = "Honor" },
   { key = "currency", name = "Currencies" },
   { key = "skill", name = "Skill-ups" },
+  { key = "legacy", name = "Legacy points" },
 }
 LT.PAGE_KINDS = KINDS
 
@@ -173,7 +174,7 @@ function LT.BuildPage(page)
   about:SetPoint("TOPLEFT", icon, "BOTTOMLEFT", 0, -12)
   about:SetSpacing(2)
   about:SetText("Floating text for what you get: items with how many you now have and what they are worth, money, "
-    .. "reputation, experience, honor, currencies and skill-ups. The same thing again adds to its line.")
+    .. "reputation, experience, honor, currencies, skill-ups and Legacy points. The same thing again adds to its line.")
 
   -- left: what shows
   local kinds = UI.Section(page, "What shows")
@@ -363,7 +364,7 @@ ns.RegisterModule({
   -- its section in the Codex window (Areas.lua)
   area = "items", sectionOrder = 35, folded = true, pageEstimate = 760,
   icon = ICON,
-  desc = "Floating text for loot, money, reputation, experience, honor, currencies and skill-ups.",
+  desc = "Floating text for loot, money, reputation, experience, honor, currencies, skill-ups and Legacy points.",
   default = false, -- off until the player switches it on (the user's choice, 2026-11-21)
   order = 97,
   Enable = function()

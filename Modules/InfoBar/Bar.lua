@@ -1532,6 +1532,16 @@ end
 function I.Enable()
   I.DB()
   I.running = true
+  -- a gear set for each talent group (Data.lua I.WearTalentSet), shown on a bar or not
+  if not I.talentWatch then
+    I.talentWatch = CreateFrame("Frame")
+    pcall(I.talentWatch.RegisterEvent, I.talentWatch, "ACTIVE_TALENT_GROUP_CHANGED")
+    I.talentWatch:SetScript("OnEvent", function(_, _, curr, prev)
+      if I.running then
+        pcall(I.WearTalentSet, curr, prev)
+      end
+    end)
+  end
   I.sessionMoney = Num(GetMoney())
   -- fresh guild and friends numbers (answered by GUILD_ROSTER_UPDATE / FRIENDLIST_UPDATE)
   if IsInGuild and IsInGuild() and C_GuildInfo and C_GuildInfo.GuildRoster then

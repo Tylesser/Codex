@@ -303,7 +303,8 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   " (175)" after each node name in the minimap blip text (post call MinimapMouseover = 21 plus a
   `hooksecurefunc(GameTooltip, "SetMinimapMouseover")` fallback; a tagged name no longer matches, so never twice).
   Test `codex_gather_test.lua`. Zone levels on the world map (Zones.lua): `ns.ZONE_LEVELS` / `ns.GATHER_ZONES`
-  (uiMapIDs; node lists from `tools/data/gather_zones.py`); our own child frame + OnUpdate
+  (uiMapIDs; node lists from `tools/data/gather_zones.py`, level ranges from `tools/data/zone_levels.py`: Forever's
+  own group finder ranges since 2026-11-22, new zones included); our own child frame + OnUpdate
   on the AreaLabelDataProvider's label (found in `WorldMapFrame.dataProviders`), nothing of Blizzard's hooked;
   idle while Leatrix Maps has ShowZoneLevels on. Test `codex_zones_test.lua`.
   Reveal unexplored areas (Reveal.lua, option `revealTint` via the toggle's `options` list, shown under it on the page): our own
@@ -443,7 +444,8 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   CurrencyInfo documentation): items from CHAT_MSG_LOOT (own lines only, patterns built from the client's
   LOOT_ITEM_*SELF* strings by `LT.Pattern`), money = PLAYER_MONEY rises (merchant / mail / AH / trade / guild bank
   open: only with `otherMoney`, never in the session), reputation CHAT_MSG_COMBAT_FACTION_CHANGE
-  (FACTION_STANDING_*), XP = UnitXP rises (across a level too), honor CHAT_MSG_COMBAT_HONOR_GAIN, currencies
+  (FACTION_STANDING_*), XP = UnitXP rises (across a level too), honor CHAT_MSG_COMBAT_HONOR_GAIN, Legacy points
+  MAJOR_FACTION_RENOWN_LEVEL_CHANGED for faction 2802 (kind `legacy`, 2026-11-22), currencies
   CURRENCY_DISPLAY_UPDATE's quantityChange, skills CHAT_MSG_SKILL (SecretInChatMessagingLockdown: secret text
   skipped). Worth = `ns.auction.GetPrice`, else the sell price; counts = GetItemCount + other characters from
   `ns.bags.ItemCounts`. Glow: `glowValue`, `glowEpic`, watched. Toasts: CVar `enableLootToasts`
@@ -472,6 +474,10 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   Texts added 2026-11-21: `xprate` (`I.XPRate()`: session XP summed at each look, across a level up; per hour from at
   least a minute; `I.Duration`) and `gearset` (`I.GearSets()` from C_EquipmentSet, Forever's character window has the
   equipment manager; click = `UI.ShowMenu` of sets, `I.WearSet(id)` out of combat). Tested in `codex_qol_extras_test`.
+  Added 2026-11-22: a set per talent group (`CodexCharDB.talentSets[group]`, picked in the same menu, put on by
+  `I.WearTalentSet(curr, prev)` from the module's own ACTIVE_TALENT_GROUP_CHANGED watcher (Bar.lua `I.Enable`), shown
+  slot or not, only when curr ~= prev), and `legacy` (`I.Legacy()`: renown of faction 2802 = account points, the Legacy trees' trait currency =
+  unspent, the next renown level with a reward).
 - `Modules/Resource` (default off, "Personal bars"): health/power under the character, five-second-rule spark,
   mana/energy tick, druid mana, combo pips, seal timer, swing timers (PLAYER_SWING / PLAYER_SWING_RANGE_UPDATE /
   UNIT_ATTACK_SPEED; there is no combat log for addons on Forever). Settings `CodexDB.resource`, mover while Edit
@@ -557,6 +563,19 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   e.g. an aura's `sourceUnit` against "player" in a raid; `== true`, `not` or `if` on it errors (the user's report,
   2026-11-21, Buffs ReadBuffs). Compare units only through `ns.SameUnit(a, b)` (Buffs Core.lua and Buff Tracker's:
   true / false / nil = unknown) or `H.Ask` + `== true`; decide what "unknown" means at each call.
+- **Race masks are 64-bit, and a race's bit is ChrRaces.PlayableRaceBit** (2026-11-22). Forever's Skyborne are race
+  95 (High Order, Alliance) and 96 (Windshaper, Horde) with bits 32 and 33, so `1 << (raceID - 1)` is wrong for them
+  and the DB2's `RaceMasks_0` alone misses their bits (`RaceMasks_1` holds them). Use `ns.RACE_BITS`
+  (ClassSpellsData.lua, generated).
+- **Dual spec is two talent groups, not specializations** (2026-11-22). Forever's talent frame (PlayerSpells
+  Camelot/ClassTalents) uses `C_SpecializationInfo.GetActiveSpecGroup()` (1 / 2), `GetNumSpecGroups()` and
+  `ACTIVE_TALENT_GROUP_CHANGED`; read the group only once `C_SpecializationInfo.IsInitialized()` is true (early in a
+  login it says 1) and act again on `PLAYER_TALENT_UPDATE`. `C_EquipmentSet`'s spec calls are Retail's
+  specializations: Forever's gear manager can't tie a set to talents (Codex keeps `CodexCharDB.talentSets`).
+- **Camp buffs and Legacy** (2026-11-22): camp features give "Boosted ..." auras that don't stack with the matching
+  class buff; two different ones are both "Boosted Stats", so they are matched by spell ID (`ns.CAMP_BUFFS`, Buffs
+  Party.lua). Legacy points are the renown of the Legacy reward track (`Constants.LegacyConsts`
+  `LEGACY_REWARD_TRACK_FACTION_ID` 2802, `C_MajorFactions`); unspent points are the Legacy trees' trait currency.
 - **Text with colour codes:** strip `|c........` / `|r` before measuring or matching length (the quest count's
   numbers are colour-coded).
 - **Sell price** on Forever is a plain text line (`GameTooltip_OnTooltipAddMoney`: "Sell Price: <money>"), not a

@@ -4,10 +4,11 @@ local UI = codex.UI
 
 -- The "Where buffs show" window (Conditions.lua has the rules), the twin of Buff Tracker's ConditionsOptions.lua on
 -- Codex's widgets: opened from "Where the row shows" above the tracked list (the whole row) and from each tracked
--- buff's "Where" button (that buff: its own rules, or the row's). Where / Group: tick what to show in; Combat: one of
--- three. A buff following the row shows the row's choices greyed.
+-- buff's "Where" button (that buff: its own rules, or the row's). Where / Talents (dual spec) / Group: tick what to
+-- show in; Combat: one of three. A buff following the row shows the row's choices greyed.
 
 local WIDTH, HEIGHT = 430, 330
+local TALENTS_HEIGHT = 64 -- the Talents section, where the game has dual spec
 local window
 
 local function Target()
@@ -35,7 +36,7 @@ end
 
 local function Build()
   window = CreateFrame("Frame", "CodexBuffConditions", UIParent)
-  window:SetSize(WIDTH, HEIGHT)
+  window:SetSize(WIDTH, HEIGHT + (ns.HasTalentGroups() and TALENTS_HEIGHT or 0))
   window:SetFrameStrata("DIALOG")
   window:SetClampedToScreen(true)
   window:EnableMouse(true)
@@ -76,6 +77,23 @@ local function Build()
     check.key = place.key
     window.places[#window.places + 1] = check
     last = check
+  end
+
+  -- dual spec (Conditions.lua ns.TALENTS), under Where; only where the game has two talent groups
+  window.talents = {}
+  if ns.HasTalentGroups() then
+    local talents = ns.SectionHeading(window, "Talents", 190)
+    talents:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 4, -10)
+    last = talents
+    for _, choice in ipairs(ns.TALENTS) do
+      local check = MakeCheck(choice.label, function(self)
+        ns.SetCondition(Target(), "talents", choice.key, self:GetChecked() and true or false)
+      end)
+      check:SetPoint("TOPLEFT", last, "BOTTOMLEFT", last == talents and -4 or 0, last == talents and -6 or 0)
+      check.key = choice.key
+      window.talents[#window.talents + 1] = check
+      last = check
+    end
   end
 
   local right = ns.SectionHeading(window, "Group", 190)
@@ -151,6 +169,9 @@ function ns.RefreshConditions()
   end
   for _, check in ipairs(window.groups) do
     Ready(check, not (conditions.groups and conditions.groups[check.key] == false))
+  end
+  for _, check in ipairs(window.talents) do
+    Ready(check, not (conditions.talents and conditions.talents[check.key] == false))
   end
   local combat = conditions.combat or "any"
   for _, check in ipairs(window.combat) do

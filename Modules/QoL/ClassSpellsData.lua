@@ -1,11 +1,12 @@
 local addonName, ns = ...
 
 -- Every spell each class learns from its trainer: { spellID, level, rank, talent, raceMask }, from the
--- SkillLineAbility / SpellLevels / Spell / Talent DB2 tables of WoW Forever build 1.60.1.70959, as served by
+-- SkillLineAbility / SpellLevels / Spell / Talent DB2 tables of WoW Forever build 1.60.1.71037, as served by
 -- wago.tools. talent = 1: a higher rank of a talent, or a spell the tables don't tie to the trainer (shown
--- only once a spell of that name is known); raceMask 0 = every race. Do not edit by hand: run
--- tools/data/class_spells.py.
-ns.CLASS_SPELLS_BUILD = "1.60.1.70959"
+-- only once a spell of that name is known); raceMask 0 = every race, else a bit per race: ns.RACE_BITS
+-- (race ID -> bit, ChrRaces.PlayableRaceBit). Do not edit by hand: run tools/data/class_spells.py.
+ns.CLASS_SPELLS_BUILD = "1.60.1.71037"
+ns.RACE_BITS = { [1] = 0, [2] = 1, [3] = 2, [4] = 3, [5] = 4, [6] = 5, [7] = 6, [8] = 7, [9] = 8, [10] = 9, [11] = 10, [22] = 21, [24] = 23, [25] = 24, [26] = 25, [27] = 26, [28] = 27, [29] = 28, [30] = 29, [31] = 30, [32] = 31, [34] = 11, [35] = 12, [36] = 13, [37] = 14, [52] = 16, [70] = 15, [84] = 17, [85] = 18, [86] = 20, [95] = 32, [96] = 33 }
 ns.CLASS_SPELLS = {
   DRUID = {
     { 8921, 4, 1 }, -- Moonfire 1
@@ -394,10 +395,10 @@ ns.CLASS_SPELLS = {
     { 7322, 20, 4 }, -- Frostbolt 4
     { 1463, 20, 1 }, -- Mana Shield 1
     { 12824, 20, 2 }, -- Polymorph 2
-    { 3562, 20, 0, 0, -1321907123 }, -- Teleport: Ironforge
-    { 3567, 20, 0, 0, 1309324210 }, -- Teleport: Orgrimmar
-    { 3561, 20, 0, 0, -1321907123 }, -- Teleport: Stormwind
-    { 3563, 20, 0, 0, 1309324210 }, -- Teleport: Undercity
+    { 3562, 20, 0, 0, 6004801044565069 }, -- Teleport: Ironforge
+    { 3567, 20, 0, 0, 3002398197593010 }, -- Teleport: Orgrimmar
+    { 3561, 20, 0, 0, 6004801044565069 }, -- Teleport: Stormwind
+    { 3563, 20, 0, 0, 3002398197593010 }, -- Teleport: Undercity
     { 8437, 22, 2 }, -- Arcane Explosion 2
     { 990, 22, 3 }, -- Conjure Food 3
     { 2138, 22, 3 }, -- Fire Blast 3
@@ -426,8 +427,8 @@ ns.CLASS_SPELLS = {
     { 8401, 30, 6 }, -- Fireball 6
     { 7302, 30, 1 }, -- Ice Armor 1
     { 12522, 30, 3, 1 }, -- Pyroblast 3
-    { 3565, 30, 0, 0, -1321907123 }, -- Teleport: Darnassus
-    { 3566, 30, 0, 0, 1309324210 }, -- Teleport: Thunder Bluff
+    { 3565, 30, 0, 0, 6004801044565069 }, -- Teleport: Darnassus
+    { 3566, 30, 0, 0, 3002398197593010 }, -- Teleport: Thunder Bluff
     { 8416, 32, 4 }, -- Arcane Missiles 4
     { 6129, 32, 4 }, -- Conjure Food 4
     { 8422, 32, 3 }, -- Flamestrike 3
@@ -456,10 +457,10 @@ ns.CLASS_SPELLS = {
     { 6131, 40, 3 }, -- Frost Nova 3
     { 7320, 40, 2 }, -- Ice Armor 2
     { 12825, 40, 3 }, -- Polymorph 3
-    { 11416, 40, 0, 0, -1321907123 }, -- Portal: Ironforge
-    { 11417, 40, 0, 0, 1309324210 }, -- Portal: Orgrimmar
-    { 10059, 40, 0, 0, -1321907123 }, -- Portal: Stormwind
-    { 11418, 40, 0, 0, 1309324210 }, -- Portal: Undercity
+    { 11416, 40, 0, 0, 6004801044565069 }, -- Portal: Ironforge
+    { 11417, 40, 0, 0, 3002398197593010 }, -- Portal: Orgrimmar
+    { 10059, 40, 0, 0, 6004801044565069 }, -- Portal: Stormwind
+    { 11418, 40, 0, 0, 3002398197593010 }, -- Portal: Undercity
     { 8446, 40, 4 }, -- Scorch 4
     { 10169, 42, 3 }, -- Amplify Magic 3
     { 10156, 42, 4 }, -- Arcane Intellect 4
@@ -493,9 +494,9 @@ ns.CLASS_SPELLS = {
     { 10180, 50, 9 }, -- Frostbolt 9
     { 1237312, 50, 2 }, -- Frostfire Bolt 2
     { 10219, 50, 3 }, -- Ice Armor 3
-    { 11419, 50, 0, 0, -1321907123 }, -- Portal: Darnassus
-    { 11420, 50, 0, 0, 1309324210 }, -- Portal: Thunder Bluff
-    { 1297659, 50, 0, 0, -1321907123 }, -- Teleport: Dalaran
+    { 11419, 50, 0, 0, 6004801044565069 }, -- Portal: Darnassus
+    { 11420, 50, 0, 0, 3002398197593010 }, -- Portal: Thunder Bluff
+    { 1297659, 50, 0, 0, 6004801044565069 }, -- Teleport: Dalaran
     { 13020, 52, 4, 1 }, -- Blast Wave 4
     { 10186, 52, 5 }, -- Blizzard 5
     { 10145, 52, 6 }, -- Conjure Food 6

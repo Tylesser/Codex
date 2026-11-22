@@ -17,6 +17,8 @@ local addonName, ns = ...
 --   honor       CHAT_MSG_COMBAT_HONOR_GAIN (the last number in the line)
 --   currencies  CURRENCY_DISPLAY_UPDATE (currencyType, quantity, quantityChange: no text to read)
 --   skill-ups   CHAT_MSG_SKILL (SKILL_RANK_UP); this one is SecretInChatMessagingLockdown: a secret text is skipped
+--   Legacy      MAJOR_FACTION_RENOWN_LEVEL_CHANGED for Forever's Legacy reward track (LegacyConsts
+--               LEGACY_REWARD_TRACK_FACTION_ID 2802: its renown level is your account's Legacy points; 2026-11-22)
 -- None of the others is marked secret, but every value read is checked (ns.Plain) before it is compared.
 -- The game's loot toasts follow the CVar enableLootToasts (AlertFrameSystems.lua: LootAlertSystem ignores alerts
 -- while it is 0); "hide the game's loot toasts" sets it, keeping the player's own value to put back.
@@ -28,7 +30,7 @@ LT.DEFAULTS = {
   style = "float", -- "float" (rises from the middle), "down" (falls from it) or "list" (stacks by the chat)
   size = 15, duration = 4, maxLines = 8,
   items = true, junk = true, crafted = false, money = true, otherMoney = false,
-  reputation = true, xp = true, honor = true, currency = true, skill = true,
+  reputation = true, xp = true, honor = true, currency = true, skill = true, legacy = true,
   minQuality = 0, showValue = true, allCharacters = true,
   glowValue = 10000, glowEpic = true, glowSound = "coin",
   watch = {}, watchSound = "toast",
@@ -392,7 +394,9 @@ end
 
 local EVENTS = { "CHAT_MSG_LOOT", "PLAYER_MONEY", "CHAT_MSG_COMBAT_FACTION_CHANGE", "PLAYER_XP_UPDATE",
   "PLAYER_LEVEL_UP", "CHAT_MSG_COMBAT_HONOR_GAIN", "CURRENCY_DISPLAY_UPDATE", "CHAT_MSG_SKILL",
-  "PLAYER_ENTERING_WORLD" }
+  "PLAYER_ENTERING_WORLD", "MAJOR_FACTION_RENOWN_LEVEL_CHANGED" }
+LT.LEGACY_FACTION = Constants and Constants.LegacyConsts and Constants.LegacyConsts.LEGACY_REWARD_TRACK_FACTION_ID
+  or 2802
 
 function LT.OnEvent(event, ...)
   local db = LT.DB()
@@ -431,6 +435,12 @@ function LT.OnEvent(event, ...)
     local skill, rank = LT.ParseSkill(...)
     if skill and db.skill then
       LT.Show({ key = "skill:" .. skill, kind = "skill", name = skill, rank = rank, replace = true })
+    end
+  elseif event == "MAJOR_FACTION_RENOWN_LEVEL_CHANGED" then
+    local faction, new, old = ...
+    faction, new, old = Num(faction), Num(new), Num(old)
+    if faction == LT.LEGACY_FACTION and new and old and new > old and db.legacy then
+      LT.Show({ key = "legacy", kind = "legacy", amount = new - old, total = new })
     end
   elseif event == "PLAYER_ENTERING_WORLD" then
     LT.lastMoney = Num(GetMoney and GetMoney())

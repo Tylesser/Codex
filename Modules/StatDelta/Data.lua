@@ -54,7 +54,7 @@ function S.DB()
   end
   if not ns.char.statdelta then
     ns.char.statdelta = {}
-    Import(ns.char.statdelta, StatDeltaCharDB, { "preset", "weights", "edited" })
+    Import(ns.char.statdelta, StatDeltaCharDB, { "preset", "weights", "edited", "talentGroup", "talentScores" })
   end
   S.db = ns.Fill(ns.db.statdelta, S.DEFAULTS)
   S.char = ns.Fill(ns.char.statdelta, S.CHAR_DEFAULTS)
