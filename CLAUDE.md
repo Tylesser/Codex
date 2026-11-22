@@ -576,6 +576,9 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   class buff; two different ones are both "Boosted Stats", so they are matched by spell ID (`ns.CAMP_BUFFS`, Buffs
   Party.lua). Legacy points are the renown of the Legacy reward track (`Constants.LegacyConsts`
   `LEGACY_REWARD_TRACK_FACTION_ID` 2802, `C_MajorFactions`); unspent points are the Legacy trees' trait currency.
+- **A zone's `C_QuestLog.GetQuestsOnMap` lists quests that stand in a neighbouring zone** (2026-11-22, the user's
+  screenshot: continent-map clusters mixing zones). Never take the listing zone as the quest's zone; Skins/QuestPins.lua
+  asks `C_Map.GetMapInfoAtPosition` on the wide map where the quest's spot is (`S.QuestZoneAt`).
 - **Text with colour codes:** strip `|c........` / `|r` before measuring or matching length (the quest count's
   numbers are colour-coded).
 - **Sell price** on Forever is a plain text line (`GameTooltip_OnTooltipAddMoney`: "Sell Price: <money>"), not a

@@ -48,6 +48,8 @@ ns.MAP_INSTANCES = {
   { name = "Krol'dok Stronghold", kind = "dungeon", home = 2548, at = { { 2548, 39, 39 } }, wings = { { false, 40, 47, 5 } } }, -- Riverglades
   { name = "The Drowned City", kind = "dungeon", home = 1434, at = { { 1434, 21, 28 } }, wings = { { false, 35, 42, 5 } } }, -- Stranglethorn Vale
   { name = "The Shaper's Terrace", kind = "dungeon", home = 1449, at = { { 1449, 56, 12 } }, wings = { { false, 58, 60, 5 } } }, -- Un'Goro Crater
+  { name = "Alcaz Prison", kind = "dungeon", home = 1445, at = { { 1445, 75.3, 14.1 } }, wings = { { false, 48, 55, 5 } }, note = "On Alcaz Island, in the keep's basement." }, -- Dustwallow Marsh
+  { name = "Blackmaw Hold", kind = "dungeon", home = 1447, at = { { 1447, 38.4, 32.6 } }, wings = { { false, 55, 60, 5 } }, note = "The tunnel leads to the portal at 35.0, 23.4." }, -- Azshara
 }
 
 ns.MAP_SERVICES = {

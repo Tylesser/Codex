@@ -103,6 +103,37 @@ local function WideMapID(host)
   end
 end
 
+-- The zone a spot of the wide map `mapID` (u, v: its coords) lies in: the game's own C_Map.GetMapInfoAtPosition,
+-- walked up from a cave or dungeon map to its zone; nil over the sea or between zones. A zone's GetQuestsOnMap also
+-- lists quests whose spot is in a neighbouring zone (Ashenvale lists a Felwood quest), so the zone that listed a quest
+-- isn't where it is: the user's report, 2026-11-22, a cluster of two zones' quests sitting between them.
+local function ZoneAt(mapID, u, v)
+  if not C_Map.GetMapInfoAtPosition then
+    return nil
+  end
+  local zoneType = Enum and Enum.UIMapType and Enum.UIMapType.Zone or 3
+  local ok, info = pcall(C_Map.GetMapInfoAtPosition, mapID, u, v)
+  for _ = 1, 4 do
+    if not (ok and type(info) == "table") then
+      return nil
+    end
+    local id, kind = Num(info.mapID), Num(info.mapType)
+    if not (id and kind) or id == mapID or kind < zoneType then
+      return nil
+    end
+    if kind == zoneType then
+      return id, Readable(info.name) and type(info.name) == "string" and info.name or nil
+    end
+    local parent = Num(info.parentMapID)
+    if not parent then
+      return nil
+    end
+    ok, info = pcall(C_Map.GetMapInfo, parent)
+  end
+  return nil
+end
+S.QuestZoneAt = ZoneAt
+
 -- Every quest of the log on the zones of `mapID`: { questID, u, v, complete } in the shown map's coords.
 local function Quests(mapID)
   local list, seen = {}, {}
@@ -131,8 +162,10 @@ local function Quests(mapID)
           if not Readable(complete) then
             complete = false
           end
-          list[#list + 1] = { questID = questID, u = left + x * (right - left), v = top + y * (bottom - top),
-            complete = complete and true or false, zone = childID, zoneName = zoneName }
+          local u, v = left + x * (right - left), top + y * (bottom - top)
+          local atZone, atName = ZoneAt(mapID, u, v)
+          list[#list + 1] = { questID = questID, u = u, v = v, complete = complete and true or false,
+            zone = atZone or childID, zoneName = atZone and (atName or zoneName) or zoneName }
         end
       end
     end

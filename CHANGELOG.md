@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1
+
+- Fixed: quest pins on the continent map grouped quests of different zones into one pin that sat between them. Each quest now counts for the zone where it stands, so a pin's count is that zone's quests only.
+- Dungeons on the map: added **Alcaz Prison** (Dustwallow Marsh, in the keep's basement on Alcaz Island) and **Blackmaw Hold** (Azshara, at the tunnel's entrance). Every WoW Forever dungeon now has its entrance on the map.
+
 ## 1.1.0
 
 - New: **talents in "Where buffs show"**. Show a tracked buff only with your primary or your secondary talents (dual spec). Switching talents updates the row.
