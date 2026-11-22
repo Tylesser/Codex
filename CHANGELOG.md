@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.0
+
+- Unit frames: set the **width and height apart** in Edit Mode: Shift + mouse wheel over a frame's box for the width, Ctrl + wheel for the height (the plain wheel still sizes the whole frame). Shift + right-click puts all three back.
+- Fixed: the **cooldown swipe** on restyled action buttons now covers the whole icon (it stopped short of the edges).
+- Proc art: **several procs show together** instead of taking turns. Two go left and right, a third on top, a fourth below.
+- Nameplates: set the **bar width and height** apart: in Edit Mode turn the mouse wheel over the new Nameplates box (Shift + wheel for the height), or pick them in the Nameplates options.
+- Proc glow: **Heating Up** at 3 stacks lights Pyroblast, with its own Codex art.
+- Proc glow: **Clearcasting** now shows only its art beside your character, no glow on the action buttons.
+- Fixed: **Bind keys by hovering** now covers the whole button, also the frame the restyle draws round it.
+- Fixed: the **bag window didn't open in a fight** when it hadn't been opened since logging in, or since your bags changed. It now gets ready when the fight starts.
+- Unit frames: a new **Bar gradient** choice, top to bottom (as before) or left to right.
+
 ## 1.2.0
 
 - New: **What's new** opens once after Codex is updated, with what changed since the version you had. Open it any time with `/codex whatsnew` or from General; switch it off there or in the window.

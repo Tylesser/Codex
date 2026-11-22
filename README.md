@@ -92,15 +92,15 @@ Home shows a card for each feature with what it is doing right now; click a card
   Maps already shows a group (dungeons, flight masters, spirit healers, OpenMap's townsfolk), Codex leaves that
   group to it. Glow on proc abilities: action buttons glow
   while Overpower, Revenge, Execute, Riposte, Counterattack, Mongoose Bite or Hammer of Wrath can be used, and
-  Shadow Bolt with Shadow Trance or your big spells with Clearcasting; what the game already lights keeps its own
-  glow. Pick the glow's style (the game's spell alert, pulsing border, marching sparkles, soft glow, flash or
+  Shadow Bolt with Shadow Trance, Arcane Missiles with Missile Barrage, Pyroblast at 3 stacks of Heating Up;
+  Clearcasting shows only its art. What the game already lights keeps its own glow. Pick the glow's style (the game's spell alert, pulsing border, marching sparkles, soft glow, flash or
   ring, with a preview), its colour (gold, theme, class or a fixed colour), pulse speed and thickness. Optional
   sound when one starts: 14 of the game's sounds, soft or loud, with a Test button, only in combat if you like,
   and a different sound per ability if you want. While an ability procs, art shows on both sides of your
   character as in later expansions: Codex's own art, a piece drawn for each proc it knows (Overpower, Execute,
   Hammer of Wrath, Shadow Trance, Clearcasting and the paladin's Unsealed Wrath echoes, one per seal, at 3 stacks),
-  with "Show all arts" to see them; or the game's own art, the spell's icon, or a plain arc. Several procs at once
-  take turns. The art and glow wait while the ability can't be cast (no mana, on cooldown). Size, opacity and a
+  with "Show all arts" to see them; or the game's own art, the spell's icon, or a plain arc. Several procs show
+  together: two left and right, a third on top, a fourth below. The art and glow wait while the ability can't be cast (no mana, on cooldown). Size, opacity and a
   "Show the art" test button. In combat the game hides your buffs from addons, so buff procs show there only for
   buffs you track in the game's cooldown manager. Put new spell ranks on your
   action bars: when you learn a higher rank, buttons with the old one get it (after the fight if you're in one),
@@ -190,7 +190,10 @@ the damage meter), so they are calmer while each class keeps its colour.
 Codex can also restyle the game's own interface in your theme: action bars, player and target frames,
 minimap, chat, quest tracker, quest log and world map, tooltips and game windows. Switch it on with "Restyle the
 game's interface" on the General page; each part then has its own switch on its page (the action bars' look on
-Action bars, the chat on Chat, and so on).
+Action bars, the chat on Chat, and so on). Restyled nameplates can have their bar width and height set apart (in
+Edit Mode: the mouse wheel over the Nameplates box), and the unit frame bars shade top to bottom or left to right.
+Codex's unit frames move in Edit Mode; over a frame's box the mouse wheel sizes it, Shift + wheel sets just its
+width and Ctrl + wheel just its height.
 
 ## Use
 

@@ -45,6 +45,7 @@ local SKIP_PATH = {
   ["movewindows.positions"] = true,
   ["skins.frames"] = true, ["skins.told"] = true, -- unit frame positions, a one-time hint
   ["skins.frameScale"] = true, -- unit frame sizes (Edit Mode, with the positions)
+  ["skins.frameShape"] = true, -- unit frame widths and heights (Edit Mode)
   -- Commerce: what turn-ins gave, faction IDs, window places (data, not settings)
   ["commerce.learned"] = true, ["commerce.factionIDs"] = true, ["commerce.position"] = true,
   ["commerce.npcPosition"] = true, ["vendorsearch.boxOffset"] = true,
@@ -735,6 +736,15 @@ function P.Sanitize(settings)
     end
     if out.skins.healthColor ~= nil and out.skins.healthColor ~= "class" then
       out.skins.healthColor = nil
+    end
+    for _, field in ipairs({ "plateWidth", "plateHeight" }) do
+      local value = out.skins[field]
+      if value ~= nil and (type(value) ~= "number" or value < 0.5 or value > 2.5) then
+        out.skins[field] = nil
+      end
+    end
+    if out.skins.barGradient ~= nil and out.skins.barGradient ~= "horizontal" then
+      out.skins.barGradient = nil
     end
     if type(out.skins.auraPos) == "table" then
       for unit, place in pairs(out.skins.auraPos) do

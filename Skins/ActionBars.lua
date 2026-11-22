@@ -206,6 +206,16 @@ local function ActionSlot(button, mode)
   SlotBox(button, icon or button, mode)
   if icon then
     S.RoundIcon(button, icon) -- a rounded theme: the icon cut to the slot's corners (Blizzard's IconMask is off)
+    -- the cooldown swipe over the whole icon: Forever's template (Mainline ActionButtonTemplate.xml) sets the
+    -- cooldowns 3 px inside the icon (2 for the charges), which left a grey wedge short of the slot's edges once the
+    -- icon fills it (the user's screenshots, 2026-11-22)
+    for _, key in ipairs({ "cooldown", "lossOfControlCooldown", "chargeCooldown" }) do
+      local cooldown = S.Child(button, key)
+      if S.Usable(cooldown) and not (cooldown.IsProtected and cooldown:IsProtected()) then
+        pcall(cooldown.ClearAllPoints, cooldown)
+        pcall(cooldown.SetAllPoints, cooldown, icon)
+      end
+    end
   end
   ButtonArt(button)
   S.HookMethod(button, "UpdateButtonArt", ButtonArt)

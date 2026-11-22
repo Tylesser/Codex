@@ -240,19 +240,57 @@ local function Box(region)
   return left * scale, bottom * scale, (left + width) * scale, (bottom + height) * scale
 end
 
+-- Is a region drawn now (shown, visible, not see-through)? Hidden glows and highlights don't count.
+local function Drawn(region)
+  if type(region) ~= "table" then
+    return false
+  end
+  local okShown, visible = pcall(function() return region:IsVisible() end)
+  if not (okShown and visible == true) then
+    return false
+  end
+  local okAlpha, alpha = pcall(function() return region:GetAlpha() end)
+  return okAlpha and type(alpha) == "number" and alpha > 0.05
+end
+
+-- The cover spans everything drawn as the button: the button, its icon, and the shown textures on it and on its
+-- child frames (a restyle's slot ring sits a few pixels outside the button: the user's screenshots, 2026-11-22),
+-- leaving out anything far bigger than the button (proc glows, spell alerts).
 local function CoverButton(button)
   cover:ClearAllPoints()
   local l, b, r, t = Box(button)
-  local icon = button.icon or button.Icon
-  local il, ib, ir, it = Box(icon)
   local uiScale = UIParent.GetEffectiveScale and UIParent:GetEffectiveScale() or 1
-  if l and il and type(uiScale) == "number" and uiScale > 0 then
-    l, b, r, t = math.min(l, il), math.min(b, ib), math.max(r, ir), math.max(t, it)
-    cover:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", l / uiScale, b / uiScale)
-    cover:SetSize((r - l) / uiScale, (t - b) / uiScale)
-  else
+  if not (l and type(uiScale) == "number" and uiScale > 0) then
     cover:SetAllPoints(button)
+    return
   end
+  local width, height = r - l, t - b
+  local function Take(region)
+    local rl, rb, rr, rt = Box(region)
+    if rl and (rr - rl) <= width * 1.4 and (rt - rb) <= height * 1.4 then
+      l, b, r, t = math.min(l, rl), math.min(b, rb), math.max(r, rr), math.max(t, rt)
+    end
+  end
+  Take(button.icon or button.Icon)
+  local function Regions(frame)
+    if type(frame.GetRegions) == "function" then
+      for _, region in ipairs({ frame:GetRegions() }) do
+        if Drawn(region) then
+          Take(region)
+        end
+      end
+    end
+  end
+  Regions(button)
+  if type(button.GetChildren) == "function" then
+    for _, child in ipairs({ button:GetChildren() }) do
+      if Drawn(child) and not (child.IsForbidden and child:IsForbidden()) then
+        Regions(child)
+      end
+    end
+  end
+  cover:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", l / uiScale, b / uiScale)
+  cover:SetSize((r - l) / uiScale, (t - b) / uiScale)
 end
 HB.CoverButton = CoverButton
 

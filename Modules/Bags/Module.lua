@@ -104,10 +104,8 @@ local function OnEvent(_, event, arg)
     end
   elseif event == "PLAYER_REGEN_DISABLED" then
     B.deposit.Stop("combat")
-    -- the last moment buttons can still be placed: catch up on a waiting layout
-    if B.layoutPending and B.Window() and B.Window():IsShown() then
-      B.Refresh()
-    end
+    -- the last moment buttons can still be placed: catch up on a waiting layout, also while the window is closed
+    B.PrepareForCombat()
     if B.bank.pending and B.BankWindow() and B.BankWindow():IsShown() then
       B.RefreshBank()
     end

@@ -10,7 +10,7 @@ the game's art. With a second argument it also writes a contact sheet of every p
 
 Keys (ProcArt.lua, A.CODEX): overpower, revenge, execute, victory_rush, riposte, counterattack, mongoose_bite,
 hammer_of_wrath, unsealed_wrath, shadow_trance, clearcasting_mage, clearcasting_druid, clearcasting_shaman,
-missile_barrage.
+missile_barrage, heating_up.
 """
 import math
 import os
@@ -320,6 +320,17 @@ def e_missile_barrage(d):
         disc(d, dx + head[0], dy + head[1], 1.6, fill=0)
 
 
+def e_heating_up(d):
+    # a fireball: a solid orb with a tall flame rising from it, and three pips under it (the three stacks)
+    flame(d, 0, 58, 22, 0.15)
+    flame(d, -9, 36, 11, -0.6)
+    flame(d, 9, 34, 11, 0.6)
+    disc(d, 0, 10, 15)
+    disc(d, -3, 7, 5, fill=0)
+    for x, y in ((-13, 33), (0, 36), (13, 33)):
+        disc(d, x, y, 3.6)
+
+
 # The procs: key -> emblem, colours { core, glow, arc, particles }, particle kind -----------------------------------
 
 ARTS = {
@@ -343,6 +354,7 @@ ARTS = {
     "clearcasting_shaman": (e_clearcasting_shaman, (225, 252, 255), (40, 180, 240), (120, 220, 255), "sparks"),
     # (new pieces go last: each piece's particles come from its place in this list)
     "missile_barrage": (e_missile_barrage, (255, 228, 255), (200, 80, 255), (225, 145, 255), "sparks"),
+    "heating_up": (e_heating_up, (255, 236, 196), (255, 96, 20), (255, 160, 60), "embers"),
 }
 
 

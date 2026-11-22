@@ -850,6 +850,28 @@ function B.RefillShown()
   end
 end
 
+-- Lays out a closed window while that is still allowed, so a bag key in a fight opens it full (2026-11-22, the
+-- user's "bags is not opening in combat": in a fight the window only refills buttons placed before, and a closed
+-- window was never laid out: the first open after login, or after a bag change, showed no slots). Run at
+-- PLAYER_REGEN_DISABLED (still out of lockdown) and once a few seconds after the window is made.
+function B.PrepareForCombat()
+  if not frame or InCombatLockdown() then
+    return
+  end
+  if frame:IsShown() then
+    if B.layoutPending then
+      B.Refresh()
+    end
+    return
+  end
+  if view.resetOnShow then
+    view.key, view.bank, view.resetOnShow = nil, false, false -- it opens on your own bags
+  end
+  if B.layoutPending or not B.lastPacked then
+    B.Refresh()
+  end
+end
+
 -- View another character (nil = yourself) or switch between bags and bank. The live buttons are hidden for
 -- that, so not during a fight.
 function B.View(key, bank)
@@ -1143,6 +1165,7 @@ function B.CreateWindow()
   end)
   B.frame = frame
   B.EnsureButtons()
+  C_Timer.After(3, B.PrepareForCombat) -- placed before the first fight
   return frame
 end
 

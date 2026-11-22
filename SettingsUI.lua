@@ -1181,6 +1181,25 @@ OPTIONS.unitframes = function(card, parent, width, stack)
         card.RedrawCodex()
       end
     end, 4)
+  options.gradient = PickerRow(parent, stack, "Bar gradient", width, function()
+    for _, choice in ipairs(ns.BAR_GRADIENTS) do
+      if choice.key == ns.BarGradient() then
+        return choice.name
+      end
+    end
+  end, function()
+    return ns.BAR_GRADIENTS
+  end, function(key)
+    ns.db.skins.barGradient = key == "horizontal" and "horizontal" or nil
+    for _, name in ipairs({ "RepaintBars" }) do
+      local refresh = ns.API[name]
+      if type(refresh) == "function" then
+        pcall(refresh)
+      end
+    end
+  end, function()
+    return ns.BarGradient()
+  end)
   options.short = OptionCheck(parent, stack, "Short numbers (1.9K instead of 1,920)", width, ns.UnitTextShort, function(on)
     ns.db.skins.unitText = ns.db.skins.unitText or {}
     ns.db.skins.unitText.short = on
@@ -1235,6 +1254,35 @@ OPTIONS.nameplates = function(card, parent, width, stack)
       pcall(refresh)
     end
   end, 4)
+  -- width and height of the bars (2026-11-22; also in Edit Mode: the wheel over the Nameplates box)
+  local function SizeChoices(low, high)
+    local list = {}
+    for percent = low, high, 10 do
+      list[#list + 1] = { key = percent, name = percent == 100 and "100% (the game's)" or (percent .. "%") }
+    end
+    return list
+  end
+  for _, size in ipairs({ { "width", "Bar width", "plateWidth", 50, 160 }, { "height", "Bar height", "plateHeight", 50, 250 } }) do
+    local key, label, field = size[1], size[2], size[3]
+    local function Current()
+      return math.floor((tonumber(ns.db.skins and ns.db.skins[field]) or 1) * 100 + 0.5)
+    end
+    card.options[key] = PickerRow(parent, stack, label, width, function()
+      local percent = Current()
+      return percent == 100 and "100% (the game's)" or (percent .. "%")
+    end, function()
+      return SizeChoices(size[4], size[5])
+    end, function(percent)
+      local set = ns.API.SetNameplateSize
+      if type(set) == "function" then
+        pcall(set, key, percent / 100)
+      else
+        ns.db.skins[field] = percent ~= 100 and percent / 100 or nil
+      end
+    end, Current)
+  end
+  stack.AddText(Wrapping(parent, 11, "muted", width,
+    "Also in Edit Mode: the mouse wheel over the Nameplates box sets the width, Shift + wheel the height."), 4)
 end
 
 OPTIONS.auras = function(card, parent, width, stack)

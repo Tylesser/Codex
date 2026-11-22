@@ -11,13 +11,15 @@ local addonName, ns = ...
 -- file's size, read from the BLP header, says where it goes: 128x256 = left and right, 256x128 = above), else
 -- Codex's ProcSide arc in the glow colour. Placement and animation follow the game's frame: a 204.8 square box at
 -- the screen centre, sides 0.8 x 128x256 against its left and right edge (the right one mirrored), the top one over it,
--- a 0.2 s fade in, a 1.08 pulse every 0.5 s and a 0.1 s fade out. A second proc goes further out (or below).
+-- a 0.2 s fade in, a 1.08 pulse every 0.5 s and a 0.1 s fade out. Several procs share the places by count
+-- (A.Show): one = both sides, two = left and right, three = + top, four = + bottom (side art turned a quarter).
 -- Whatever the game's own frame shows (SPELL_ACTIVATION_OVERLAY_SHOW) is left to it.
 -- The "spell's icon" look (also what the game's look falls back to): the arc, with the proc's own icon three
 -- times along it on each side (big in the middle, two smaller up and down the curve, soft round edges from the
 -- ProcIconMask mask; the right side mirrored), so the art says which ability lit. Plain textures on a frame of
 -- ours on UIParent: nothing secure, works in combat.
 
+local unpack = unpack or table.unpack
 local Q = ns.qol
 local P = Q.procglow
 local A = {}
@@ -30,8 +32,9 @@ A.LONG, A.SHORT = 256 * 0.8, 128 * 0.8
 -- the icon look: { y, size, alpha } in the 128x256 side file, each just inside the arc (the circle round (230, 128)
 -- with radius 190 that ProcSide.tga draws)
 A.SPOTS = { { 128, 64, 1 }, { 52, 38, 0.7 }, { 204, 38, 0.7 } }
-A.MAX = 2 -- procs shown at once (A.Show; the rotation below gives it one at a time)
-A.ROTATE = 2 -- seconds each proc's art shows while several are up (the user's request, 2026-11-20)
+A.MAX = 4 -- procs shown at once (2026-11-22, the user's request: one proc on both sides; two = left and right; three
+-- = left, right, top; four = left, right, top, bottom; more wait their turn: the first four lit show)
+A.ROTATE = 2 -- (the old one-at-a-time rotation, 2026-11-20; kept for A.Rotate, no longer used by A.Update)
 
 -- The game's art (FileDataID, textures/spellactivationoverlays/*.blp) and where it goes: "sides" (a 128x256 file)
 -- or "top" (256x128). Keyed by the lit ability's name or the buff that lit it, lower case.
@@ -91,7 +94,7 @@ A.CODEX = {
   { "echo_of_light", "Echo of Light", "Paladin" }, { "echo_of_wisdom", "Echo of Wisdom", "Paladin" },
   { "shadow_trance", "Shadow Trance", "Warlock" }, { "clearcasting_mage", "Clearcasting", "Mage" },
   { "clearcasting_druid", "Clearcasting", "Druid" }, { "clearcasting_shaman", "Clearcasting", "Shaman" },
-  { "missile_barrage", "Missile Barrage", "Mage" },
+  { "missile_barrage", "Missile Barrage", "Mage" }, { "heating_up", "Heating Up", "Mage" },
 }
 A.codexKeys = {}
 for _, entry in ipairs(A.CODEX) do
@@ -361,6 +364,37 @@ local PLACES = {
 }
 A.PLACES = PLACES
 
+-- The texture corners (UL, LL, UR, LR as SetTexCoord takes them) that turn an art file so its outer edge faces
+-- `place`'s outside: a side file (outer edge left, the "(" arc) as it is on the left, mirrored on the right, a
+-- quarter turn clockwise on top and that mirrored at the bottom; a top file (256x128, outer edge up) the other way.
+local function Corners(place, where)
+  local spot = PLACES[place]
+  local turns = 0 -- quarter turns clockwise
+  local outerTop = place == "top" or place == "bottom"
+  if where == "top" and not outerTop then
+    turns = 3
+  elseif where ~= "top" and outerTop then
+    turns = 1
+  end
+  local out = {}
+  for _, corner in ipairs({ { 0, 0 }, { 0, 1 }, { 1, 0 }, { 1, 1 } }) do
+    local u, v = corner[1], corner[2]
+    if spot.flipX then
+      u = 1 - u
+    end
+    if spot.flipY then
+      v = 1 - v
+    end
+    for _ = 1, turns do
+      u, v = v, 1 - u -- the display point's place in the file before a clockwise quarter turn
+    end
+    out[#out + 1] = u
+    out[#out + 1] = v
+  end
+  return out
+end
+A.Corners = Corners
+
 local function Place(piece, art)
   local spot = PLACES[piece.place]
   local size = A.Size()
@@ -371,7 +405,7 @@ local function Place(piece, art)
   piece:SetPoint(spot[3], A.anchor, spot[4], spot[5] * A.SHORT * size, 0)
   piece:SetSize(width, height)
   local ok = pcall(piece.texture.SetTexture, piece.texture, art.file)
-  piece.texture:SetTexCoord(spot.flipX and 1 or 0, spot.flipX and 0 or 1, spot.flipY and 1 or 0, spot.flipY and 0 or 1)
+  piece.texture:SetTexCoord(unpack(Corners(piece.place, art.where)))
   local color = art.tint and P.Color() or { 1, 1, 1 }
   piece.texture:SetVertexColor(color[1], color[2], color[3])
   if art.tint and piece.texture.SetBlendMode then
@@ -532,30 +566,34 @@ end
 
 -- Showing ---------------------------------------------------------------------------------------------------------
 
+-- Where each of several procs goes, by how many there are (2026-11-22): one on both sides (or on top, for a top file
+-- of the game's), two left and right, three adds the top, four the bottom.
+A.SLOTS = { { "left", "right", "top", "bottom" } }
+
 -- Shows the art for these procs (names or { name, id }, in order; at most A.MAX) and fades out the rest.
 function A.Show(names)
   local wanted = {}
-  local sides, tops = 0, 0
+  local list = {}
   for _, entry in ipairs(names) do
-    if sides + tops >= A.MAX then
+    if #list >= A.MAX then
       break
     end
     local name, id = entry, nil
     if type(entry) == "table" then
       name, id = entry.name, entry.id
     end
-    local art = A.ArtFor(name, id)
-    if art.where == "top" then
-      tops = tops + 1
-      wanted[tops == 1 and "top" or "bottom"] = { art = art, name = name }
+    list[#list + 1] = { art = A.ArtFor(name, id), name = name }
+  end
+  if #list == 1 then
+    local one = list[1]
+    if one.art.where == "top" then
+      wanted.top = one
     else
-      sides = sides + 1
-      local left, right = "left", "right"
-      if sides > 1 then
-        left, right = "left2", "right2"
-      end
-      wanted[left] = { art = art, name = name }
-      wanted[right] = { art = art, name = name }
+      wanted.left, wanted.right = one, one
+    end
+  else
+    for index, one in ipairs(list) do
+      wanted[A.SLOTS[1][index]] = one
     end
   end
   if next(wanted) then
@@ -579,7 +617,8 @@ local function KeyOf(entry)
   return Lower(type(entry) == "table" and entry.name or entry)
 end
 
--- Several procs at once: one at a time, the next every A.ROTATE seconds (the one showing stays while it is up).
+-- The old rotation (2026-11-20: one at a time, the next every A.ROTATE seconds). A.Update no longer uses it since
+-- several procs share the places (A.Show); A.Rotate is kept for the Test button's history and the tests.
 A.rotation = { names = {}, index = 1, gen = 0 }
 
 local function ShowCurrent()
@@ -636,7 +675,10 @@ function A.Update(order)
     A.HideAll()
     return
   end
-  A.Rotate(A.Names(order))
+  -- no rotation any more: up to A.MAX procs show together (a waiting tick of an older rotation is stopped)
+  local rotation = A.rotation
+  rotation.running, rotation.gen, rotation.names = false, rotation.gen + 1, {}
+  A.Show(A.Names(order))
 end
 
 function A.HideAll()

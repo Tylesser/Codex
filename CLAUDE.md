@@ -377,7 +377,7 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   (230, 128) r 190), BORDER layer under the arc, `Modules/QoL/Media/ProcIconMask.tga` (soft disc, glow-art.py) as a plain
   mask (never nine-sliced), right side mirrored with tex coords. A stretched icon in a crescent mask was tried
   first and was unreadable. Geometry and timings as the game's frame (204.8 box at the centre, 0.8 x 128x256, 0.2 s in, 1.08
-  pulse per 0.5 s, 0.1 s out); two procs at most, the second further out / below. ManifestInterfaceData doesn't
+  pulse per 0.5 s, 0.1 s out); several procs share the places by count (2026-11-22, the user's request; replaced the 2-second rotation): one = both sides, two = left / right, three = + top, four = + bottom (`A.MAX` 4, `A.Corners` turns side art a quarter for top / bottom). ManifestInterfaceData doesn't
   list the overlay art (not even MoP Classic's), and wago.tools' file search ignores the build, so whether Forever
   ships a file can't be read there: the "arc" look is the way out if the game's art doesn't show. Test
   `codex_procart_test.lua`. Spell ranks (Ranks.lua, `spellRanks`): on LEARNED_SPELL_IN_SKILL_LINE (+ SPELLS_CHANGED or
@@ -517,6 +517,31 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   Blizzard_ActionBar/Shared/ActionButton.lua); the key text gets `ACTIONBAR_HOTKEY_FONT_COLOR` back (the range dot
   "●" keeps its red), the icon is desaturated and dimmed while out of range / no mana / unusable; secrets = usable.
   Test in `codex_qol_extras_test`.
+- Nameplate size (Skins/Nameplates.lua `SizeBars`, 2026-11-22): `CodexDB.skins.plateWidth` / `plateHeight` (0.5-1.6 /
+  0.5-2.5, nil = the game's). Forever has no Edit Mode nameplate system (one CVar `nameplateSize`), and
+  `C_NamePlate.SetNamePlateSize` is restricted; never write `NamePlateSetupOptions`. Applied in Layout, after the
+  game's anchoring (NamePlateUnitFrameMixin): CastBarsContainer re-anchored with a centred inset, the
+  HealthBarsContainer's height = `healthBarHeight` x height. Edit Mode box `CodexNameplateSizer` (wheel = width,
+  Shift + wheel = height, Shift + right-click = reset), pickers in the Nameplates section; `TylesserCodex.SetNameplateSize`,
+  `RefreshPlateSize`. The nameplate test's mock allows those two containers (`movable` / `sizable`).
+- Unit frame width / height (2026-11-22, the user's screenshot of the Player mover: "still no width or height
+  option"): `CodexDB.skins.frameShape[unit] = { w, h }` (party = "party"), Shift + wheel / Ctrl + wheel on the mover,
+  Shift + right-click resets size, width and height. `SizedSpec(f)` (a copy over the spec) feeds Layout and
+  Geometry: dx more bar width; a right-side portrait moves dx with it through `f.origin` (every portrait piece is
+  anchored to it, never to the button); height = `barScale` on the bars (party step grows by `partyExtra`).
+  `S.SetUnitFrameShape`, `S.UnitFrameShape`; Profiles skip `skins.frameShape`.
+- Action button cooldowns (Skins/ActionBars.lua ActionSlot): `cooldown` / `lossOfControlCooldown` / `chargeCooldown`
+  SetAllPoints(icon); Forever's template insets them 3 px (2 for charges), which left the swipe short of the slot.
+- Never use a game global as a fallback colour (`HOSTILE or {...}`: HOSTILE is the string "Hostile"); the nameplate
+  test's mock SetColorTexture is strict now.
+- Unit frame bar gradient (`CodexDB.skins.barGradient` "horizontal" / nil): `Paint` reads it; `TylesserCodex.RepaintBars`.
+- Bags in combat (2026-11-22, the user's "bags is not opening in combat"): a fight only refills placed buttons, so
+  `B.PrepareForCombat` lays out the closed window at PLAYER_REGEN_DISABLED (still out of lockdown) and 3 s after the
+  window is made. Test at the end of `codex_bags_test`.
+- Proc glow `artOnly` (Clearcasting: art and sound, no button glow); Heating Up 400625 at 3 stacks lights Pyroblast
+  (notIDs 400624 passive, 460878 boss aura), art `heating_up`.
+- Hover-bind cover: the union of the button, its icon and every drawn region of it and its children up to 1.4x its
+  size (a restyle's ring sits outside the button).
 - Loot roll glyphs (Skins/LootRoll.lua) keep the game's colours (2026-11-22, the user's request); only a disabled
   button greys and dims its glyph.
 - `Modules/Rings` (default off; standalone = `OPie`, whose code and art were not used): OPie-style ring menus. Data.lua

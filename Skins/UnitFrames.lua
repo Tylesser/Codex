@@ -51,9 +51,10 @@ function ns.FrameStyle()
   return STYLES[style] and style or "compact"
 end
 
+local partyExtra = 0 -- the party frames' extra height (their saved height, Layout)
 local function PartyStep()
   local style = ns.FrameStyle()
-  return style == "compact" and PARTY_STEP_COMPACT or style == "bars" and PARTY_STEP_BARS or PARTY_STEP
+  return (style == "compact" and PARTY_STEP_COMPACT or style == "bars" and PARTY_STEP_BARS or PARTY_STEP) + partyExtra
 end
 local DEAD_NAME, DEAD_TEXT = { 0.6, 0.6, 0.6 }, { 0.78, 0.78, 0.78 } -- R2-Frames: a dead / offline member
 local REST = { 1, 0.82, 0 } -- the "zZ" while resting
@@ -339,7 +340,10 @@ local function Paint(bar, colors)
   bar:SetStatusBarColor(top[1], top[2], top[3])
   local texture = bar.GetStatusBarTexture and bar:GetStatusBarTexture()
   if S.IsRegion(texture) and texture.SetGradient and CreateColor then
-    pcall(texture.SetGradient, texture, "VERTICAL", CreateColor(bottom[1], bottom[2], bottom[3], 1),
+    -- dark at the bottom (or the left, with "Left to right": CodexDB.skins.barGradient), light at the top (right)
+    local skins = type(CodexDB) == "table" and type(CodexDB.skins) == "table" and CodexDB.skins
+    local direction = skins and skins.barGradient == "horizontal" and "HORIZONTAL" or "VERTICAL"
+    pcall(texture.SetGradient, texture, direction, CreateColor(bottom[1], bottom[2], bottom[3], 1),
       CreateColor(top[1], top[2], top[3], 1))
   end
 end
@@ -458,6 +462,29 @@ local function ScaleOf(unit)
   return math.max(SCALE_MIN, math.min(SCALE_MAX, value))
 end
 S.UnitFrameScale = ScaleOf
+
+-- Width and height apart from the size (2026-11-22, the user's "allow user to adjust just width or height", in Edit
+-- Mode: Shift + wheel = width, Ctrl + wheel = height): CodexDB.skins.frameShape[unit] = { w = 1.2, h = 0.9 } (party
+-- members share "party"). Width = the bars' length (the frame grows away from its portrait), height = the bars'
+-- thickness. Laid out by Layout through SizedSpec.
+local SHAPE_LIMITS = { w = { 0.6, 2 }, h = { 0.6, 2.5 } }
+local function ShapeKey(unit)
+  if type(unit) == "string" and unit:find("^party%d") then
+    return "party"
+  end
+  return unit
+end
+local function ShapeOf(unit)
+  local skins = type(CodexDB) == "table" and type(CodexDB.skins) == "table" and CodexDB.skins
+  local saved = skins and type(skins.frameShape) == "table" and skins.frameShape[ShapeKey(unit)]
+  local function Read(key)
+    local value = type(saved) == "table" and tonumber(saved[key])
+    local limits = SHAPE_LIMITS[key]
+    return value and math.max(limits[1], math.min(limits[2], value)) or 1
+  end
+  return Read("w"), Read("h")
+end
+S.UnitFrameShape = ShapeOf
 
 -- scale: the frame's own (its offsets are in its scale's units, the saved position in UIParent's)
 local function SetPosition(frame, pos, scale)
@@ -1254,8 +1281,8 @@ local function BuildPortrait(f, spec)
   holder:SetFrameLevel(button:GetFrameLevel() + 5)
   f.portraitLayer = holder
   f.ringParts = {}
-  f.ring = RingDiscs(holder, "BORDER", -8, size, RoundRings(spec.ring), "TOPLEFT", button, cx, cy, f.ringParts)
-  f.disc = Disc(holder, "ARTWORK", 0, size, DISC, "TOPLEFT", button, cx, cy)
+  f.ring = RingDiscs(holder, "BORDER", -8, size, RoundRings(spec.ring), "TOPLEFT", f.origin, cx, cy, f.ringParts)
+  f.disc = Disc(holder, "ARTWORK", 0, size, DISC, "TOPLEFT", f.origin, cx, cy)
   f.portrait = holder:CreateTexture(nil, "ARTWORK", nil, 1)
   f.portrait:SetSize(size, size)
   f.portrait:SetPoint("CENTER", f.disc, "CENTER", 0, 0)
@@ -1275,8 +1302,8 @@ local function BuildBadges(f, spec)
     local badge, bx, by = spec.badge[1], spec.badge[2], spec.badge[3]
     local cx, cy = bx + badge / 2, -(by + badge / 2)
     f.badgeParts = {}
-    RingDiscs(top, "ARTWORK", -8, badge, RoundRings("thin"), "TOPLEFT", button, cx, cy, f.badgeParts)
-    local disc = Disc(top, "ARTWORK", 0, badge, theme.hud.fill, "TOPLEFT", button, cx, cy)
+    RingDiscs(top, "ARTWORK", -8, badge, RoundRings("thin"), "TOPLEFT", f.origin, cx, cy, f.badgeParts)
+    local disc = Disc(top, "ARTWORK", 0, badge, theme.hud.fill, "TOPLEFT", f.origin, cx, cy)
     S.SetColor(disc, theme.hud.fill, 1)
     f.badgeParts[#f.badgeParts + 1] = { texture = disc }
     f.levelDisc, f.badgeSize = disc, badge
@@ -1292,7 +1319,7 @@ local function BuildBadges(f, spec)
   if spec.info then
     local mark = top:CreateTexture(nil, "OVERLAY", nil, 2)
     mark:SetSize(math.floor(size * 0.36 + 0.5), math.floor(size * 0.36 + 0.5))
-    mark:SetPoint("CENTER", button, "TOPLEFT", px + size / 2, -py + 2)
+    mark:SetPoint("CENTER", f.origin, "TOPLEFT", px + size / 2, -py + 2)
     mark:Hide()
     f.mark = mark
   end
@@ -1301,17 +1328,17 @@ local function BuildBadges(f, spec)
     local rest = top:CreateFontString(nil, "OVERLAY")
     BodyFont(rest, 14)
     rest:SetText("zZ")
-    rest:SetPoint("CENTER", button, "TOPLEFT", px + size * 0.86, -py - 2)
+    rest:SetPoint("CENTER", f.origin, "TOPLEFT", px + size * 0.86, -py - 2)
     TextColor(rest, REST)
     rest:Hide()
     local combat = top:CreateTexture(nil, "OVERLAY", nil, 2)
     combat:SetSize(20, 20)
-    combat:SetPoint("CENTER", button, "TOPLEFT", px + size * 0.86, -py - 4)
+    combat:SetPoint("CENTER", f.origin, "TOPLEFT", px + size * 0.86, -py - 4)
     pcall(combat.SetAtlas, combat, "UI-HUD-UnitFrame-Player-CombatIcon")
     combat:Hide()
     local leader = top:CreateTexture(nil, "OVERLAY", nil, 2)
     leader:SetSize(16, 16)
-    leader:SetPoint("CENTER", button, "TOPLEFT", px + size * 0.14, -py - 2)
+    leader:SetPoint("CENTER", f.origin, "TOPLEFT", px + size * 0.14, -py - 2)
     pcall(leader.SetAtlas, leader, "UI-HUD-UnitFrame-Player-Group-LeaderIcon")
     leader:Hide()
     f.rest, f.combat, f.leader = rest, combat, leader
@@ -1320,16 +1347,16 @@ local function BuildBadges(f, spec)
     -- party (R2-Frames): the leader crown on the portrait's top left, role top right, the raid mark on top
     local leader = top:CreateTexture(nil, "OVERLAY", nil, 2)
     leader:SetSize(16, 16)
-    leader:SetPoint("CENTER", button, "TOPLEFT", px + 12, -py)
+    leader:SetPoint("CENTER", f.origin, "TOPLEFT", px + 12, -py)
     pcall(leader.SetAtlas, leader, "UI-HUD-UnitFrame-Player-Group-LeaderIcon")
     leader:Hide()
     local role = top:CreateTexture(nil, "OVERLAY", nil, 2)
     role:SetSize(14, 14)
-    role:SetPoint("CENTER", button, "TOPLEFT", px + size - 8, -py - 4)
+    role:SetPoint("CENTER", f.origin, "TOPLEFT", px + size - 8, -py - 4)
     role:Hide()
     local mark = top:CreateTexture(nil, "OVERLAY", nil, 3)
     mark:SetSize(16, 16)
-    mark:SetPoint("CENTER", button, "TOPLEFT", px + size / 2, -py)
+    mark:SetPoint("CENTER", f.origin, "TOPLEFT", px + size / 2, -py)
     pcall(mark.SetTexture, mark, "Interface\\TargetingFrame\\UI-RaidTargetingIcons")
     mark:Hide()
     f.leader, f.role, f.raidIcon = leader, role, mark
@@ -1606,8 +1633,9 @@ local function Geometry(spec)
     textLeft, textRight = 4, clear
     visX, visW = x, width - clear + 4
   end
-  local power = spec.power and math.max(5, math.floor(size * COMPACT_POWER + 0.5)) or nil
-  local health = math.floor(size * (power and COMPACT_HEALTH or COMPACT_HEALTH + COMPACT_POWER) + 0.5)
+  local thick = spec.barScale or 1 -- (frame height, SizedSpec)
+  local power = spec.power and math.max(3, math.floor(size * COMPACT_POWER * thick + 0.5)) or nil
+  local health = math.floor(size * (power and COMPACT_HEALTH or COMPACT_HEALTH + COMPACT_POWER) * thick + 0.5)
   -- the power bar touches the health bar: it starts 1 px up, so its top line is the health bar's bottom line
   local block = health + (power and power - 1 or 0)
   local y = math.max(0, math.floor(py + size / 2 - block / 2 + 0.5))
@@ -1620,6 +1648,46 @@ end
 -- The portrait's pieces (rings, disc, picture, level badge) shown or not, and the icons round it kept where they
 -- were built (bars style: on the health bar's top edge instead).
 local ICON_KEYS = { "rest", "combat", "leader", "role", "raidIcon" }
+
+-- The frame's spec at its saved width and height (ShapeOf): a copy over the board's own (1 / 1: the board's).
+-- Width: dx more bar; with the portrait on the frame's right the portrait (and its pieces, on f.origin) moves dx
+-- out too. Height: the bars' thickness (barScale); the panel's backdrop and the frame grow with it.
+local function SizedSpec(f)
+  local base = f.spec
+  local wide, tall = ShapeOf(f.unit)
+  f.originX = 0
+  if wide == 1 and tall == 1 then
+    return base
+  end
+  local sized = setmetatable({}, { __index = base })
+  local dx = math.floor((wide - 1) * (Geometry(base).width or 0) + 0.5)
+  sized.w = base.w + dx
+  local p = base.portrait
+  local right = p and p[2] + p[1] / 2 >= base.w / 2
+  if right then
+    sized.portrait = { p[1], p[2] + dx, p[3] }
+    f.originX = dx
+  end
+  sized.back = { base.back[1], base.back[2], base.back[3] + dx, base.back[4] }
+  if base.cast then
+    sized.cast = { base.cast[1], base.cast[2], base.cast[3] + dx, base.cast[4] }
+  end
+  sized.barScale = tall
+  if tall ~= 1 then
+    local function Thick(value)
+      return value and math.max(3, math.floor(value * tall + 0.5)) or nil
+    end
+    sized.health, sized.power = Thick(base.health), Thick(base.power)
+    if base.bars then
+      local b = base.bars
+      sized.bars = { Thick(b[1]), Thick(b[2]), b[3], b[4], b[5] }
+    end
+    local extra = (sized.health or 0) - (base.health or 0) + (sized.power or 0) - (base.power or 0)
+    sized.h = base.h + extra
+    sized.back[4] = base.back[4] + extra
+  end
+  return sized
+end
 local function PortraitShown(f, shown)
   f.noPortrait = not shown
   f.portraitLayer:SetShown(shown)
@@ -1699,7 +1767,18 @@ local function PlaceBarText(text, top, size, inBar, right)
 end
 
 local function Layout(f)
-  local spec, button = f.spec, f.button
+  local button = f.button
+  local spec = SizedSpec(f)
+  if f.origin then
+    f.origin:ClearAllPoints()
+    f.origin:SetPoint("TOPLEFT", button, "TOPLEFT", f.originX or 0, 0)
+  end
+  if f.back and spec.back ~= f.spec.back or f.sizedBack then
+    -- the panel's backdrop at the sized width / height (and back to the board's)
+    f.back:SetSize(spec.back[3], spec.back[4])
+    f.backHeight = spec.back[4]
+    f.sizedBack = spec.back ~= f.spec.back or nil
+  end
   local g = Geometry(spec)
   local compact, bars, inBar = g.compact or false, g.bars or false, g.inBar or false
   f.nameInBar = inBar
@@ -1708,7 +1787,8 @@ local function Layout(f)
   f.plate:SetShown(not compact)
   PortraitShown(f, not bars)
   -- the clickable frame: the board's size, or (bars) just the bars and their small row
-  f.h = bars and g.bottom or spec.h
+  f.h = bars and g.bottom or (spec ~= f.spec and math.max(spec.h, g.bottom or 0) or spec.h)
+  f.w = spec.w
   button:SetSize(spec.w, f.h)
   local nameSize = g.nameSize or spec.nameSize
   f.nameSize = nameSize
@@ -1824,6 +1904,7 @@ local function Layout(f)
     pcall(container.UpdateAllAuras, container)
   end
   if spec.party then
+    partyExtra = math.max(0, f.h - f.spec.h)
     button:ClearAllPoints()
     button:SetPoint("TOPLEFT", partyHolder, "TOPLEFT", 0, -(spec.party - 1) * PartyStep())
   end
@@ -1833,6 +1914,11 @@ local function BuildFrame(spec)
   local theme = S.Theme()
   local button = CreateFrame("Button", "Codex" .. spec.name .. "Frame", UIParent, "SecureUnitButtonTemplate")
   local f = { unit = spec.unit, spec = spec, button = button, w = spec.w, h = spec.h }
+  -- the portrait's pieces hang on this point, not on the button: a wider frame moves it (with the portrait) when
+  -- the portrait sits on the frame's right (Layout, SizedSpec)
+  f.origin = CreateFrame("Frame", nil, button)
+  f.origin:SetSize(1, 1)
+  f.origin:SetPoint("TOPLEFT", button, "TOPLEFT", 0, 0)
   button:SetScale(ScaleOf(spec.unit))
   button:SetFrameStrata("LOW")
   button:SetFrameLevel(5) -- (the plate goes one under it, the badges above)
@@ -2152,8 +2238,13 @@ local function FitMover(f)
   mover:ClearAllPoints()
   mover:SetPoint("TOPLEFT", f.button, "TOPLEFT", 0, 0)
   if f.moverLabel then
-    f.moverLabel:SetText(math.abs(scale - 1) < 0.001 and f.spec.label
-      or ("%s  %d%%"):format(f.spec.label, math.floor(scale * 100 + 0.5)))
+    local wide, tall = ShapeOf(f.unit)
+    local text = math.abs(scale - 1) < 0.001 and f.spec.label
+      or ("%s  %d%%"):format(f.spec.label, math.floor(scale * 100 + 0.5))
+    if wide ~= 1 or tall ~= 1 then
+      text = ("%s  ·  %d%% x %d%%"):format(text, math.floor(wide * 100 + 0.5), math.floor(tall * 100 + 0.5))
+    end
+    f.moverLabel:SetText(text)
   end
 end
 
@@ -2201,6 +2292,53 @@ local function SetScale(f, value)
     FitMover(f)
   end
 end
+-- Sets a frame's width or height (key "w" / "h"; nil: back to the board's), in SCALE_STEP steps, and lays it out
+-- again (party: every member and the stack). Out of combat (Edit Mode).
+local function SetShape(f, key, value)
+  if S.InCombat() or type(CodexDB) ~= "table" then
+    return
+  end
+  CodexDB.skins = CodexDB.skins or {}
+  CodexDB.skins.frameShape = type(CodexDB.skins.frameShape) == "table" and CodexDB.skins.frameShape or {}
+  local unit = ShapeKey(f.unit)
+  local saved = CodexDB.skins.frameShape[unit] or {}
+  if value then
+    local limits = SHAPE_LIMITS[key]
+    value = math.floor(math.max(limits[1], math.min(limits[2], value)) / SCALE_STEP + 0.5) * SCALE_STEP
+    value = math.floor(value * 100 + 0.5) / 100 -- (1.2, not 1.2000000000000002)
+    if math.abs(value - 1) < 0.001 then
+      value = nil
+    end
+  end
+  saved[key] = value
+  CodexDB.skins.frameShape[unit] = next(saved) and saved or nil
+  if unit == "party" then
+    for index = 1, 4 do
+      local member = frames["party" .. index]
+      if member then
+        Layout(member)
+      end
+    end
+    if partyStack and frames.party1 then
+      partyStack.w = frames.party1.w
+      partyHolder:SetSize(partyStack.w, partyStack.h)
+    end
+  elseif frames[f.unit] then
+    Layout(frames[f.unit])
+  end
+  ApplyScale(f)
+  if f.mover then
+    FitMover(f)
+  end
+end
+S.SetUnitFrameShape = function(unit, key, value)
+  for _, f in ipairs(placeables) do
+    if f.unit == unit then
+      SetShape(f, key, value)
+    end
+  end
+end
+
 S.SetUnitFrameScale = function(unit, value)
   for _, f in ipairs(placeables) do
     if f.unit == unit then
@@ -2240,15 +2378,28 @@ local function BuildMover(f)
   -- the mouse wheel sizes the frame (Shift + right-click: 100 % again)
   mover:EnableMouseWheel(true)
   mover:SetScript("OnMouseWheel", Safe(function(_, delta)
-    if not S.InCombat() then
-      SetScale(f, ScaleOf(f.unit) + (delta > 0 and SCALE_STEP or -SCALE_STEP))
+    if S.InCombat() then
+      return
+    end
+    local step = delta > 0 and SCALE_STEP or -SCALE_STEP
+    local wide, tall = ShapeOf(f.unit)
+    if IsShiftKeyDown and IsShiftKeyDown() then
+      SetShape(f, "w", wide + step) -- just the width
+    elseif IsControlKeyDown and IsControlKeyDown() then
+      SetShape(f, "h", tall + step) -- just the height
+    else
+      SetScale(f, ScaleOf(f.unit) + step)
     end
   end))
   mover:SetScript("OnEnter", Safe(function(self)
     GameTooltip:SetOwner(self, "ANCHOR_TOP")
     GameTooltip:AddLine(f.spec.label)
+    local wide, tall = ShapeOf(f.unit)
     GameTooltip:AddLine("Drag to move. Mouse wheel: size (" .. math.floor(ScaleOf(f.unit) * 100 + 0.5) .. "%).", 1, 1, 1, true)
-    GameTooltip:AddLine("Right-click: back to its place. Shift + right-click: back to 100 %.", 0.7, 0.7, 0.7, true)
+    GameTooltip:AddLine(("Shift + wheel: width (%d%%). Ctrl + wheel: height (%d%%)."):format(
+      math.floor(wide * 100 + 0.5), math.floor(tall * 100 + 0.5)), 1, 1, 1, true)
+    GameTooltip:AddLine("Right-click: back to its place. Shift + right-click: size, width and height back to 100 %.",
+      0.7, 0.7, 0.7, true)
     GameTooltip:Show()
   end))
   mover:SetScript("OnLeave", Safe(function()
@@ -2267,6 +2418,8 @@ local function BuildMover(f)
     if button == "RightButton" then
       if IsShiftKeyDown and IsShiftKeyDown() then
         SetScale(f, nil)
+        SetShape(f, "w", nil)
+        SetShape(f, "h", nil)
       else
         ResetPosition(f)
       end
@@ -2574,6 +2727,18 @@ TylesserCodex.RefreshNames = function()
 end
 
 -- Settings changed the frame style (CodexDB.skins.frameStyle): every frame laid out again, out of combat.
+-- Every frame's health and power painted again (the gradient direction changed: the colours are cached per frame).
+TylesserCodex.RepaintBars = function()
+  for _, f in pairs(frames) do
+    if f.health and f.healthColors then
+      Paint(f.health, f.healthColors)
+    end
+    if f.power and f.powerColors then
+      Paint(f.power, f.powerColors)
+    end
+  end
+end
+
 TylesserCodex.RefreshFrameStyle = function()
   S.Defer("unitframes:style", function()
     for _, f in pairs(frames) do

@@ -48,19 +48,27 @@ P.REACTIVE = {
 }
 
 -- Buff procs: while the buff is on you, these spells glow (class = only for that class; stacks = only from that many
--- stacks of the buff; notActive = not a spell whose own buff is on you).
+-- stacks of the buff; notActive = not a spell whose own buff is on you; artOnly = the art beside you and the sound,
+-- no glow on the buttons: Clearcasting, the user's request 2026-11-22).
 P.AURAS = {
   { name = "Shadow Trance", ids = { 17941 }, spells = { "Shadow Bolt" },
     spellIDs = { 686, 695, 705, 1088, 1106, 7641, 11659, 11660, 11661, 25307 } },
-  { name = "Clearcasting", ids = { 12536 }, class = "MAGE",
+  { name = "Clearcasting", ids = { 12536 }, class = "MAGE", artOnly = true,
     spells = { "Arcane Missiles", "Arcane Explosion", "Blizzard", "Flamestrike" } },
-  { name = "Clearcasting", ids = { 16870 }, class = "DRUID",
+  { name = "Clearcasting", ids = { 16870 }, class = "DRUID", artOnly = true,
     spells = { "Shred", "Maul", "Healing Touch", "Regrowth" } },
-  { name = "Clearcasting", ids = { 16246 }, class = "SHAMAN",
+  { name = "Clearcasting", ids = { 16246 }, class = "SHAMAN", artOnly = true,
     spells = { "Lightning Bolt", "Chain Lightning", "Chain Heal" } },
   -- Missile Barrage (the user's request, 2026-11-22): the buff makes the next Arcane Missiles faster. Forever's own
   -- buff 1326083 and the older Season of Discovery ones (wago.tools wowf SpellName / SpellEffect); notIDs: the talent
   -- and rune themselves (400588 the passive, 401736 the rune), also named "Missile Barrage", never light it.
+  -- Heating Up (the user's request, 2026-11-22): Forever's buff 400625 (wago.tools wowf build 1.60.1.71037: stacks
+  -- up to 3, each cutting the next Pyroblast's cast time) lights Pyroblast at 3 stacks. notIDs: 400624 is the
+  -- talent's passive of that name, 460878 a boss aura (Molten Core). A count hidden in combat comes from the
+  -- cooldown manager when the buff is tracked there (secretStacks), as for the paladin echoes.
+  { name = "Heating Up", ids = { 400625 }, notIDs = { [400624] = true, [460878] = true }, class = "MAGE",
+    stacks = 3, secretStacks = true, spells = { "Pyroblast" },
+    spellIDs = { 11366, 12505, 12522, 12523, 12524, 12525, 12526, 18809 } },
   { name = "Missile Barrage", ids = { 1326083, 400589, 467409 }, notIDs = { [400588] = true, [401736] = true },
     class = "MAGE", spells = { "Arcane Missiles" },
     spellIDs = { 5143, 5144, 5145, 8416, 8417, 10211, 10212, 25345 } },
@@ -1502,7 +1510,7 @@ function P.Lit(item, auras)
     if auras[aura] then
       local own = aura.notActive and auras.names and Lower(SpellName(item.id) or entry.key)
       if not (own and auras.names[own]) then
-        return true, aura.name
+        return true, aura.name, aura.artOnly
       end
     end
   end
@@ -1518,9 +1526,11 @@ function P.Update()
   local lit, shown, order = {}, {}, {}
   local ready, artOrder, wake = {}, {}, nil
   for _, item in ipairs(P.watch) do
-    local ok, on, key = pcall(P.Lit, item, auras)
+    local ok, on, key, artOnly = pcall(P.Lit, item, auras)
     if ok and on then
-      shown[item.button] = true
+      if not artOnly then
+        shown[item.button] = true -- (an art-only proc lights no button: Clearcasting)
+      end
       key = key or item.entry.key
       if not lit[key] then
         lit[key] = true
@@ -1992,9 +2002,8 @@ Q.AddToggle({
   name = "Glow on proc abilities",
   desc = "Action buttons glow while a reactive ability can be used: Overpower, Revenge, Execute, Riposte, "
     .. "Counterattack, Mongoose Bite, Hammer of Wrath (and Victory Rush where the game has it). Also Shadow Bolt "
-    .. "with Shadow Trance (Nightfall), and with Clearcasting: Arcane Missiles, Arcane Explosion, Blizzard and "
-    .. "Flamestrike (mage), Shred, Maul, Healing Touch and Regrowth (druid), Lightning Bolt, Chain Lightning and "
-    .. "Chain Heal (shaman), and with Missile Barrage: Arcane Missiles (mage). What the game already lights itself "
+    .. "with Shadow Trance (Nightfall), Arcane Missiles with Missile Barrage and Pyroblast at 3 stacks of Heating Up "
+    .. "(mage). Clearcasting shows only its art beside you, no glow on the buttons. What the game already lights itself "
     .. "keeps the game's glow. With the art on, the "
     .. "game's proc art shows on both sides of your character too (two swords for Blade of Justice).",
   order = 50,

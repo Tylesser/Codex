@@ -109,6 +109,14 @@ function ns.FrameStyle()
 end
 ns.API.FrameStyle = ns.FrameStyle
 
+-- The way unit frame bars shade (CodexDB.skins.barGradient: nil = top to bottom, "horizontal" = left to right;
+-- 2026-11-22, after the user's "make unit frame colours gradient").
+ns.BAR_GRADIENTS = { { key = "vertical", name = "Top to bottom" }, { key = "horizontal", name = "Left to right" } }
+function ns.BarGradient()
+  local skins = ns.db and ns.db.skins
+  return skins and skins.barGradient == "horizontal" and "horizontal" or "vertical"
+end
+
 -- Where a unit frame's auras go (CodexDB.skins.auraPos[unit]: "target", "focus", "party"; nil = below; 2026-11-22).
 ns.AURA_PLACES = {
   { key = "below", name = "Below the frame" },

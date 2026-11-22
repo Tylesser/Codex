@@ -778,6 +778,43 @@ local function PlaceMark(state, unitFrame)
   end
 end
 
+-- Width and height of the bars (2026-11-22, the user's "in edit mode allow user to adjust just width or height"):
+-- CodexDB.skins.plateWidth / plateHeight, fractions of the game's own (nil = 1). Forever has no Edit Mode system
+-- for nameplates and only one size slider (CVar nameplateSize); C_NamePlate.SetNamePlateSize is restricted and
+-- NamePlateSetupOptions is Blizzard's table (writing it would taint every plate). So the size is applied here,
+-- after Blizzard's own layout (NamePlateUnitFrameMixin's anchoring: the cast bar container from the plate's
+-- insetWidth, the health container above it at healthBarHeight): both containers get a centred width, the health
+-- container a height. The click area stays the game's.
+local PLATE_LIMITS = { width = { 0.5, 1.6 }, height = { 0.5, 2.5 } }
+local function PlateSize(key)
+  local skins = type(CodexDB) == "table" and type(CodexDB.skins) == "table" and CodexDB.skins
+  local value = skins and tonumber(skins[key == "width" and "plateWidth" or "plateHeight"])
+  local limits = PLATE_LIMITS[key]
+  return value and math.max(limits[1], math.min(limits[2], value)) or 1
+end
+TylesserCodex.NameplateSize = PlateSize
+TylesserCodex.NAMEPLATE_SIZE_LIMITS = PLATE_LIMITS
+
+local function SizeBars(state, unitFrame, container, casts)
+  local width, height = PlateSize("width"), PlateSize("height")
+  if width == 1 and height == 1 and not state.sized then
+    return -- Blizzard's own sizes, untouched
+  end
+  state.sized = not (width == 1 and height == 1) or nil
+  local inset = SetupSize("insetWidth") or 12
+  local ok, plateWidth = Call(unitFrame, "GetWidth")
+  plateWidth = ok and Number(plateWidth)
+  if plateWidth and S.Usable(casts) then
+    local extra = (1 - width) * math.max(0, plateWidth - 2 * inset) / 2
+    Anchored(casts, { "BOTTOMLEFT", unitFrame, "BOTTOMLEFT", inset + extra, 0 },
+      { "BOTTOMRIGHT", unitFrame, "BOTTOMRIGHT", -inset - extra, 0 })
+  end
+  local base = SetupSize("healthBarHeight")
+  if base then
+    Call(container, "SetHeight", math.max(2, math.floor(base * height + 0.5)))
+  end
+end
+
 -- After Blizzard's layout: the board's arrangement. Nothing when the unit frame is protected or shows only
 -- its name (Blizzard's own name-only layout stays).
 local function Layout(state, unitFrame)
@@ -790,6 +827,7 @@ local function Layout(state, unitFrame)
   if not S.Usable(container) or not S.Usable(bar) then
     return
   end
+  SizeBars(state, unitFrame, container, casts)
   -- the bar to the plate's right end (Forever stops it short of the level box, which moves to the left)
   if S.Usable(casts) then
     Place(container, "BOTTOMRIGHT", casts, "TOPRIGHT", 0, SetupSize("castBarToHealthBarSpacing") or 2)
@@ -823,6 +861,17 @@ local function Layout(state, unitFrame)
     Anchored(raid, { "BOTTOM", name, "TOP", 0, 2 })
   end
   PlaceMark(state, unitFrame)
+end
+
+-- The width or height changed (Settings, the Edit Mode box): every plate laid out again.
+TylesserCodex.RefreshPlateSize = function()
+  S.Run(part, function()
+    for unitFrame, state in pairs(plates) do
+      if S.Usable(unitFrame) then
+        Layout(state, unitFrame)
+      end
+    end
+  end)
 end
 
 -- Health text -------------------------------------------------------------------------------------------
@@ -1203,6 +1252,108 @@ local function RefreshText()
   end)
 end
 
+-- Edit Mode: a sample plate to size them (the nameplates have no Edit Mode system of their own on Forever).
+-- Mouse wheel = width, Shift + mouse wheel = height, Shift + right-click = the game's size again.
+local sizer
+local SIZE_STEP = 0.05
+
+local function SetPlateSize(key, value)
+  CodexDB.skins = CodexDB.skins or {}
+  local field = key == "width" and "plateWidth" or "plateHeight"
+  if value then
+    local limits = PLATE_LIMITS[key]
+    value = math.floor(math.max(limits[1], math.min(limits[2], value)) / SIZE_STEP + 0.5) * SIZE_STEP
+  end
+  CodexDB.skins[field] = (value and math.abs(value - 1) > 0.001) and value or nil
+  TylesserCodex.RefreshPlateSize()
+  if sizer then
+    sizer.Fit()
+  end
+end
+TylesserCodex.SetNameplateSize = SetPlateSize
+
+local function SizerText()
+  return ("Nameplates  ·  width %d%%  ·  height %d%%"):format(math.floor(PlateSize("width") * 100 + 0.5),
+    math.floor(PlateSize("height") * 100 + 0.5))
+end
+
+local function BuildSizer()
+  local theme = S.Theme()
+  sizer = CreateFrame("Frame", "CodexNameplateSizer", UIParent)
+  sizer:SetFrameStrata("DIALOG")
+  sizer:SetPoint("CENTER", UIParent, "CENTER", 0, 220)
+  sizer:SetSize(300, 60)
+  sizer:EnableMouse(true)
+  sizer:EnableMouseWheel(true)
+  local back = sizer:CreateTexture(nil, "BACKGROUND")
+  back:SetAllPoints(sizer)
+  S.SetColor(back, theme.accent, 0.18)
+  local label = sizer:CreateFontString(nil, "OVERLAY")
+  label:SetFont(NUMBER_FONT, 12, "OUTLINE")
+  label:SetPoint("TOP", sizer, "TOP", 0, -6)
+  local bar = sizer:CreateTexture(nil, "ARTWORK")
+  S.SetColor(bar, { 0.75, 0.25, 0.2 }, 1) -- (never a global name here: HOSTILE is the game's text "Hostile")
+  local line = sizer:CreateTexture(nil, "OVERLAY")
+  S.SetColor(line, theme.accent, 1)
+  line:SetPoint("TOPLEFT", bar, "BOTTOMLEFT", 0, 0)
+  line:SetPoint("TOPRIGHT", bar, "BOTTOMRIGHT", 0, 0)
+  line:SetHeight(1)
+  function sizer.Fit()
+    local width = 150 * PlateSize("width")
+    local height = math.max(2, (SetupSize("healthBarHeight") or 10) * PlateSize("height"))
+    bar:ClearAllPoints()
+    bar:SetPoint("TOP", label, "BOTTOM", 0, -8)
+    bar:SetSize(width, height)
+    sizer:SetSize(math.max(300, width + 40), height + 44)
+    label:SetText(SizerText())
+  end
+  sizer:SetScript("OnMouseWheel", function(_, delta)
+    S.Run(part, function()
+      local key = (IsShiftKeyDown and IsShiftKeyDown()) and "height" or "width"
+      SetPlateSize(key, PlateSize(key) + (delta > 0 and SIZE_STEP or -SIZE_STEP))
+    end)
+  end)
+  sizer:SetScript("OnMouseUp", function(_, button)
+    if button == "RightButton" and IsShiftKeyDown and IsShiftKeyDown() then
+      S.Run(part, function()
+        SetPlateSize("width", nil)
+        SetPlateSize("height", nil)
+      end)
+    end
+  end)
+  sizer:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_TOP")
+    GameTooltip:AddLine("Nameplates")
+    GameTooltip:AddLine("Mouse wheel: width. Shift + mouse wheel: height.", 1, 1, 1, true)
+    GameTooltip:AddLine("Shift + right-click: the game's size again. The game's Nameplate Size option "
+      .. "(Options > Nameplates) still scales them all.", 0.7, 0.7, 0.7, true)
+    GameTooltip:Show()
+  end)
+  sizer:SetScript("OnLeave", function()
+    GameTooltip:Hide()
+  end)
+  sizer:Hide()
+end
+
+local function HookPlateEditMode()
+  local manager = S.Get("EditModeManagerFrame")
+  if not S.Usable(manager) or not S.Once(manager, "nameplates") then
+    return
+  end
+  S.HookScript(manager, "OnShow", function()
+    if not sizer then
+      BuildSizer()
+    end
+    sizer.Fit()
+    sizer:Show()
+  end)
+  S.HookScript(manager, "OnHide", function()
+    if sizer then
+      sizer:Hide()
+    end
+  end)
+end
+
 S.Part("nameplates", function()
   -- a flag only (no part of its own): switching it needs a reload
   round = TylesserCodex.SkinPartOn("roundicons") and true or false
@@ -1245,4 +1396,9 @@ S.Part("nameplates", function()
   AllPlates(function(plate)
     StylePlate(plate, false)
   end)
+  if S.Get("EditModeManagerFrame") then
+    HookPlateEditMode()
+  else
+    S.OnAddOn("Blizzard_EditMode", HookPlateEditMode)
+  end
 end)
