@@ -20,6 +20,9 @@ local R = ns.rings
 --                (Display.lua), free to change in combat.
 -- Secure frames are only made, moved and given attributes out of combat; anything asked for in combat waits for
 -- PLAYER_REGEN_ENABLED.
+-- Rings inside rings (2026-11-22): a slice with the attribute "subring" (kind "ring") does nothing itself; choosing
+-- it (releasing the key over it, or clicking it) hides this ring and opens that one at the cursor, Escape-bound, as
+-- OPEN. A ring used inside an enabled ring is built and may open even without a key of its own (`nested`).
 
 local BUTTON = "CodexRingButton"
 R.BUTTON = BUTTON
@@ -102,13 +105,44 @@ if not pick then
   return false
 end
 local slice = ring:GetFrameRef("slice" .. pick)
+local sub = slice and slice:GetAttribute("subring")
+if sub then
+  local inner = owner:GetFrameRef("ring" .. sub)
+  if inner and (inner:GetAttribute("count") or 0) > 0 then
+    inner:ClearAllPoints()
+    inner:SetPoint("CENTER", "$cursor")
+    inner:Show()
+    inner:SetBindingClick(true, "ESCAPE", "]] .. BUTTON .. [[", "close")
+    OPEN = sub
+  end
+  return false
+end
 if not slice or not slice:GetAttribute("type") then
   return false
 end
 ]] .. table.concat(COPY, "\n") .. "\n"
 
--- A slice clicked with the mouse: its own secure click acts, then the ring closes.
+-- A slice clicked with the mouse: its own secure click acts, then the ring closes. A ring slice instead closes
+-- this ring and opens its ring at the cursor (rings inside rings: choose there with a click, or Escape).
 R.SLICE_PRE = [[
+local sub = self:GetAttribute("subring")
+if sub then
+  local ring = self:GetParent()
+  if ring then
+    ring:Hide()
+    ring:ClearBindings()
+  end
+  OPEN = nil
+  local inner = owner:GetFrameRef("ring" .. sub)
+  if inner and (inner:GetAttribute("count") or 0) > 0 then
+    inner:ClearAllPoints()
+    inner:SetPoint("CENTER", "$cursor")
+    inner:Show()
+    inner:SetBindingClick(true, "ESCAPE", "]] .. BUTTON .. [[", "close")
+    OPEN = sub
+  end
+  return false
+end
 return nil, "used"
 ]]
 R.SLICE_POST = [[
@@ -206,7 +240,7 @@ function R.Layout(id)
   end
   local db = R.DB()
   local count = #infos
-  entry.ring:SetAttribute("count", (ring and ring.enabled ~= false or entry.preview) and count or 0)
+  entry.ring:SetAttribute("count", (ring and (ring.enabled ~= false or entry.nested) or entry.preview) and count or 0)
   entry.ring:SetAttribute("deadzone", R.DeadZone())
   entry.ring:SetAttribute("outer", R.OuterLimit())
   for index, button in ipairs(entry.slices) do
@@ -270,10 +304,24 @@ function R.Sync()
     return false
   end
   local alive = {}
+  -- rings inside enabled rings are built and may open too, with or without a key of their own
+  local nested = {}
+  for _, ring in ipairs(R.Rings()) do
+    if ring.enabled then
+      for _, slice in ipairs(R.Slices(ring)) do
+        if slice.kind == "ring" then
+          nested[tostring(slice.id)] = true
+        end
+      end
+    end
+  end
   for _, ring in ipairs(R.Rings()) do
     alive[ring.id] = true
-    if ring.enabled then
+    if ring.enabled or nested[tostring(ring.id)] then
       BuildRing(ring.id)
+    end
+    if R.frames[ring.id] then
+      R.frames[ring.id].nested = nested[tostring(ring.id)] or nil
     end
     if R.frames[ring.id] then
       R.Layout(ring.id)

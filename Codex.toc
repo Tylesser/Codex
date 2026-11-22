@@ -25,6 +25,8 @@ Settings.lua
 SettingsUI.lua
 Profiles.lua
 Setup.lua
+WhatsNewData.lua
+WhatsNew.lua
 Minimap.lua
 Modules\Auction\Auction.xml
 Modules\Buffs\Buffs.xml

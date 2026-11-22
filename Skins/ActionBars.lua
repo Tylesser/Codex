@@ -569,6 +569,11 @@ end
 -- the picture Blizzard picks (experience purple, rested blue, honor, the faction's colour); the rested part
 -- ahead of the fill a lighter see-through blue. Blizzard's text (shown on hover) in white Arial. These bars are
 -- not secure; nothing of theirs is moved or sized, and the look is set again after Blizzard changes it.
+-- Codex's bar design (2026-11-22, the user's request "add our designs to rep and exp bars", as the unit frames and
+-- Personal bars draw theirs): the fill a vertical gradient (the colour at the top, 60 % of it at the bottom), the
+-- rested part the same in see-through blue; a rounded theme (round.bar: Dusk, Dawn) rounds the fill and the track
+-- and draws no rings; the rested-level marker (ExhaustionTick, Blizzard's pip picture) becomes a thin upright line
+-- in the theme's accent.
 local FLAT = "Interface\\Buttons\\WHITE8X8"
 local TRACK_ALPHA = 0.85
 local FILL_COLORS = { -- by a word in the picture's atlas name, first match wins (muted: the bright ones glared)
@@ -598,6 +603,20 @@ local function FactionColor()
   end
 end
 
+-- A texture in the design's vertical gradient of `color` (alpha a): 60 % at the bottom, the colour at the top.
+local function Gradient(texture, color, a)
+  a = a or 1
+  if texture.SetGradient and CreateColor then
+    texture:SetVertexColor(1, 1, 1, a)
+    local ok = pcall(texture.SetGradient, texture, "VERTICAL",
+      CreateColor(color[1] * 0.6, color[2] * 0.6, color[3] * 0.6, a), CreateColor(color[1], color[2], color[3], a))
+    if ok then
+      return
+    end
+  end
+  texture:SetVertexColor(color[1], color[2], color[3], a)
+end
+
 local function HoldColor(status)
   local want = fillColor[status]
   if want == "faction" then
@@ -605,7 +624,7 @@ local function HoldColor(status)
   end
   local texture = Ask(status, "GetStatusBarTexture")
   if type(want) == "table" and S.IsRegion(texture) then
-    texture:SetVertexColor(want[1], want[2], want[3], 1)
+    Gradient(texture, want)
   end
 end
 
@@ -652,7 +671,42 @@ end
 local function Exhaustion(texture)
   if S.IsRegion(texture) and texture.SetTexture then
     texture:SetTexture(FLAT)
-    texture:SetVertexColor(RESTED[1], RESTED[2], RESTED[3], RESTED[4])
+    Gradient(texture, RESTED, RESTED[4])
+  end
+end
+
+-- The rested-level marker (ExhaustionTick, a button with Blizzard's pip pictures): a thin upright line in the
+-- theme's accent, a little taller than the bar; brighter on hover. Its place, size and tooltip stay Blizzard's.
+local function TickLine(texture, alpha)
+  if not S.IsRegion(texture) then
+    return
+  end
+  local accent = S.Theme().accent
+  texture:SetTexture(FLAT)
+  texture:ClearAllPoints()
+  texture:SetPoint("TOP", texture:GetParent(), "TOP", 0, 0)
+  texture:SetPoint("BOTTOM", texture:GetParent(), "BOTTOM", 0, 0)
+  texture:SetWidth(2)
+  texture:SetVertexColor(accent[1], accent[2], accent[3], alpha)
+end
+
+local function RestedTick(tick)
+  if not S.Usable(tick) then
+    return
+  end
+  local normal = S.Region(tick, "Normal") or Ask(tick, "GetNormalTexture")
+  local highlight = S.Region(tick, "Highlight") or Ask(tick, "GetHighlightTexture")
+  TickLine(normal, 0.9)
+  TickLine(highlight, 1)
+  if S.Once(tick, "tickLine") then
+    -- Blizzard sets the pip again (atlas) when it updates the marker
+    for _, region in ipairs({ normal, highlight }) do
+      if S.IsRegion(region) then
+        S.HookMethod(region, "SetAtlas", function(texture)
+          TickLine(texture, texture == highlight and 1 or 0.9)
+        end)
+      end
+    end
   end
 end
 
@@ -860,9 +914,17 @@ local function TrackingBar(bar)
   for _, line in ipairs(plate.lines) do
     trackOurs[line] = true
   end
+  local rested = S.Child(status, "ExhaustionLevelFillBar") or S.Child(bar, "ExhaustionLevelFillBar")
+  -- a rounded theme: fill, rested part and track cut round, no rings (the boards: a dark see-through track)
+  local mask = S.RoundBar(status, { plate.fill, S.IsRegion(rested) and rested or nil })
+  if mask then
+    for _, line in ipairs(plate.lines) do
+      line:SetAlpha(0)
+    end
+  end
   BarText(bar, status)
   FlatFill(status)
-  local rested = S.Child(status, "ExhaustionLevelFillBar") or S.Child(bar, "ExhaustionLevelFillBar")
+  RestedTick(S.Child(bar, "ExhaustionTick") or S.Child(status, "ExhaustionTick"))
   Exhaustion(rested)
   S.HookMethod(rested, "SetAtlas", Exhaustion)
   S.HookMethod(rested, "SetTexture", function(texture, file)
@@ -883,6 +945,7 @@ local function TrackingBar(bar)
   local function Again()
     BarArt(bar)
     HoldColor(status)
+    RestedTick(S.Child(bar, "ExhaustionTick") or S.Child(status, "ExhaustionTick"))
     ShowText(status)
   end
   -- ticks laid out (again) by Blizzard, on the bar or a tick frame of its own

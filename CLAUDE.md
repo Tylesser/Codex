@@ -34,7 +34,8 @@ fitted to its shown buttons; Action bars > Look has the Edit Mode guide and the 
 
 `.pkgmeta` moves the subfolders out to their own addon folders in the release zip. For testing in game each
 subfolder has its own junction in `_forever_/Interface/AddOns` (`Codex_Runestone` -> `Codex/Themes/Runestone`, ...; created 2026-11-17;
-`Codex_Dusk` added 2026-11-19, the user creates them: `New-Item -ItemType Junction -Path "C:\Program Files (x86)\World of Warcraft\_forever_\Interface\AddOns\Codex_Dusk" -Target "E:\Games\Wow\Addons\Codex\Themes\Dusk"`; the old `Codex_Dawn` junction can be deleted).
+`Codex_Dusk` added 2026-11-19, `Codex_Obsidian` and `Codex_Onyx` 2026-11-22 (Dusk's structure in near-black, from the
+preview artifact https://claude.ai/artifact/XiQ6Ax18bUzvJk5Krzxkb5; Inter from Codex_Dusk/Media), the user creates them: `New-Item -ItemType Junction -Path "C:\Program Files (x86)\World of Warcraft\_forever_\Interface\AddOns\Codex_Dusk" -Target "E:\Games\Wow\Addons\Codex\Themes\Dusk"`; the old `Codex_Dawn` junction can be deleted).
 The user asked to be told whenever another part should get its own load-on-demand folder.
 
 ## Core files (load order = Codex.toc)
@@ -486,7 +487,38 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   UnitPowerPercent, secrets only through SetFormattedText; replaced the old `numbers` flag, 2026-11-18). `layout`
   under (default) / beside: health upright left, power right, druid mana outside it, `sideGap` 160 / `sideHeight`
   150 / `sideWidth` 10; texts outside the bar ends (druid's under its bottom), sparks climb; combo pips and timer
-  rows stay flat under them; own place `posBeside` (top centre). Test `codex_resource_test.lua`.
+  rows stay flat under them; own place `posBeside` (top centre). `arc` (2026-11-22): the beside places drawn as arcs
+  (`SetArc`: Media/Arc*.tga from `branding/source/arc_textures.py`, frame 4 x the band, `ArcX` puts sparks on the
+  curve; keep its constants in step with the script). Health in class colours with `ns.ClassHealth()` (the unit
+  frames' setting; SettingsUI calls `R.RefreshHealthColor`). `show` always / combat / notfull (2026-11-22: health,
+  power, druid mana each only while not at rest: full, or empty for rage / runic power. UnitHealth is always secret
+  on Forever (the first version compared it and never hid anything, the user's screenshot), so the row's alpha is
+  `UnitHealthPercent` / `UnitPowerPercent` with a Step curve (C_CurveUtil), handed straight to SetAlpha; `R.AtRest`
+  only without the curve API). Test `codex_resource_test.lua`.
+- Interface scale (Settings.lua, General section `uiscale`, 2026-11-22): `CodexDB.uiScale` nil = the game's own,
+  untouched; else 0.5-1.15. CVars `useUiScale` 1 + `uiScale` (the game's floor 0.64) and `UIParent:SetScale` below
+  that, again at PLAYER_ENTERING_WORLD / UI_SCALE_CHANGED / DISPLAY_SIZE_CHANGED; waits for PLAYER_REGEN_ENABLED in a
+  fight. `ns.SetUIScale`, `ns.UIScale`, `ns.PixelPerfectScale` (768 / physical height). Tested in `codex_test`.
+- What's new (WhatsNew.lua + generated WhatsNewData.lua, 2026-11-22): `python branding/source/whats_new.py .`
+  after every CHANGELOG change and **before each release tag** (codex_test fails when the data's first section
+  doesn't match CHANGELOG.md). `CodexDB.whatsNewSeen` (in Profiles' SKIP_TOP) = last version shown; at login + 4 s,
+  out of combat, once per version: not on a first install (setup), not in a dev copy (`@project-version@`), not with
+  `CodexDB.whatsNew == false`; lists every version newer than the seen one. `ns.WhatsNewDecision`,
+  `ns.WhatsNewFor`, `ns.CompareVersions`, `/codex whatsnew`, a check + button in General > Codex window.
+- Hide empty slots (Modules/QoL/HideEmpty.lua, `hideEmpty`, default off): alpha 0 on bar buttons without an action
+  (`C_ActionBar.HasAction`), back while the "showgrid" attribute has the EVENT / SPELLCOLLECTION reasons, the cursor
+  holds something, Edit Mode is open or hover-binding runs. A toggle's `Enable` runs at the module's start even
+  while it is off: check `Q.On(key)` there (hooking Edit Mode while off broke the buffs test's one-hook stand-in).
+- Personal bars cast cost (`castCost`, default on): a band of cost / max on the power fill's moving edge (anchored
+  to `GetStatusBarTexture()`, clipped by a frame), UNIT_SPELLCAST_START shows it, STOP / FAILED / INTERRUPTED /
+  SUCCEEDED hide it; cost from `C_Spell.GetSpellPowerCost` (not secret); not on the arc layout.
+- Grey out what you can't use (Modules/QoL/GreyOut.lua, `greyOut`, default off, Action bars > Buttons): post hooks on
+  each bar button's `UpdateUsable` and the global `ActionButton_UpdateRangeIndicator` (forever
+  Blizzard_ActionBar/Shared/ActionButton.lua); the key text gets `ACTIONBAR_HOTKEY_FONT_COLOR` back (the range dot
+  "●" keeps its red), the icon is desaturated and dimmed while out of range / no mana / unusable; secrets = usable.
+  Test in `codex_qol_extras_test`.
+- Loot roll glyphs (Skins/LootRoll.lua) keep the game's colours (2026-11-22, the user's request); only a disabled
+  button greys and dims its glyph.
 - `Modules/Rings` (default off; standalone = `OPie`, whose code and art were not used): OPie-style ring menus. Data.lua
   (`CodexDB.rings`: radius, iconSize, nextID, list of rings `{ id, name, enabled, key, auto, preset, slices }`; account
   wide, no per-character copies; slices `{ kind = spell/item/macro/mount/marker/toy/action, id }`; premade Mounts /
@@ -503,7 +535,10 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   Blizzard_RadialWheel's atlases scaled by radius / 80, names beside the icons by its quadrant rule, `R.LayoutPing` /
   `R.PingHover` / `R.PingPointer`; 4 slices use Radial_Wheel_Frame_Count_4 + _Select_Wedge_Count_4, other counts
   Line dividers + Media/Wedge<N>.tga) or "codex" (the disc with the name in the hub); a check on the Rings page), Page.lua (list, key capture with conflicts from
-  `GetBindingAction`, 12 slots: drop from cursor, right-click clear, drag to swap, click for markers/actions; preview;
+  `GetBindingAction`, 12 slots: drop from cursor, right-click clear, drag to swap, click opens the slot picker
+(Picker.lua, `CodexRingPicker`, 2026-11-22: `R.CHOICE_KINDS` spells / items / mounts / toys / macros / markers /
+actions / windows / rings, `R.Choices(kind, ring)`, search, a click = `R.SetSlice`); rings in rings: slice kind
+`ring` (attribute `subring`, the trigger snippet opens it at the cursor; a ring can't hold itself); preview;
   sizes; editing refused in combat). `/codex rings`, `/codex ring <name>` (out of combat). Test `codex_rings_test.lua`
   (runs the snippets in a stand-in restricted environment).
 - `Modules/Professions`: Profit Sort ported in (standalone = `ProfitSort`). Prices only from Codex: auction

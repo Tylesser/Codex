@@ -118,7 +118,10 @@ Home shows a card for each feature with what it is doing right now; click a card
   nearest first, and the others follow grouped by zone. Bind keys by hovering (Action bars > Buttons, or
   `/codex bind`): point at an action button and press a key to bind it, Escape clears it; Done saves, Cancel puts
   your old keys back. Numbers on cooldowns (off until you switch it on): the time left on every cooling-down
-  button and buff, in your theme's font with the restyle on. Learn all at trainers (Trade > Trainers): a Learn all
+  button and buff, in your theme's font with the restyle on. Grey out what you can't use (off until you switch it
+  on): buttons out of range, short of mana or not usable turn grey, and the key text keeps its colour instead of
+  turning red. Hide empty slots (off until you switch it on): empty action bar slots are hidden, and show again
+  while you drag a spell or item, in Edit Mode and while binding keys. Learn all at trainers (Trade > Trainers): a Learn all
   button on the class trainer's window learns every spell you can learn and afford, cheapest first; professions
   are left to you. `/codex qol`.
 - **Highlights** (off until you switch it on): a pulsing ring and the name on the herb, ore, chest or fishing pool
@@ -148,8 +151,9 @@ Home shows a card for each feature with what it is doing right now; click a card
 - **Rings** (off until you switch it on): hold a key and a ring of spells, items, macros, mounts or raid markers opens
   around your mouse; point at one and let go to use it, or click it. Works in combat. Ready-made rings for mounts,
   travel (Hearthstone, teleports and portals), professions (and herb and mineral tracking) and raid markers, filled
-  from what each character knows; make your own with up to 12 slices by dragging spells, items and macros onto the
-  ring's slots. Each ring gets its own key, and Codex tells you when the key is already used. Rings can only be
+  from what each character knows; make your own with up to 12 slices: click a slot to pick from a list (spells,
+  items, mounts, toys, macros, raid markers, actions, windows such as the character panel, or another ring, which
+  opens where you let go), with a search box, or drag spells, items and macros onto it. Each ring gets its own key, and Codex tells you when the key is already used. Rings can only be
   changed out of combat. Two looks: the game's ping wheel (the default) or a Codex disc. If OPie is installed, Codex
   leaves rings to it. `/codex rings`, `/codex ring <name>`.
 - **Info bars**: a bar along the top or bottom of the screen and a panel under the chat with what you want to keep an
@@ -159,8 +163,12 @@ Home shows a card for each feature with what it is doing right now; click a card
   or to pick a set for each talent group: switching talents puts it on). Right-click a slot to choose what it shows. The
   chat panel's corner buttons hide the chat and copy its recent lines. Moves the game's frames out of the bar's way.
 - **Personal bars** (off until you switch it on): health and power under your character, with the five-second
-  rule, the mana and energy tick, druid mana, combo points, your seal's time and swing timers; under the character
-  or upright beside it.
+  rule, the mana and energy tick, druid mana, combo points, your seal's time and swing timers; under the character,
+  upright beside it, or as arcs beside it; always, only in combat, or each bar only while it isn't full. With
+  "Health bars in class colours" the health bar takes your class colour. While you cast, the end of the power bar
+  darkens by what the spell will cost.
+- **What's new**: after an update, a window lists what changed since your version, once per version.
+  `/codex whatsnew` opens it again.
 
 If you still have one of the separate Tylesser addons installed, Codex leaves that feature to it, so nothing
 shows twice.
@@ -189,6 +197,8 @@ Action bars, the chat on Chat, and so on).
 - `/codex` opens the window; `/codex <module>` (for example `/codex rings`) opens the page and section of that
   feature; `/codex settings` opens General, `/codex profile` Profiles and `/codex setup` the first-run setup.
 - The minimap button: click to open, right-click for a quick menu, drag to move it.
+- Interface scale (General): the size of the whole game interface, from 50 % to 115 % (smaller than the game's own
+  64 % too), or Pixel perfect for your screen. "Game's own" hands it back to the game's setting.
 
 ## Feedback
 
@@ -200,7 +210,7 @@ No GitHub account? Join the [Tylesser Discord](https://discord.gg/n2rEB6mRxF) an
 
 Tag `vX.Y.Z` after moving the changes into a `## X.Y.Z` section of CHANGELOG.md. The packager builds one zip
 with `Codex` and its load-on-demand folders (`Codex_Runestone`, `Codex_Hearthwood`, `Codex_Classic`,
-`Codex_Slate`, `Codex_Dusk`, `Codex_Skins`).
+`Codex_Slate`, `Codex_Dusk`, `Codex_Obsidian`, `Codex_Onyx`, `Codex_Skins`).
 
 ## License
 

@@ -16,6 +16,7 @@ local BARS = {
   { key = "power", name = "Power (mana, rage or energy)" },
   { key = "fsr", name = "Five-second rule spark", indent = true },
   { key = "ticks", name = "Mana and energy ticks", indent = true },
+  { key = "castCost", name = "What the cast will spend", indent = true },
   { key = "druidMana", name = "Druid: mana while in a form" },
   { key = "combo", name = "Combo points (rogue, druid in cat form)" },
   { key = "seal", name = "Paladin: seal time left" },
@@ -25,7 +26,8 @@ local BARS = {
 }
 R.PAGE_BARS = BARS
 
-R.SHOW_MODES = { { key = "always", name = "Always" }, { key = "combat", name = "Only in combat" } }
+R.SHOW_MODES = { { key = "always", name = "Always" }, { key = "combat", name = "Only in combat" },
+  { key = "notfull", name = "When not full" } }
 
 local function NameOf(list, key)
   for _, item in ipairs(list) do
@@ -45,8 +47,13 @@ function R.StatusText()
     return "On after a reload."
   end
   local where = R.Beside() and "beside" or "under"
-  return R.DB().show == "combat" and ("Shown " .. where .. " your character in combat.")
-    or ("Shown " .. where .. " your character.")
+  local show = R.DB().show
+  if show == "combat" then
+    return "Shown " .. where .. " your character in combat."
+  elseif show == "notfull" then
+    return "Shown " .. where .. " your character while a bar isn't full (rage: while you have some)."
+  end
+  return "Shown " .. where .. " your character."
 end
 
 local function Wrap(text)
@@ -84,7 +91,7 @@ function R.RefreshPage()
   end
   view.show:SetText(NameOf(R.SHOW_MODES, db.show))
   view.text:SetText(NameOf(R.TEXT_MODES, R.TextMode()))
-  view.layout:SetText(NameOf(R.LAYOUTS, beside and "beside" or "under"))
+  view.layout:SetText(NameOf(R.LAYOUTS, R.LayoutMode()))
   view.fade:SetEnabled(db.show ~= "combat")
   view.fade.label:SetAlpha(db.show ~= "combat" and 1 or 0.5)
 end
@@ -179,7 +186,7 @@ function R.BuildPage(page)
   end)
   view.checks[#view.checks + 1] = view.fade
   view.text = Picker(3, "Text", R.TEXT_MODES, "text", R.TextMode)
-  view.layout = Picker(4, "Layout", R.LAYOUTS, "layout", function() return R.Beside() and "beside" or "under" end)
+  view.layout = Picker(4, "Layout", R.LAYOUTS, "layout", R.LayoutMode)
   for index = 2, #STEPPERS do
     Stepper(3 + index, STEPPERS[index])
   end
@@ -187,8 +194,8 @@ function R.BuildPage(page)
   sideNote:SetPoint("TOPLEFT", look, "BOTTOMLEFT", 0, -12 - (#STEPPERS + 4) * LINE + 6)
   sideNote:SetWidth(columnWidth)
   sideNote:SetJustifyH("LEFT")
-  sideNote:SetText("Beside: health on the left, power on the right, the text at their tops; combo points and "
-    .. "timers stay under your character, as wide as Width. Short numbers (1.9K) follow Unit frames > Player, target, pet and focus.")
+  sideNote:SetText("Beside (upright or as arcs): health on the left, power on the right, the text at their tops; "
+    .. "combo points and timers stay under your character, as wide as Width. Short numbers (1.9K) follow Unit frames > Player, target, pet and focus.")
 
   local reset = UI.Button(page, 150, 24, "Reset position")
   reset:SetPoint("TOPLEFT", sideNote, "BOTTOMLEFT", 0, -10)

@@ -12,6 +12,10 @@ local S = ns.S
 -- click targets, right click opens the unit menu) that the game's unit watch shows and hides, so they work in
 -- combat; they are only built and placed out of combat. Edit Mode can't move them: while Edit Mode is open each
 -- frame gets a mover box to drag (saved in CodexDB.skins.frames; right-click puts it back where it started).
+-- Sizes (2026-11-22, the user's request "resize unit frames in Edit Mode"): the mouse wheel over a mover scales its
+-- frame in 5 % steps, 50-200 % (CodexDB.skins.frameScale[unit]; the party stack is one, "party"); Shift + right-click
+-- puts it back to 100 %. A frame's offsets are in its own scale, so a saved or default position (UIParent units) is
+-- divided by the scale; the party buttons each take the scale and hang from the unscaled stack holder.
 -- Health and power can be secret on Forever: those values go straight into the bars and text, no maths on them.
 -- Target and focus get their own cast bar and aura icons under the frame. Aura data can be secret, so the icons
 -- come from Blizzard's own aura container (CustomAuraContainerTemplate): it tracks UNIT_AURA, reads the auras
@@ -420,9 +424,46 @@ local function PositionOf(f)
   return f.spec.pos
 end
 
-local function SetPosition(frame, pos)
+-- Frame sizes ------------------------------------------------------------------------------------------------
+local SCALE_MIN, SCALE_MAX, SCALE_STEP = 0.5, 2, 0.05
+
+local function SavedScales(create)
+  local skins = type(CodexDB) == "table" and CodexDB.skins
+  if type(skins) ~= "table" then
+    if not create or type(CodexDB) ~= "table" then
+      return nil
+    end
+    CodexDB.skins = {}
+    skins = CodexDB.skins
+  end
+  if type(skins.frameScale) ~= "table" then
+    if not create then
+      return nil
+    end
+    skins.frameScale = {}
+  end
+  return skins.frameScale
+end
+
+-- A frame's size (1 = 100 %); party members share the stack's ("party").
+local function ScaleOf(unit)
+  if type(unit) == "string" and unit:find("^party%d") then
+    unit = "party"
+  end
+  local saved = SavedScales(false)
+  local value = saved and tonumber(saved[unit])
+  if not value then
+    return 1
+  end
+  return math.max(SCALE_MIN, math.min(SCALE_MAX, value))
+end
+S.UnitFrameScale = ScaleOf
+
+-- scale: the frame's own (its offsets are in its scale's units, the saved position in UIParent's)
+local function SetPosition(frame, pos, scale)
+  scale = scale or 1
   frame:ClearAllPoints()
-  frame:SetPoint(pos[1], UIParent, pos[2], pos[3], pos[4])
+  frame:SetPoint(pos[1], UIParent, pos[2], pos[3] / scale, pos[4] / scale)
 end
 
 -- Puts our frame where it belongs (secure: out of combat only, else after the fight).
@@ -432,7 +473,8 @@ local function Place(f)
     if ApplyPosition and f.spec.attach then
       ApplyPosition(f)
     else
-      SetPosition(f.button, PositionOf(f))
+      -- (the party stack's holder isn't scaled: its members are)
+      SetPosition(f.button, PositionOf(f), f.unit == "party" and 1 or ScaleOf(f.unit))
     end
   end)
 end
@@ -657,6 +699,12 @@ end
 
 local function NameColor(f)
   local theme = S.Theme()
+  -- the name sits inside the health bar and that bar is in the class colour: the name in white, or it disappears
+  -- into the bar (the user's screenshot, 2026-11-22)
+  local skins = type(CodexDB) == "table" and type(CodexDB.skins) == "table" and CodexDB.skins
+  if f.nameInBar and skins and skins.healthColor == "class" then
+    return theme.bright
+  end
   if f.spec.own then
     -- R3-Polish: with the class colour accent your own name is in it too
     return f.unit == "player" and theme.accentSource == "class" and theme.accent or theme.bright
@@ -690,9 +738,19 @@ local function Hostile(f)
   return f.spec.hostileRing and Readable(UnitCanAttack("player", f.unit)) == true or false
 end
 
--- Forever's UnitName gives first name and surname apart: joined when both can be read.
+-- Forever's UnitName gives first name and surname apart: joined when both can be read. With "First names only"
+-- (CodexDB.skins.firstNameOnly, the user's request 2026-11-22) a player shows by the first value alone; NPCs have
+-- no surname value, so their names ("Marshal McBride") stay whole.
+local function FirstNameOnly()
+  local skins = type(CodexDB) == "table" and type(CodexDB.skins) == "table" and CodexDB.skins
+  return skins and skins.firstNameOnly == true or false
+end
+
 local function FullName(unit)
   local name, surname = UnitName(unit)
+  if FirstNameOnly() then
+    return name
+  end
   if CanRead(name) and CanRead(surname) and type(name) == "string" and type(surname) == "string" and surname ~= "" then
     local consts = Constants and Constants.CharacterNameSeparatorConsts
     local separator = consts and consts.CHARACTERNAME_SURNAME_SEPARATOR
@@ -737,7 +795,9 @@ local function HealthGradient(color)
   end
   local key = string.format("%.3f:%.3f:%.3f", r, g, b)
   if not healthCache[key] then
-    healthCache[key] = { { r * 0.6, g * 0.6, b * 0.6 }, { r, g, b } }
+    -- (the user's "make unit frame colours gradient", 2026-11-22: 45 % at the bottom, the top 12 % towards white)
+    healthCache[key] = { { r * 0.45, g * 0.45, b * 0.45 },
+      { r + (1 - r) * 0.12, g + (1 - g) * 0.12, b + (1 - b) * 0.12 } }
   end
   return healthCache[key]
 end
@@ -771,11 +831,25 @@ local function HealthColors(f)
   return HEALTH
 end
 
+-- Incoming heals in the health bar's own colour, faded (the user's request, 2026-11-22: not green on a class-coloured
+-- bar): yours at 55 %, the others' at 35 %; shields keep their pale blue.
+local HEAL_FADE_MINE, HEAL_FADE_OTHERS = 0.55, 0.35
+local function PaintHeals(f, colors)
+  local heals = f.heals
+  local top = colors and colors[2]
+  if not (heals and top) then
+    return
+  end
+  heals.mine:SetStatusBarColor(top[1], top[2], top[3], HEAL_FADE_MINE)
+  heals.others:SetStatusBarColor(top[1], top[2], top[3], HEAL_FADE_OTHERS)
+end
+
 local function UpdateHealthColor(f)
   local colors = HealthColors(f)
   if f.healthColors ~= colors then
     f.healthColors = colors
     Paint(f.health, colors)
+    PaintHeals(f, colors)
   end
 end
 
@@ -1403,6 +1477,34 @@ local function MakeAuras(spec)
   return container
 end
 
+-- Where the auras go (Settings: Target / Focus / Party auras; the user's request, 2026-11-22): below the frame (the
+-- board's place), above it (growing up), or beside it on the right or left (growing outward, AURA_SIDE_ROW a row).
+local AURA_SIDE_ROW = 4
+local function AuraPlace(spec)
+  local fn = TylesserCodex.AuraPlace
+  local place = type(fn) == "function" and fn(spec.party and "party" or spec.unit) or "below"
+  return place
+end
+
+-- The container's flow for a place: the anchor corner, the growth directions and the row length.
+local function AuraFlow(container, spec, place)
+  local axis, flow = AnchorUtil and AnchorUtil.FlowLayoutAxis, AnchorUtil and AnchorUtil.FlowDirection
+  local size, spacing = spec.auras[3], spec.auras[4]
+  local corner, across, down = "TOPLEFT", "Right", "Down"
+  if place == "above" then
+    corner, down = "BOTTOMLEFT", "Up"
+  elseif place == "left" then
+    corner, across = "TOPRIGHT", "Left"
+  end
+  if axis and flow then
+    pcall(container.SetFlowLayoutAxis, container, axis.Horizontal)
+    pcall(container.SetFlowLayoutGrowthDirection, container, flow[across], flow[down])
+  end
+  pcall(container.SetFlowLayoutAnchorPoint, container, corner)
+  local row = (place == "left" or place == "right") and AURA_SIDE_ROW or (spec.auraRow or AURA_ROW)
+  pcall(container.SetFlowLayoutMaximumLineSize, container, row * size + (row - 1) * spacing)
+end
+
 -- At the board's place under the unit frame (Build, out of combat).
 local function BuildAuras(f, spec)
   local container = early[f.unit] or MakeAuras(spec)
@@ -1457,10 +1559,12 @@ function ApplyPosition(f)
   local attach = f.spec.attach
   local other = attach and frames[attach[1]]
   if not (saved and saved[f.unit]) and other then
+    -- beside the other frame, as far off as that frame is big (offsets in this frame's scale)
+    local ratio = ScaleOf(other.unit) / ScaleOf(f.unit)
     f.button:ClearAllPoints()
-    f.button:SetPoint("TOPLEFT", other.button, "TOPLEFT", attach[2], -attach[3])
+    f.button:SetPoint("TOPLEFT", other.button, "TOPLEFT", attach[2] * ratio, -attach[3] * ratio)
   else
-    SetPosition(f.button, PositionOf(f))
+    SetPosition(f.button, PositionOf(f), ScaleOf(f.unit))
   end
 end
 
@@ -1598,6 +1702,7 @@ local function Layout(f)
   local spec, button = f.spec, f.button
   local g = Geometry(spec)
   local compact, bars, inBar = g.compact or false, g.bars or false, g.inBar or false
+  f.nameInBar = inBar
   local x, width, y = g.x, g.width, g.y
   f.columnX, f.nameWidth = g.visX, width
   f.plate:SetShown(not compact)
@@ -1701,12 +1806,22 @@ local function Layout(f)
     end
   end
   if f.auraContainer then
-    f.auraContainer:ClearAllPoints()
-    if compact then
-      f.auraContainer:SetPoint("TOPLEFT", button, "TOPLEFT", vx, -(under - 1))
+    local place = AuraPlace(spec)
+    local container = f.auraContainer
+    container:ClearAllPoints()
+    AuraFlow(container, spec, place)
+    if place == "above" then
+      container:SetPoint("BOTTOMLEFT", button, "TOPLEFT", compact and vx or spec.auras[1], 4)
+    elseif place == "right" then
+      container:SetPoint("TOPLEFT", button, "TOPRIGHT", 4, 0)
+    elseif place == "left" then
+      container:SetPoint("TOPRIGHT", button, "TOPLEFT", -4, 0)
+    elseif compact then
+      container:SetPoint("TOPLEFT", button, "TOPLEFT", vx, -(under - 1))
     else
-      f.auraContainer:SetPoint("TOPLEFT", button, "TOPLEFT", spec.auras[1], -spec.auras[2])
+      container:SetPoint("TOPLEFT", button, "TOPLEFT", spec.auras[1], -spec.auras[2])
     end
+    pcall(container.UpdateAllAuras, container)
   end
   if spec.party then
     button:ClearAllPoints()
@@ -1718,6 +1833,7 @@ local function BuildFrame(spec)
   local theme = S.Theme()
   local button = CreateFrame("Button", "Codex" .. spec.name .. "Frame", UIParent, "SecureUnitButtonTemplate")
   local f = { unit = spec.unit, spec = spec, button = button, w = spec.w, h = spec.h }
+  button:SetScale(ScaleOf(spec.unit))
   button:SetFrameStrata("LOW")
   button:SetFrameLevel(5) -- (the plate goes one under it, the badges above)
   button:SetClampedToScreen(true)
@@ -2031,9 +2147,66 @@ local function FitMover(f)
       f.button:SetSize(f.w, f.h)
     end
   end
-  mover:SetSize(f.w, f.h)
+  local scale = ScaleOf(f.unit)
+  mover:SetSize(f.w * scale, f.h * scale)
   mover:ClearAllPoints()
   mover:SetPoint("TOPLEFT", f.button, "TOPLEFT", 0, 0)
+  if f.moverLabel then
+    f.moverLabel:SetText(math.abs(scale - 1) < 0.001 and f.spec.label
+      or ("%s  %d%%"):format(f.spec.label, math.floor(scale * 100 + 0.5)))
+  end
+end
+
+-- A frame (or the party stack) at its saved size, then placed again for it. Out of combat (Edit Mode).
+local function ApplyScale(f)
+  if S.InCombat() then
+    return
+  end
+  local scale = ScaleOf(f.unit)
+  if f.unit == "party" then
+    for index = 1, 4 do
+      local member = frames["party" .. index]
+      if member then
+        member.button:SetScale(scale)
+      end
+    end
+  else
+    f.button:SetScale(scale)
+  end
+  Place(f)
+  -- a frame attached to this one (target of target beside the target) keeps its distance
+  for _, other in pairs(frames) do
+    if other.spec.attach and other.spec.attach[1] == f.unit then
+      Place(other)
+    end
+  end
+end
+
+-- Sets a frame's size (nil: back to 100 %), in SCALE_STEP steps between SCALE_MIN and SCALE_MAX.
+local function SetScale(f, value)
+  local saved = SavedScales(true)
+  if not saved then
+    return
+  end
+  if value then
+    value = math.floor(value / SCALE_STEP + 0.5) * SCALE_STEP
+    value = math.max(SCALE_MIN, math.min(SCALE_MAX, value))
+    if math.abs(value - 1) < 0.001 then
+      value = nil
+    end
+  end
+  saved[f.unit] = value
+  ApplyScale(f)
+  if f.mover then
+    FitMover(f)
+  end
+end
+S.SetUnitFrameScale = function(unit, value)
+  for _, f in ipairs(placeables) do
+    if f.unit == unit then
+      SetScale(f, value)
+    end
+  end
 end
 
 local function ResetPosition(f)
@@ -2063,6 +2236,24 @@ local function BuildMover(f)
   label:SetPoint("CENTER", mover, "CENTER", 0, 0)
   label:SetText(f.spec.label)
   TextColor(label, theme.bright)
+  f.moverLabel = label
+  -- the mouse wheel sizes the frame (Shift + right-click: 100 % again)
+  mover:EnableMouseWheel(true)
+  mover:SetScript("OnMouseWheel", Safe(function(_, delta)
+    if not S.InCombat() then
+      SetScale(f, ScaleOf(f.unit) + (delta > 0 and SCALE_STEP or -SCALE_STEP))
+    end
+  end))
+  mover:SetScript("OnEnter", Safe(function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_TOP")
+    GameTooltip:AddLine(f.spec.label)
+    GameTooltip:AddLine("Drag to move. Mouse wheel: size (" .. math.floor(ScaleOf(f.unit) * 100 + 0.5) .. "%).", 1, 1, 1, true)
+    GameTooltip:AddLine("Right-click: back to its place. Shift + right-click: back to 100 %.", 0.7, 0.7, 0.7, true)
+    GameTooltip:Show()
+  end))
+  mover:SetScript("OnLeave", Safe(function()
+    GameTooltip:Hide()
+  end))
   mover:SetScript("OnDragStart", Safe(function(self)
     if not S.InCombat() then
       self:StartMoving()
@@ -2074,7 +2265,11 @@ local function BuildMover(f)
   end))
   mover:SetScript("OnMouseUp", Safe(function(_, button)
     if button == "RightButton" then
-      ResetPosition(f)
+      if IsShiftKeyDown and IsShiftKeyDown() then
+        SetScale(f, nil)
+      else
+        ResetPosition(f)
+      end
     end
   end))
   mover:Hide()
@@ -2134,6 +2329,9 @@ local UNIT_EVENTS = {
   UNIT_HEALTH = UpdateHealth, UNIT_MAXHEALTH = UpdateHealth, UNIT_HEAL_PREDICTION = UpdateHeals,
   UNIT_ABSORB_AMOUNT_CHANGED = UpdateHeals, UNIT_CONNECTION = UpdateAll, UNIT_FLAGS = UpdatePortrait,
   UNIT_POWER_UPDATE = UpdatePower, UNIT_MAXPOWER = UpdatePower, UNIT_DISPLAYPOWER = UpdatePower,
+  -- (the game sends this one many times a second while power fills, as Personal bars use it; UNIT_POWER_UPDATE came
+  -- in steps, so mana and energy jumped on the frames while drinking: the user's report, 2026-11-22)
+  UNIT_POWER_FREQUENT = UpdatePower,
   UNIT_NAME_UPDATE = UpdateName, UNIT_FACTION = UpdateName, UNIT_LEVEL = UpdateLevel,
   UNIT_CLASSIFICATION_CHANGED = UpdateAll,
   UNIT_PORTRAIT_UPDATE = UpdatePortrait, UNIT_MODEL_CHANGED = UpdatePortrait,
@@ -2356,9 +2554,20 @@ TylesserCodex.RefreshHealthColor = function()
   S.Run("unitframes", function()
     for _, f in pairs(frames) do
       if Exists(f.unit) then
-        UpdateHealthColor(f)
+        UpdateName(f) -- (the name's colour follows the setting too; it paints the health bar)
       else
         f.healthColors = nil
+      end
+    end
+  end)
+end
+
+-- "First names only" changed: every shown frame writes its name again.
+TylesserCodex.RefreshNames = function()
+  S.Run("unitframes", function()
+    for _, f in pairs(frames) do
+      if Exists(f.unit) and f.name then
+        UpdateName(f)
       end
     end
   end)

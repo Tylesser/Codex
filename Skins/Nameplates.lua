@@ -289,6 +289,13 @@ local function NameColor(unitFrame, target)
   end
 end
 
+-- The target's soft glow (CodexDB.skins.nameplateGlow = false: off, the 2 px accent stays; the user's request,
+-- 2026-11-22).
+local function GlowOn()
+  local skins = type(CodexDB) == "table" and type(CodexDB.skins) == "table" and CodexDB.skins
+  return not (skins and skins.nameplateGlow == false)
+end
+
 -- Target: 2 px accent + glow; focus: the line in a softer accent; else the plate line.
 local function PaintSelection(unitFrame)
   local state = plates[unitFrame]
@@ -300,10 +307,11 @@ local function PaintSelection(unitFrame)
   local target, focus = Selected(unitFrame, bar)
   local key = target and "target" or focus and "focus" or "none"
   NameColor(unitFrame, target)
-  if state.selected == key then
+  local glow = key == "target" and GlowOn()
+  if state.selected == key and state.glowing == glow then
     return
   end
-  state.selected = key
+  state.selected, state.glowing = key, glow
   local accent = S.Theme().accent
   if key == "target" then
     Paint(state.line, accent, 1)
@@ -316,8 +324,17 @@ local function PaintSelection(unitFrame)
     texture:SetShown(key == "target")
   end
   for _, texture in ipairs(state.glow) do
-    texture:SetShown(key == "target")
+    texture:SetShown(glow)
   end
+end
+
+-- The glow setting changed (Settings): every plate painted again.
+TylesserCodex.RefreshPlateGlow = function()
+  S.Run(part, function()
+    for unitFrame in pairs(plates) do
+      PaintSelection(unitFrame)
+    end
+  end)
 end
 
 -- Friendly players in their class colour (Blizzard's pale friendly colour otherwise); every value checked.

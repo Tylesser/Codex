@@ -2,6 +2,7 @@
   <Script file="Data.lua"/>
   <Script file="Secure.lua"/>
   <Script file="Display.lua"/>
+  <Script file="Picker.lua"/>
   <Script file="Page.lua"/>
   <Script file="Module.lua"/>
 </Ui>

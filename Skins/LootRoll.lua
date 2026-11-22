@@ -9,8 +9,9 @@ local S = ns.S
 --   item's quality colour). Quality shows on the ring and the name colour only, never as a glow.
 -- * Name: Blizzard colours it by quality; it only gets the theme's body font.
 -- * Need / Greed / Pass (and Disenchant / Transmog where the client has them): a theme button plate behind
---   each; Blizzard's glyph art off and the same glyph drawn by us, greyed and tinted in the button text colour
---   (muted while Blizzard has the button disabled); a hover tint.
+--   each; Blizzard's glyph art off and the same glyph drawn by us in its own colours (the gold dice, the coin, the
+--   red cross: the user's request, 2026-11-22; it was greyed and tinted before), dimmed and greyed only while
+--   Blizzard has the button disabled; a hover tint.
 -- * Timer: Blizzard's bar made invisible; a slim bar of ours (4 units, accent fill, dark back, black line)
 --   on its centre line copies its range and value through post-hooks.
 -- Frame names from FlareUI (MIT, Modules/LootRolls.lua, Movers.lua); the code is ours. Nothing here is
@@ -120,10 +121,11 @@ local function GlyphState(button)
   if not glyph then
     return
   end
-  local style = S.Theme().button
   local enabled = not button.IsEnabled or button:IsEnabled()
-  local c = enabled and style.text or S.Theme().muted
-  glyph:SetVertexColor(c[1], c[2], c[3], enabled and 1 or 0.6)
+  if glyph.SetDesaturated then
+    glyph:SetDesaturated(not enabled)
+  end
+  glyph:SetVertexColor(1, 1, 1, enabled and 1 or 0.5)
 end
 
 local function SkinButton(button)
@@ -151,9 +153,6 @@ local function SkinButton(button)
       glyph:SetAtlas(art)
     else
       glyph:SetTexture(art)
-    end
-    if glyph.SetDesaturated then
-      glyph:SetDesaturated(true)
     end
     glyphs[button] = glyph
   end

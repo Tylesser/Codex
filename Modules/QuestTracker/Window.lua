@@ -281,6 +281,15 @@ function QT.ItemCooldown(button)
   end
 end
 
+-- A row holds a quest's item button (secure), so in a fight the row is protected too and the game blocks
+-- SetHitRectInsets on it (ADDON_ACTION_BLOCKED in the user's dev log, 2026-11-22): changed out of combat only.
+local function HitInsets(row, right)
+  if InCombatLockdown and InCombatLockdown() then
+    return
+  end
+  row:SetHitRectInsets(0, right, 0, 0)
+end
+
 local function FillRow(row, data)
   row.data = data
   local theme = Theme()
@@ -291,7 +300,7 @@ local function FillRow(row, data)
   row.mark:SetShown(kind == "quest" and data.focused == true)
   UI.SetColor(row.mark, theme.accent)
   if kind ~= "quest" then
-    row:SetHitRectInsets(0, 0, 0, 0)
+    HitInsets(row, 0)
   end
   if kind == "zone" then
     row.arrow:SetOpen(not data.folded)
@@ -302,7 +311,7 @@ local function FillRow(row, data)
     row.count:SetText(data.count)
   elseif kind == "quest" then
     -- a quest with an item: the row's own clicks stop short of the item button
-    row:SetHitRectInsets(0, data.item and (ITEM + 4) or 0, 0, 0)
+    HitInsets(row, data.item and (ITEM + 4) or 0)
     row.text:SetPoint("TOPLEFT", row, "TOPLEFT", 4, 0)
     row.text:SetPoint("RIGHT", row, "RIGHT", data.item and -(ITEM + 4) or 0, 0)
     UI.Font(row.text, "body", 12, "text")

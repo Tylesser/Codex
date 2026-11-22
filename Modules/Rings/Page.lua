@@ -124,26 +124,6 @@ function R.Select(id)
   R.RefreshPage()
 end
 
-local function MenuForSlot(ring, index)
-  local items = { { text = "Put in this slot", title = true } }
-  for marker = 1, 8 do
-    items[#items + 1] = { text = R.MarkerName(marker) .. " marker", func = function()
-      R.Edit(ring, function() return R.SetSlice(ring, index, { kind = "marker", id = marker }) end)
-    end }
-  end
-  for _, id in ipairs(R.ACTION_ORDER) do
-    items[#items + 1] = { text = R.ACTIONS[id].name, func = function()
-      R.Edit(ring, function() return R.SetSlice(ring, index, { kind = "action", id = id }) end)
-    end }
-  end
-  if R.Slices(ring)[index] then
-    items[#items + 1] = { text = "Clear this slot", func = function()
-      R.Edit(ring, function() return R.SetSlice(ring, index, nil) end)
-    end }
-  end
-  return items
-end
-
 -- A spell, item, macro or mount dropped on a slot.
 function R.DropOnSlot(index)
   local ring = Selected()
@@ -187,7 +167,7 @@ local function NewSlot(parent, index)
     elseif button == "RightButton" then
       R.Edit(ring, function() return R.SetSlice(ring, self.index, nil) end)
     elseif R.CanEdit() then
-      UI.ShowMenu(self, MenuForSlot(ring, self.index))
+      R.OpenPicker(self, ring, self.index) -- everything a slot can hold (Picker.lua); dragging works too
     else
       ns.Say(COMBAT_NOTE)
     end
@@ -217,11 +197,11 @@ local function NewSlot(parent, index)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
     if self.info then
       GameTooltip:AddLine(self.info.name)
-      GameTooltip:AddLine("Drag to another slot to swap, right-click to clear.", 0.7, 0.7, 0.7, true)
+      GameTooltip:AddLine("Click to change it, drag to another slot to swap, right-click to clear.", 0.7, 0.7, 0.7, true)
     else
       GameTooltip:AddLine("Empty slot")
-      GameTooltip:AddLine("Drag a spell, item, macro or mount here, or click for raid markers and other actions.",
-        0.7, 0.7, 0.7, true)
+      GameTooltip:AddLine("Click to choose what goes here (spells, items, mounts, toys, macros, markers, actions, "
+        .. "windows or another ring), or drag a spell, item, macro or mount onto it.", 0.7, 0.7, 0.7, true)
     end
     GameTooltip:Show()
   end)
@@ -478,11 +458,12 @@ function R.BuildPage(page)
   end)
   view.hint = Wrapped(page, 11, "muted", rightWidth)
   view.hint:SetPoint("TOPLEFT", right, gridBottom - 80)
-  view.hint:SetText("Drag a spell from your spellbook, an item from your bags, a macro or a mount onto a slot. "
-    .. "Right-click a slot to clear it, drag a slot onto another to swap them, click an empty slot for raid "
-    .. "markers and other actions. In game: hold the key, point at a slice and let go to use it, or click a "
-    .. "slice. Let go in the middle or far outside the ring, or press Escape, to use nothing. Slice 1 is at the top, the rest go "
-    .. "clockwise. Works in combat; changes wait until the fight is over.")
+  view.hint:SetText("Click a slot to choose what goes in it: spells, items, mounts, toys, macros, raid markers, "
+    .. "actions, windows or another ring (a ring inside a ring opens where you let go). Dragging a spell, item, "
+    .. "macro or mount onto a slot works too. Right-click a slot to clear it, drag a slot onto another to swap "
+    .. "them. In game: hold the key, point at a slice and let go to use it, or click a slice. Let go in the middle "
+    .. "or far outside the ring, or press Escape, to use nothing. Slice 1 is at the top, the rest go clockwise. "
+    .. "Works in combat; changes wait until the fight is over.")
 
   -- preview (right of the slots)
   local preview = UI.Ink(CreateFrame("Frame", nil, page)) -- a picture of the ring: on ink, as in game (Dawn)

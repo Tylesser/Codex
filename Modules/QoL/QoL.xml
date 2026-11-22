@@ -16,6 +16,8 @@
   <Script file="ClassSpellsData.lua"/>
   <Script file="FutureSpells.lua"/>
   <Script file="CooldownNumbers.lua"/>
+  <Script file="GreyOut.lua"/>
+  <Script file="HideEmpty.lua"/>
   <Script file="HoverBind.lua"/>
   <Script file="Trainer.lua"/>
   <Script file="Page.lua"/>

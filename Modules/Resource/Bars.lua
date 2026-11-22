@@ -20,12 +20,36 @@ local addonName, ns = ...
 -- sparks then climb the bar. Texts sit outside the ends (health and power above the top, druid mana under its
 -- bottom), so the amount fits. Combo points and the timer rows stay flat, under the upright bars, Width wide.
 -- Each layout keeps its own place (pos / posBeside; the beside one saved by its top centre).
+--
+-- Layout "arc" (2026-11-22, the user's request): the "beside" places and sizes, the bars drawn as arcs: health "("
+-- on the left, power ")" on the right (a druid's mana just outside it). The status bar fills its arc texture
+-- (Media/Arc*.tga, from branding/source/arc_textures.py) bottom to top; the dark track is the same band a little
+-- wider (ArcBack), no straight outline or rounded mask. A bar's frame is ARC_SCALE x sideWidth wide, so the band is
+-- sideWidth thick and bulges outward; sparks sit on the band's centre line (ArcX), texts above the arcs' ends.
+--
+-- Show "When not full" (CodexDB.resource.show = "notfull", 2026-11-22, the user's request): the health, power and
+-- druid mana bars each show only while they aren't at rest: health and druid mana below their max, power below its
+-- max, or above 0 for the powers that drain when you rest (rage, runic power). Forever's UnitHealth is always secret
+-- (SecretReturns) and power often is, so nothing is compared: the row's alpha comes from a step curve evaluated by
+-- the game, UnitHealthPercent / UnitPowerPercent(..., curve) (forever UnitDocumentation; Blizzard's CurveConstants),
+-- and goes straight into SetAlpha (it takes secrets: AllowedWhenTainted). The rows keep their places; Edit Mode
+-- shows them all. Without the curve API, readable values decide (R.AtRest), and an unreadable one shows the bar.
+--
+-- Health in class colours (2026-11-22): with Unit frames' "Health bars in class colours" (ns.ClassHealth) the health
+-- bar takes your class colour, shaded as the unit frames' (R.RefreshHealthColor when the setting changes).
 
 local R = ns.resource
 local T = ns.T
 local CanRead, Readable = R.CanRead, R.Readable
 
 local WHITE = "Interface\\Buttons\\WHITE8X8"
+local MEDIA = "Interface\\AddOns\\Codex\\Modules\\Resource\\Media\\"
+local ARC = { left = MEDIA .. "Arc", right = MEDIA .. "ArcRight" }
+local ARC_BACK = { left = MEDIA .. "ArcBack", right = MEDIA .. "ArcRightBack" }
+-- the textures' geometry (arc_textures.py): 64 x 256, a 16 px band whose centre line is a circle of radius
+-- ARC_RADIUS around (ARC_CX, 128); its ends at x = ARC_END
+local ARC_W, ARC_H, ARC_BAND, ARC_END, ARC_RADIUS, ARC_CX = 64, 256, 16, 55, 201.09, 210.09
+local ARC_SCALE = math.floor(ARC_W / ARC_BAND) -- 4 (whole pixels)
 local CIRCLE = "Interface\\AddOns\\Codex\\Media\\Circle"
 local SPARK = "Interface\\CastingBar\\UI-CastingBar-Spark"
 local BAR_FONT = "Fonts\\ARIALN.TTF"
@@ -108,6 +132,7 @@ local function Bar(parent, colors, back)
   local fill = bar:CreateTexture(nil, "BACKGROUND")
   fill:SetAllPoints(bar)
   fill:SetColorTexture(unpack(back or BAR_BACK))
+  bar.back, bar.backColor = fill, back or BAR_BACK
   -- the black line and the texts on a layer above the fill
   local top = CreateFrame("Frame", nil, bar)
   top:SetAllPoints(bar)
@@ -120,7 +145,7 @@ local function Bar(parent, colors, back)
   if mask then
     bar.mask = mask
   else
-    T.Outline(top, 0, BLACK, 1, "BORDER")
+    bar.outline = T.Outline(top, 0, BLACK, 1, "BORDER")
   end
   if colors then
     Paint(bar, colors)
@@ -128,6 +153,48 @@ local function Bar(parent, colors, back)
   bar.top = top
   return bar
 end
+
+-- A bar as an arc (side "left" = "(", "right" = ")") or back to a straight bar (nil).
+local function SetArc(bar, side)
+  if bar.arc == side then
+    return
+  end
+  bar.arc = side
+  local fill, back = bar:GetStatusBarTexture(), bar.back
+  if bar.mask and fill then
+    pcall(fill.RemoveMaskTexture, fill, bar.mask)
+    pcall(back.RemoveMaskTexture, back, bar.mask)
+  end
+  if side then
+    bar:SetStatusBarTexture(ARC[side])
+    back:SetTexture(ARC_BACK[side])
+    back:SetVertexColor(unpack(bar.backColor))
+  else
+    bar:SetStatusBarTexture(WHITE)
+    back:SetColorTexture(unpack(bar.backColor))
+    back:SetVertexColor(1, 1, 1, 1)
+    fill = bar:GetStatusBarTexture()
+    if bar.mask and fill then
+      pcall(fill.AddMaskTexture, fill, bar.mask)
+      pcall(back.AddMaskTexture, back, bar.mask)
+    end
+  end
+  for _, line in ipairs(bar.outline or {}) do
+    line:SetShown(not side)
+  end
+  if bar.paint then
+    Paint(bar, bar.paint)
+  end
+end
+
+-- Where an arc's band is at `phase` (0 = bottom, 1 = top): x from the frame's centre, as a share of its width.
+local function ArcX(phase, side)
+  local dy = (phase - 0.5) * ARC_H
+  local x = ARC_CX - math.sqrt(math.max(0, ARC_RADIUS * ARC_RADIUS - dy * dy))
+  local share = x / ARC_W - 0.5
+  return side == "right" and -share or share
+end
+R.ArcX = ArcX
 
 local function SetFont(text, size, flags)
   if not text:SetFont(BAR_FONT, size, flags or "") then
@@ -205,7 +272,12 @@ local function PlaceSpark(spark, bar, phase)
   end
   spark:ClearAllPoints()
   if bar.vertical then
-    spark:SetPoint("CENTER", bar, "BOTTOM", 0, BarLength(bar) * phase)
+    local x = 0
+    if bar.arc then
+      local width = bar:GetWidth()
+      x = ArcX(phase, bar.arc) * (type(width) == "number" and width > 0 and width or R.Size("sideWidth") * ARC_SCALE)
+    end
+    spark:SetPoint("CENTER", bar, "BOTTOM", x, BarLength(bar) * phase)
   else
     spark:SetPoint("CENTER", bar, "LEFT", BarLength(bar) * phase, 0)
   end
@@ -257,22 +329,29 @@ local function BarRow(key, colors, withText, sparks)
   return row
 end
 
--- A bar row flat (text centred on it) or upright (text outside an end, outlined: it sits on the world).
-local function StyleBarRow(row, beside, height)
-  if row.styled ~= beside then
-    row.styled = beside
+-- A bar row flat (text centred on it), upright or an arc (text outside an end, outlined: it sits on the world;
+-- over an arc's end, which is at the inner side: `width` is the arc's frame width).
+local function StyleBarRow(row, beside, height, arc, width)
+  local style = not beside and "flat" or (arc or "upright") .. ":" .. tostring(width or 0)
+  if row.styled ~= style then
+    row.styled = style
     Orient(row.bar, beside)
+    SetArc(row.bar, beside and arc or nil)
     if row.text then
       row.text:ClearAllPoints()
+      -- an arc's end: (ARC_W - ARC_END) / ARC_W of its width in from its inner side
+      local inset = arc and (ARC_W - ARC_END) / ARC_W * (width or 0) or 0
+      local from = arc == "left" and "RIGHT" or arc == "right" and "LEFT" or ""
+      local dx = arc == "left" and -inset or inset
       if not beside then
         SetFont(row.text, TEXT_SIZES[row.key])
         row.text:SetPoint("CENTER", row.bar.top, "CENTER", 0, 0)
       elseif row.key == "druid" then
         SetFont(row.text, SIDE_TEXT_SIZES[row.key], "OUTLINE")
-        row.text:SetPoint("TOP", row.bar, "BOTTOM", 0, -3)
+        row.text:SetPoint("TOP", row.bar, "BOTTOM" .. from, arc and dx or 0, -3)
       else
         SetFont(row.text, SIDE_TEXT_SIZES[row.key], "OUTLINE")
-        row.text:SetPoint("BOTTOM", row.bar, "TOP", 0, 3)
+        row.text:SetPoint("BOTTOM", row.bar, "TOP" .. from, arc and dx or 0, 3)
       end
     end
   end
@@ -462,13 +541,146 @@ local function HasText()
   return R.TextMode() ~= "none"
 end
 
+-- Powers that drain to 0 when you rest (rage, runic power): "at rest" is empty, not full.
+local DRAINS = { [R.RAGE] = true, [(Enum and Enum.PowerType and Enum.PowerType.RunicPower) or 6] = true }
+
+-- Whether a bar is at rest (full; empty for rage): the "When not full" mode hides it then.
+local function AtRest(key)
+  local current, max, powerType
+  if key == "health" then
+    current, max = Readable(UnitHealth("player")), Readable(UnitHealthMax("player"))
+  elseif key == "power" then
+    powerType = Readable(UnitPowerType("player"))
+    if powerType == nil then
+      return false
+    end
+    current, max = Readable(UnitPower("player", powerType)), Readable(UnitPowerMax("player", powerType))
+  elseif key == "druid" then
+    current, max = Readable(UnitPower("player", R.MANA)), Readable(UnitPowerMax("player", R.MANA))
+  end
+  if type(current) ~= "number" or type(max) ~= "number" then
+    return false
+  end
+  if powerType and DRAINS[powerType] then
+    return current <= 0
+  end
+  return current >= max
+end
+R.AtRest = AtRest
+
+-- Step curves of a percentage (0-1): 1 = shown. HIDE_FULL: shown below 100 %; HIDE_EMPTY: shown above 0.
+local curves
+local function Curves()
+  if curves == nil then
+    curves = false
+    local create = C_CurveUtil and C_CurveUtil.CreateCurve
+    local step = Enum and Enum.LuaCurveType and Enum.LuaCurveType.Step
+    if type(create) == "function" and step then
+      local ok, full, empty = pcall(function()
+        local a, b = create(), create()
+        a:SetType(step)
+        a:AddPoint(0, 1)
+        a:AddPoint(1, 0)
+        b:SetType(step)
+        b:AddPoint(0, 0)
+        b:AddPoint(0.001, 1)
+        return a, b
+      end)
+      if ok and full and empty then
+        curves = { full = full, empty = empty }
+      end
+    end
+  end
+  return curves or nil
+end
+
+-- The row's alpha for "When not full" (may be a secret number: only ever handed to SetAlpha).
+local function RestAlpha(key)
+  local c = Curves()
+  if c then
+    local ok, alpha
+    if key == "health" and UnitHealthPercent then
+      ok, alpha = pcall(UnitHealthPercent, "player", true, c.full)
+    elseif key == "power" and UnitPowerPercent then
+      local powerType = UnitPowerType("player")
+      local drains = Readable(powerType) ~= nil and DRAINS[powerType]
+      ok, alpha = pcall(UnitPowerPercent, "player", powerType, false, drains and c.empty or c.full)
+    elseif key == "druid" and UnitPowerPercent then
+      ok, alpha = pcall(UnitPowerPercent, "player", R.MANA, false, c.full)
+    end
+    if ok and alpha ~= nil then
+      return alpha
+    end
+  end
+  return AtRest(key) and 0 or 1
+end
+R.RestAlpha = RestAlpha
+function R.ResetCurves() -- (tests: the curve API came or went)
+  curves = nil
+end
+
+local function CheckRest(key)
+  local row = rows[key]
+  if not (row and row.frame) then
+    return
+  end
+  if R.DB().show ~= "notfull" or st.editing then
+    row.frame:SetAlpha(1)
+  elseif not pcall(row.frame.SetAlpha, row.frame, RestAlpha(key)) then
+    row.frame:SetAlpha(1)
+  end
+end
+
+-- All three again (the setting, Edit Mode).
+function R.ApplyRest()
+  for _, key in ipairs({ "health", "power", "druid" }) do
+    CheckRest(key)
+  end
+end
+
+-- The health bar's colours: green, or your class colour with "Health bars in class colours" (as the unit frames
+-- shade it: a very light colour taken down a little, the bottom at 60 %, toned on a classTone theme).
+local healthShades = {}
+local function HealthColors()
+  if not (ns.ClassHealth and ns.ClassHealth()) then
+    return HEALTH
+  end
+  local _, class = UnitClass("player")
+  class = Readable(class)
+  local c = type(class) == "string" and (C_ClassColor and C_ClassColor.GetClassColor and C_ClassColor.GetClassColor(class)
+    or type(RAID_CLASS_COLORS) == "table" and RAID_CLASS_COLORS[class])
+  if type(c) ~= "table" or type(c.r) ~= "number" then
+    return HEALTH
+  end
+  local color = { c.r, c.g, c.b }
+  local tone = TylesserCodex and TylesserCodex.ToneClass
+  if type(tone) == "function" then
+    local ok, toned = pcall(tone, color, ns.InkTheme())
+    color = ok and type(toned) == "table" and toned or color
+  end
+  local r, g, b = color[1], color[2], color[3]
+  if r * 0.3 + g * 0.59 + b * 0.11 > 0.75 then
+    r, g, b = r * 0.82, g * 0.82, b * 0.82
+  end
+  local key = string.format("%.3f:%.3f:%.3f", r, g, b)
+  healthShades[key] = healthShades[key] or { { r * 0.6, g * 0.6, b * 0.6 }, { r, g, b } }
+  return healthShades[key]
+end
+R.HealthColors = HealthColors
+
 local function UpdateHealth(glide)
   local row = rows.health
+  local colors = HealthColors()
+  if row.colors ~= colors then
+    row.colors = colors
+    Paint(row.bar, colors)
+  end
   local max = UnitHealthMax("player")
   row.bar:SetMinMaxValues(0, max)
   local value = UnitHealth("player")
   SetBar(row.bar, value, glide)
   SafeText(row.text, "health", value, max)
+  CheckRest("health")
 end
 
 local function PowerColors(token)
@@ -488,6 +700,94 @@ local function UpdatePower(glide)
     Paint(row.bar, colors)
   end
   SafeText(row.text, "power", value, max, powerType)
+  CheckRest("power")
+end
+
+-- What a cast will spend (2026-11-22, the user's request): while a spell with a cost in the bar's power is being cast,
+-- a dark band over the end of the fill, as long as the cost (cost / max of the bar), so its left (bottom) edge is
+-- where the power will be. The band hangs on the fill texture's moving edge, which the client places from the bar's
+-- value: no current power is read, so it works while UnitPower is secret. The cost comes from
+-- C_Spell.GetSpellPowerCost (not secret on Forever); an unreadable max, a cost in another power type or an arc
+-- layout shows nothing. Clipped to the bar (a cost above what is left would reach past its start).
+local function CostBand(row)
+  local clip = CreateFrame("Frame", nil, row.bar)
+  clip:SetAllPoints(row.bar)
+  clip:SetFrameLevel((row.bar:GetFrameLevel() or 1) + 1)
+  if clip.SetClipsChildren then
+    clip:SetClipsChildren(true)
+  end
+  local band = clip:CreateTexture(nil, "ARTWORK")
+  band:SetColorTexture(0, 0, 0, 0.5)
+  local edge = clip:CreateTexture(nil, "ARTWORK", nil, 1)
+  edge:SetColorTexture(1, 1, 1, 0.85)
+  band:Hide()
+  edge:Hide()
+  row.cost, row.costEdge = band, edge
+end
+
+-- The cost of `spellID` in the player's current power type, or nil.
+function R.CastCost(spellID)
+  spellID = Readable(spellID)
+  if not (spellID and C_Spell and C_Spell.GetSpellPowerCost) then
+    return nil
+  end
+  local powerType = Readable((UnitPowerType("player")))
+  local ok, costs = pcall(C_Spell.GetSpellPowerCost, spellID)
+  if not (ok and type(costs) == "table" and powerType) then
+    return nil
+  end
+  for _, info in ipairs(costs) do
+    local kind, cost = Readable(info.type), Readable(info.cost)
+    local needsAura = Readable(info.requiredAuraID)
+    local applies = not needsAura or needsAura == 0 or Readable(info.hasRequiredAura) == true
+    if kind == powerType and type(cost) == "number" and cost > 0 and applies then
+      return cost, powerType
+    end
+  end
+  return nil
+end
+
+function R.HideCost()
+  local row = rows.power
+  if row and row.cost then
+    row.cost:Hide()
+    row.costEdge:Hide()
+  end
+end
+
+function R.ShowCost(spellID)
+  R.HideCost()
+  local row = rows.power
+  if not (row and row.cost and R.DB().castCost ~= false and R.Wanted("power") and not row.bar.arc) then
+    return
+  end
+  local cost, powerType = R.CastCost(spellID)
+  local max = cost and Readable(UnitPowerMax("player", powerType))
+  if not (type(max) == "number" and max > 0) then
+    return
+  end
+  local length = BarLength(row.bar) * math.min(1, cost / max)
+  local fill = row.bar:GetStatusBarTexture()
+  local band, edge = row.cost, row.costEdge
+  band:ClearAllPoints()
+  edge:ClearAllPoints()
+  if row.bar.vertical then
+    band:SetPoint("TOPLEFT", fill, "TOPLEFT")
+    band:SetPoint("TOPRIGHT", fill, "TOPRIGHT")
+    band:SetHeight(length)
+    edge:SetPoint("BOTTOMLEFT", band, "BOTTOMLEFT")
+    edge:SetPoint("BOTTOMRIGHT", band, "BOTTOMRIGHT")
+    edge:SetHeight(1)
+  else
+    band:SetPoint("TOPRIGHT", fill, "TOPRIGHT")
+    band:SetPoint("BOTTOMRIGHT", fill, "BOTTOMRIGHT")
+    band:SetWidth(length)
+    edge:SetPoint("TOPLEFT", band, "TOPLEFT")
+    edge:SetPoint("BOTTOMLEFT", band, "BOTTOMLEFT")
+    edge:SetWidth(1)
+  end
+  band:Show()
+  edge:Show()
 end
 
 local function UpdateDruid(glide)
@@ -497,6 +797,7 @@ local function UpdateDruid(glide)
   local value = UnitPower("player", R.MANA)
   SetBar(row.bar, value, glide)
   SafeText(row.text, "druid", value, max, R.MANA)
+  CheckRest("druid")
 end
 
 local function UpdateCombo()
@@ -627,24 +928,31 @@ end
 local function PlaceUpright(wanted)
   local gap, tall, thick = R.Size("sideGap"), R.Size("sideHeight"), R.Size("sideWidth")
   local druidThick = math.max(4, math.floor(thick * 0.6 + 0.5))
-  local right = (wanted.power and thick or 0) + (wanted.druid and druidThick + (wanted.power and PAIR_GAP or 0) or 0)
-  local left = wanted.health and thick or 0
+  local arc = R.Arc()
+  -- an arc's frame: ARC_SCALE times its band, so the band is `thick` and bulges outward
+  local scale = arc and ARC_SCALE or 1
+  -- how far the right side reaches from the gap: the power bar, and a druid's mana just outside its band
+  local druidAt = wanted.power and thick + PAIR_GAP or 0
+  local right = math.max(wanted.power and thick * scale or 0, wanted.druid and druidAt + druidThick * scale or 0)
+  local left = wanted.health and thick * scale or 0
   holder:SetWidth(math.max(R.Width(), gap + 2 * math.max(left, right)))
   local half = math.floor(gap / 2) -- (whole pixels)
+  -- { point, x, band thickness, arc side }
   local spots = {
-    health = { "TOPRIGHT", -half, thick },
-    power = { "TOPLEFT", half, thick },
-    druid = { "TOPLEFT", half + (wanted.power and thick + PAIR_GAP or 0), druidThick },
+    health = { "TOPRIGHT", -half, thick, "left" },
+    power = { "TOPLEFT", half, thick, "right" },
+    druid = { "TOPLEFT", half + (wanted.power and thick + PAIR_GAP or 0), druidThick, "right" },
   }
   local any = false
   for key, spot in pairs(spots) do
     local row = rows[key]
-    StyleBarRow(row, true, spot[3])
+    local width = spot[3] * scale
+    StyleBarRow(row, true, spot[3], arc and spot[4] or nil, width)
     if wanted[key] then
       any = true
       row.frame:ClearAllPoints()
       row.frame:SetPoint(spot[1], holder, "TOP", spot[2], 0)
-      row.frame:SetSize(spot[3], tall)
+      row.frame:SetSize(width, tall)
     end
   end
   if not any then
@@ -663,7 +971,8 @@ local function Layout(force)
   parts[#parts + 1] = R.Width()
   parts[#parts + 1] = R.TextMode()
   if beside then
-    parts[#parts + 1] = "beside " .. R.Size("sideGap") .. " " .. R.Size("sideHeight") .. " " .. R.Size("sideWidth")
+    parts[#parts + 1] = (R.Arc() and "arc " or "beside ") .. R.Size("sideGap") .. " " .. R.Size("sideHeight") .. " "
+      .. R.Size("sideWidth")
   end
   local layout = table.concat(parts, ",")
   if layout == layoutKey and not force then
@@ -700,6 +1009,13 @@ local function Layout(force)
 end
 R.Layout = Layout
 
+-- Unit frames' "Health bars in class colours" changed (SettingsUI).
+function R.RefreshHealthColor()
+  if holder and rows.health then
+    UpdateHealth()
+  end
+end
+
 -- Shown and faded as the page says (Edit Mode: always shown, full).
 local function ApplyVisibility()
   local db = R.DB()
@@ -707,6 +1023,7 @@ local function ApplyVisibility()
   holder:SetShown(show and true or false)
   local faded = not st.editing and not st.combat and db.show ~= "combat" and db.fade
   holder:SetAlpha(faded and R.FADED or 1)
+  R.ApplyRest() -- "When not full": each bar's own alpha
 end
 R.ApplyVisibility = ApplyVisibility
 
@@ -1007,7 +1324,12 @@ local HANDLERS = {
   UNIT_MAXPOWER = function(token) PowerEvent(token, false) end,
   UNIT_DISPLAYPOWER = function() UpdateAll() end,
   UPDATE_SHAPESHIFT_FORM = function() UpdateAll() end,
+  UNIT_SPELLCAST_START = function(_, spellID) R.ShowCost(spellID) end,
+  UNIT_SPELLCAST_STOP = function() R.HideCost() end,
+  UNIT_SPELLCAST_FAILED = function() R.HideCost() end,
+  UNIT_SPELLCAST_INTERRUPTED = function() R.HideCost() end,
   UNIT_SPELLCAST_SUCCEEDED = function(_, spellID)
+    R.HideCost()
     R.SpellSucceeded(spellID)
     UpdateSeal()
     Layout()
@@ -1058,6 +1380,8 @@ local HANDLERS = {
 }
 local UNIT_EVENTS = { UNIT_HEALTH = true, UNIT_MAXHEALTH = true, UNIT_POWER_UPDATE = true, UNIT_POWER_FREQUENT = true,
   UNIT_MAXPOWER = true, UNIT_DISPLAYPOWER = true, UNIT_SPELLCAST_SUCCEEDED = true, UNIT_AURA = true,
+  UNIT_SPELLCAST_START = true, UNIT_SPELLCAST_STOP = true, UNIT_SPELLCAST_FAILED = true,
+  UNIT_SPELLCAST_INTERRUPTED = true,
   UNIT_ATTACK_SPEED = true }
 
 local function OnEvent(_, event, ...)
@@ -1086,6 +1410,7 @@ local function Build()
   end
   rows.health = BarRow("health", HEALTH, true)
   rows.power = BarRow("power", POWER.MANA, true, true)
+  CostBand(rows.power)
   rows.druid = BarRow("druid", POWER.MANA, true, true)
   rows.combo = { key = "combo", frame = CreateFrame("Frame", nil, holder), pips = {} }
   rows.combo.frame:Hide()

@@ -8,7 +8,8 @@ local addonName, ns = ...
 --   list = { ring, ... }    in the order shown on the page
 -- ring = { id, name, enabled, key = "SHIFT-F" or nil, auto = "mounts" / "travel" / "professions" or nil,
 --          preset = the premade ring it came from or nil, slices = { slice, ... } }
--- slice = { kind = "spell" / "item" / "macro" / "mount" / "marker" / "toy" / "action", id = number or string }
+-- slice = { kind = "spell" / "item" / "macro" / "mount" / "marker" / "toy" / "action" / "ring", id = number or string }
+-- (kind "ring", 2026-11-22: a ring inside a ring; choosing it opens that ring at the cursor, Secure.lua)
 --   spell id = spell ID, item / toy id = item ID, macro id = the macro's name, mount id = mount ID (mount
 --   journal), marker id = 1..8 (raid target icons), action id = a key of R.ACTIONS.
 -- A ring with `auto` fills its slices from what the character knows and carries each time it is built (so the
@@ -25,7 +26,7 @@ R.ICON = { min = 28, max = 56, step = 4 }
 local DEFAULTS = { radius = 100, iconSize = 40, nextID = 1, list = {}, style = "ping" }
 
 -- The attributes a slice may set on a secure action button (the ring's button copies these on release).
-R.ATTR_KEYS = { "type", "spell", "item", "macro", "macrotext", "marker", "action", "unit", "toy" }
+R.ATTR_KEYS = { "type", "spell", "item", "macro", "macrotext", "marker", "action", "unit", "toy", "subring" }
 
 -- Readable values only (Forever has secret values) ------------------------------------------------------------
 
@@ -150,7 +151,45 @@ R.ACTIONS = {
 }
 R.ACTION_ORDER = { "clearmark", "dismount", "sit", "stopcasting", "cancelform" }
 
+-- Windows a slice opens (the user's request, 2026-11-22: "panels like the character panel"): a secure /click on the
+-- game's own micro-menu button (Forever's Blizzard_MicroMenu names), so it works as that button does, in combat too;
+-- bags and the map (no micro button) through the game's toggles. A window whose button this game hasn't is not
+-- offered (R.PanelAvailable).
+R.PANELS = {
+  { "character", "Character", "CharacterMicroButton", "Interface\\Icons\\INV_Chest_Cloth_17" },
+  { "spellbook", "Spellbook", "SpellbookMicroButton", "Interface\\Icons\\INV_Misc_Book_09" },
+  { "talents", "Talents", "TalentMicroButton", "Interface\\Icons\\Ability_Marksmanship" },
+  { "playerspells", "Spells and talents", "PlayerSpellsMicroButton", "Interface\\Icons\\INV_Misc_Book_07" },
+  { "professions", "Professions", "ProfessionMicroButton", "Interface\\Icons\\Trade_BlackSmithing" },
+  { "legacy", "Legacy", "LegacyMicroButton", "Interface\\Icons\\INV_Misc_Book_11" },
+  { "achievements", "Achievements", "AchievementMicroButton", "Interface\\Icons\\INV_Misc_Book_11" },
+  { "questlog", "Quest log", "QuestLogMicroButton", "Interface\\Icons\\INV_Misc_Note_01" },
+  { "guild", "Guild and communities", "GuildMicroButton", "Interface\\Icons\\INV_BannerPVP_02" },
+  { "groupfinder", "Group finder", "LFDMicroButton", "Interface\\Icons\\INV_Misc_GroupNeedMore" },
+  { "collections", "Collections", "CollectionsMicroButton", "Interface\\Icons\\Ability_Mount_RidingHorse" },
+  { "bags", "Bags", nil, "Interface\\Icons\\INV_Misc_Bag_08", "/run ToggleAllBags()" },
+  { "map", "World map", nil, "Interface\\Icons\\INV_Misc_Map_01", "/run ToggleWorldMap()" },
+  { "menu", "Game menu", "MainMenuMicroButton", "Interface\\Icons\\INV_Misc_Gear_01" },
+}
+R.PANEL_ORDER = {}
+for _, panel in ipairs(R.PANELS) do
+  local key, name, button, icon, macro = panel[1], panel[2], panel[3], panel[4], panel[5]
+  R.ACTIONS["panel_" .. key] = { name = name, icon = icon, button = button, panel = true,
+    attrs = { type = "macro", macrotext = macro or ("/click " .. button) } }
+  R.PANEL_ORDER[#R.PANEL_ORDER + 1] = "panel_" .. key
+end
+
+-- Whether this game has the window's button (bags and the map always).
+function R.PanelAvailable(id)
+  local action = R.ACTIONS[id]
+  if not (action and action.panel) then
+    return false
+  end
+  return action.button == nil or type(_G[action.button]) == "table"
+end
+
 local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
+local RING_ICON = "Interface\\Icons\\INV_Jewelry_Ring_03"
 
 local function SpellName(id)
   local name = C_Spell and C_Spell.GetSpellName and Plain(R.Call(C_Spell.GetSpellName, id))
@@ -249,6 +288,15 @@ function R.Info(slice)
     local index = tonumber(id) or 1
     return { name = R.MarkerName(index), icon = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_" .. index,
       marker = index, attrs = { type = "raidtarget", marker = index, action = "toggle", unit = "target" } }
+  elseif kind == "ring" then
+    local inner = R.Find(id)
+    if not inner then
+      return { name = "Ring (deleted)", icon = QUESTION, missing = true, attrs = {} }
+    end
+    local first = R.Slices(inner)[1]
+    local firstInfo = first and first.kind ~= "ring" and R.Info(first)
+    return { name = inner.name or "Ring", icon = firstInfo and firstInfo.icon or RING_ICON, ring = inner.id,
+      attrs = { subring = tostring(inner.id) } }
   elseif kind == "action" then
     local action = R.ACTIONS[id]
     if not action then
@@ -403,6 +451,8 @@ local function JournalMounts()
   return list
 end
 
+R.JournalMounts, R.BagMounts = JournalMounts, BagMounts -- (the slot picker lists them)
+
 R.AUTO = {
   mounts = function()
     local list = {}
@@ -492,6 +542,9 @@ end
 
 -- Slots on the page are 1..MAX_SLICES; a ring's slices are packed (no gaps) in the order of its slots.
 function R.SetSlice(ring, index, slice)
+  if slice and slice.kind == "ring" and tostring(slice.id) == tostring(ring.id) then
+    return false -- a ring can't hold itself
+  end
   R.MakeOwn(ring)
   local list = ring.slices
   if slice then

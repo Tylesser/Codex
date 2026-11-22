@@ -424,7 +424,8 @@ end
 S.BuildScene = BuildScene
 
 local FONT_NAMES = { runestone = "Cinzel and Friz Quadrata", hearthwood = "IM Fell English SC and Friz Quadrata",
-  classic = "Friz Quadrata", slate = "Arial Narrow", dusk = "Inter" }
+  classic = "Friz Quadrata", slate = "Arial Narrow", dusk = "Inter", obsidian = "Inter",
+  onyx = "Inter" }
 
 builders[2] = function(page, width)
   local leftWidth = 420

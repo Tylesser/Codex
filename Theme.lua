@@ -1,7 +1,7 @@
 local addonName, ns = ...
 
 -- Themes. Each look lives in its own load-on-demand folder (Codex_Runestone, Codex_Hearthwood,
--- Codex_Classic, Codex_Slate, Codex_Dusk) that is loaded only when the player picks it. The folder
+-- Codex_Classic, Codex_Slate, Codex_Dusk, Codex_Obsidian, Codex_Onyx) that is loaded only when the player picks it. The folder
 -- calls TylesserCodex.RegisterTheme(def) while it loads. Changing the theme takes effect after a reload.
 --
 -- A theme definition (colors are { r, g, b } or { r, g, b, a }, 0-1):
@@ -92,6 +92,9 @@ ns.THEMES = {
   { id = "classic", name = "Classic", folder = "Codex_Classic", desc = "Close to the game's own colours." },
   { id = "slate", name = "Slate", folder = "Codex_Slate", desc = "Flat, quiet and minimal." },
   { id = "dusk", name = "Dusk", folder = "Codex_Dusk", desc = "Calm blue-grey, a soft teal, rounded corners." },
+  -- darker than Dusk, mostly black (players' request, 2026-11-22): they borrow Dusk's Inter (Codex_Dusk/Media)
+  { id = "obsidian", name = "Obsidian", folder = "Codex_Obsidian", desc = "Near-black with a warm gold accent." },
+  { id = "onyx", name = "Onyx", folder = "Codex_Onyx", desc = "Cool black with a soft teal." },
 }
 
 local registered = {}

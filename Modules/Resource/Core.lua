@@ -18,10 +18,11 @@ local R = {}
 ns.resource = R
 
 R.DEFAULTS = {
-  health = true, power = true, fsr = true, ticks = true, druidMana = true, combo = true, seal = true,
+  health = true, power = true, fsr = true, ticks = true, castCost = true, druidMana = true, combo = true, seal = true,
   swing = true, ranged = true, standStill = true,
   text = "both", -- on the health, power and druid mana bars: "none", "value", "percent" or "both" (R.TEXT_MODES)
-  layout = "under", -- "under" the character (rows) or "beside" it (health left, power right, upright)
+  layout = "under", -- "under" the character (rows), "beside" it (health left, power right, upright) or "arc"
+  -- (beside it as curved bars, health "(" and power ")": the same places and sizes as "beside")
   width = 150, show = "always", -- "always" or "combat"
   fade = true, -- out of combat the bars fade to FADED (with show = "always")
   sideGap = 160, sideHeight = 150, sideWidth = 10, -- "beside": the space between the bars, their height, width
@@ -48,6 +49,7 @@ R.TEXT_MODES = {
 R.LAYOUTS = {
   { key = "under", name = "Under the character" },
   { key = "beside", name = "Beside the character" },
+  { key = "arc", name = "Arcs beside the character" },
 }
 
 local FSR, PAIR, TICK, TICK_SLACK, TICK_QUIET = 5, 0.6, 2, 0.35, 4.5
@@ -100,8 +102,17 @@ function R.TextMode()
   return Choice(R.TEXT_MODES, R.DB().text, R.DEFAULTS.text)
 end
 
+function R.LayoutMode()
+  return Choice(R.LAYOUTS, R.DB().layout, R.DEFAULTS.layout)
+end
+
+-- Beside the character: upright bars or arcs (they share places, sizes and the saved position).
 function R.Beside()
-  return Choice(R.LAYOUTS, R.DB().layout, R.DEFAULTS.layout) == "beside"
+  return R.LayoutMode() ~= "under"
+end
+
+function R.Arc()
+  return R.LayoutMode() == "arc"
 end
 
 -- A change from the page: saved, then the bars follow at once.

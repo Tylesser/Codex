@@ -298,6 +298,8 @@ Q.SECTIONS = {
   futureSpells = { area = "bars", order = 45, title = "Future spells", folded = true },
   hoverBind = { area = "bars", order = 50, title = "Bind keys by hovering" },
   cooldownNumbers = { area = "bars", order = 55, title = "Numbers on cooldowns" },
+  greyOut = { area = "bars", order = 56, title = "Grey out what you can't use" },
+  hideEmpty = { area = "bars", order = 57, title = "Hide empty slots" },
   trainerAll = { area = "trade", order = 40, title = "Learn all at trainers" },
   fasterLoot = { area = "items", order = 30, title = "Faster loot" },
   questTooltips = { area = "tooltips", order = 20, title = "Quest info in tooltips" },

@@ -91,6 +91,7 @@ A.CODEX = {
   { "echo_of_light", "Echo of Light", "Paladin" }, { "echo_of_wisdom", "Echo of Wisdom", "Paladin" },
   { "shadow_trance", "Shadow Trance", "Warlock" }, { "clearcasting_mage", "Clearcasting", "Mage" },
   { "clearcasting_druid", "Clearcasting", "Druid" }, { "clearcasting_shaman", "Clearcasting", "Shaman" },
+  { "missile_barrage", "Missile Barrage", "Mage" },
 }
 A.codexKeys = {}
 for _, entry in ipairs(A.CODEX) do

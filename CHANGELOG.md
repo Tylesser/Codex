@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.2.0
+
+- New: **What's new** opens once after Codex is updated, with what changed since the version you had. Open it any time with `/codex whatsnew` or from General; switch it off there or in the window.
+- Personal bars: **what the cast will spend**. While you cast, the end of the power bar darkens by the spell's cost, with a line where your power will be. On by default; not on the arc layout.
+- New: **Hide empty slots** (Action bars > Buttons, off until you switch it on). Empty slots come back while you drag a spell, in Edit Mode and while binding keys.
+- New: **Grey out what you can't use** (Action bars > Buttons, off until you switch it on): buttons out of range, short of mana or not usable turn grey, and the key text keeps its colour instead of turning red.
+- New: **Interface scale** (General): the game's interface from 50 % to 115 %, below the game's own 64 % too, or pixel perfect for your screen.
+- Loot rolls: Need, Greed and Pass keep their own colours on Codex's buttons.
+- Rings: **click a slot to choose** what goes in it from a list (spells, items, mounts, toys, macros, raid markers, actions, windows and your other rings), with a search box. Dragging still works.
+- Rings: **rings inside rings**. Put another ring in a slot; choosing it opens that ring where you let go. Works in combat.
+- Unit frames: incoming heals show in the health bar's own colour, faded, instead of green.
+- Fixed: the quest tracker tried to change a row's click area during a fight, which the game blocks.
+- Two new themes, darker than Dusk: **Obsidian** (near-black with a warm gold accent) and **Onyx** (cool black with a soft teal). Pick one in Settings > Theme.
+- Unit frames: mana and energy fill smoothly while they regenerate (as Personal bars do); with class-coloured health the name inside the bar is white so it can be read; a stronger gradient on the health bars.
+- Rings: slices can now **open windows**: character, spellbook, talents, professions, Legacy, quest log, guild, group finder, collections, bags, world map and the game menu ("Open a window" in a slot's menu). They work in combat, like the game's own buttons.
+- Unit frames: choose where the **auras** go for the target, focus and party frames: below (as before), above, right or left of the frame.
+- Fixed: the highlight of **Bind keys by hovering** now covers the whole button, icon included.
+- Nameplates: the target's glow is now optional (**Glow round the target's nameplate**); the accent line stays.
+- Proc glow: **Missile Barrage** lights Arcane Missiles, with its own Codex art.
+- Unit frames: **resize them in Edit Mode**. Turn the mouse wheel over a frame's box (5 % a notch, 50 to 200 %); Shift + right-click puts it back to 100 %. The party frames resize together.
+- Unit frames: a new option, **Players by first name only (no surname)**.
+- Experience and reputation bars in Codex's bar design: a gradient fill like the unit frames and Personal bars, rounded on the Dusk theme, and the rested marker as a thin line in the theme's colour.
+- Fixed: Codex's drop-down menus (the pickers on the pages, the Info bar's slot menus, the minimap menu) didn't close on a click elsewhere the first time one was opened after a login or reload.
+- Personal bars: a new layout, **arcs beside the character**. Health curves on the left, power on the right, filling from the bottom; the five-second rule and tick sparks follow the curve. Pick it under Layout; Side gap, height and width work as for the upright bars.
+- Personal bars: a new Show choice, **When not full**. Each bar shows only while it isn't full: health while you're hurt, mana and energy while they're below their max, rage while you have some. Edit Mode still shows them all.
+- Personal bars: with **Health bars in class colours** (Unit frames) on, the health bar takes your class colour.
+
 ## 1.1.1
 
 - Fixed: quest pins on the continent map grouped quests of different zones into one pin that sat between them. Each quest now counts for the zone where it stands, so a pin's count is that zone's quests only.

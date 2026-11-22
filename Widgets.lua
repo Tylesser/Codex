@@ -1250,6 +1250,9 @@ local menu
 function UI.ShowMenu(anchor, items)
   if not menu then
     menu = CreateFrame("Frame", "CodexMenu", UIParent)
+    -- (a new frame is shown: hidden first, so the Show below fires OnShow and the outside-click watch starts with
+    -- the very first menu; it didn't, the user's report 2026-11-22: menus not closing on a click elsewhere)
+    menu:Hide()
     menu:SetFrameStrata("DIALOG")
     menu:SetClampedToScreen(true)
     UI.Panel(menu, { cornerSize = 12, strip = false })

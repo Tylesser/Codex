@@ -109,6 +109,28 @@ function ns.FrameStyle()
 end
 ns.API.FrameStyle = ns.FrameStyle
 
+-- Where a unit frame's auras go (CodexDB.skins.auraPos[unit]: "target", "focus", "party"; nil = below; 2026-11-22).
+ns.AURA_PLACES = {
+  { key = "below", name = "Below the frame" },
+  { key = "above", name = "Above the frame" },
+  { key = "right", name = "Right of the frame" },
+  { key = "left", name = "Left of the frame" },
+}
+local AURA_PLACE_KEYS = { below = true, above = true, right = true, left = true }
+function ns.AuraPlace(unit)
+  local skins = ns.db and ns.db.skins
+  local place = skins and type(skins.auraPos) == "table" and skins.auraPos[unit]
+  return AURA_PLACE_KEYS[place] and place or "below"
+end
+ns.API.AuraPlace = ns.AuraPlace
+
+-- Players on the unit frames by first name only, no surname (CodexDB.skins.firstNameOnly; 2026-11-22).
+function ns.FirstNameOnly()
+  local skins = ns.db and ns.db.skins
+  return skins and skins.firstNameOnly == true or false
+end
+ns.API.FirstNameOnly = ns.FirstNameOnly
+
 -- Health bars in class colours (CodexDB.skins.healthColor = "class"); nil = green.
 function ns.ClassHealth()
   local skins = ns.db and ns.db.skins
@@ -241,6 +263,25 @@ PREVIEW.dusk = { head = DUSK_MEDIA .. "Inter-SemiBold.ttf", body = DUSK_MEDIA ..
   side = { 1, 1, 1, 0.02 }, divider = { 0.141, 0.152, 0.171 },
   inset = { { 0.106, 0.122, 0.145, 0.92 }, { 0.141, 0.152, 0.171 } },
   button = { { 0.125, 0.145, 0.173 }, { 0.125, 0.145, 0.173 }, { 0.195, 0.213, 0.239 }, { 0.843, 0.859, 0.878 } } }
+-- Obsidian and Onyx (2026-11-22): Dusk's look in near-black
+PREVIEW.obsidian = { head = DUSK_MEDIA .. "Inter-SemiBold.ttf", body = DUSK_MEDIA .. "Inter-Regular.ttf", round = 5,
+  text = { 0.839, 0.831, 0.812 }, muted = { 0.518, 0.506, 0.482 },
+  panel = { { 0.047, 0.047, 0.051 }, { 0.047, 0.047, 0.051 } }, rings = { { 0.114, 0.114, 0.117 } },
+  title = { { 0.067, 0.067, 0.075 }, { 0.067, 0.067, 0.075 } }, titleLine = { 0.180, 0.180, 0.184 },
+  titleText = { 0.839, 0.831, 0.812 },
+  accent = { 0.784, 0.635, 0.353 }, bright = { 0.949, 0.937, 0.910 }, good = { 0.498, 0.769, 0.549 },
+  inset = { { 0.067, 0.067, 0.075, 0.94 }, { 0.104, 0.104, 0.108 } },
+  side = { 1, 1, 1, 0.02 }, divider = { 0.104, 0.104, 0.108 },
+  button = { { 0.090, 0.090, 0.102 }, { 0.090, 0.090, 0.102 }, { 0.163, 0.163, 0.174 }, { 0.839, 0.831, 0.812 } } }
+PREVIEW.onyx = { head = DUSK_MEDIA .. "Inter-SemiBold.ttf", body = DUSK_MEDIA .. "Inter-Regular.ttf", round = 5,
+  text = { 0.827, 0.843, 0.863 }, muted = { 0.486, 0.518, 0.553 },
+  panel = { { 0.039, 0.043, 0.047 }, { 0.039, 0.043, 0.047 } }, rings = { { 0.106, 0.110, 0.114 } },
+  title = { { 0.059, 0.067, 0.075 }, { 0.059, 0.067, 0.075 } }, titleLine = { 0.174, 0.177, 0.180 },
+  titleText = { 0.827, 0.843, 0.863 },
+  accent = { 0.435, 0.698, 0.659 }, bright = { 0.941, 0.949, 0.957 }, good = { 0.498, 0.769, 0.549 },
+  inset = { { 0.059, 0.067, 0.075, 0.94 }, { 0.097, 0.101, 0.104 } },
+  side = { 1, 1, 1, 0.02 }, divider = { 0.097, 0.101, 0.104 },
+  button = { { 0.078, 0.086, 0.098 }, { 0.078, 0.086, 0.098 }, { 0.152, 0.159, 0.170 }, { 0.827, 0.843, 0.863 } } }
 -- Frame style cards: a small drawn player frame in the theme for each style (Codex's own textures, not pictures)
 local function StyleDisc(frame, size, color, x, y, layer, sublevel)
   local disc = frame:CreateTexture(nil, layer or "ARTWORK", nil, sublevel or 0)
@@ -731,7 +772,7 @@ ns.MINIMAP_SHAPES = {
 }
 -- each theme's own shape (board miniDefault; Skins/Minimap.lua uses the same)
 ns.MINIMAP_THEME_SHAPE = { runestone = "round", classic = "header", hearthwood = "round", slate = "square",
-  dusk = "round" }
+  dusk = "round", obsidian = "round", onyx = "round" }
 
 function ns.MinimapShapeName(key)
   for _, shape in ipairs(ns.MINIMAP_SHAPES) do
@@ -1078,8 +1119,146 @@ local function BuildCodexWindow(body, width, section)
   size.value:SetText(("%d%%"):format(math.floor((ns.db.scale or 1) * 100 + 0.5)))
   body.sizeStepper = size
   stack.AddText(Wrapping(body, 12, "muted", width, "From 70% to 140%. Drag the title bar to move the window."), 0)
+
+  local news = WrapCheck(body, "Show what's new after an update (once for each version)", width)
+  news.refresh = function(self)
+    self:SetChecked(ns.db.whatsNew ~= false)
+  end
+  news:SetScript("OnClick", function(self)
+    ns.db.whatsNew = self:GetChecked() and true or false
+  end)
+  stack.AddCheck(news, 10)
+  section.Register(news)
+  body.whatsNewCheck = news
+  local newsButton = UI.Button(body, 150, 24, "What's new")
+  newsButton:SetScript("OnClick", function()
+    ns.ShowWhatsNew()
+  end)
+  stack.Add(newsButton, function() return 24 end, 0, 6)
   return { Height = stack.Layout }
 end
+
+-- General: the game's interface scale (2026-11-22, the user's request) ---------------------------------------------
+-- CodexDB.uiScale: nil = the game's own setting, untouched. 0.5-1.15 in 0.05 steps, or "pixel perfect" (768 / the
+-- screen's physical height). From 0.64 up it is the game's own setting (CVars useUiScale / uiScale, the game scales
+-- UIParent itself); below that the CVar sits at 0.64 and UIParent gets the scale, again after the game resets it
+-- (UI_SCALE_CHANGED, DISPLAY_SIZE_CHANGED). Out of combat only: a change in a fight waits for its end.
+local UI_SCALE_MIN, UI_SCALE_MAX, UI_SCALE_GAME_MIN = 0.5, 1.15, 0.64
+local scaleFrame, applyingScale
+
+function ns.PixelPerfectScale()
+  local _, height = GetPhysicalScreenSize and GetPhysicalScreenSize()
+  if type(height) ~= "number" or height <= 0 then
+    return nil
+  end
+  return math.max(UI_SCALE_MIN, math.min(UI_SCALE_MAX, 768 / height))
+end
+
+function ns.UIScale()
+  local value = ns.db and tonumber(ns.db.uiScale)
+  return value and math.max(UI_SCALE_MIN, math.min(UI_SCALE_MAX, value)) or nil
+end
+
+local function SetGameCVar(name, value)
+  if C_CVar and C_CVar.SetCVar then
+    pcall(C_CVar.SetCVar, name, tostring(value))
+  elseif SetCVar then
+    pcall(SetCVar, name, tostring(value))
+  end
+end
+
+function ns.ApplyUIScale()
+  local value = ns.UIScale()
+  if not value or applyingScale then
+    return
+  end
+  if InCombatLockdown and InCombatLockdown() then
+    scaleFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+    return
+  end
+  applyingScale = true
+  SetGameCVar("useUiScale", 1)
+  if value >= UI_SCALE_GAME_MIN then
+    SetGameCVar("uiScale", value)
+  else
+    SetGameCVar("uiScale", UI_SCALE_GAME_MIN)
+  end
+  if math.abs((UIParent:GetScale() or 1) - value) > 0.001 then
+    pcall(UIParent.SetScale, UIParent, value)
+  end
+  applyingScale = false
+end
+
+function ns.SetUIScale(value)
+  if value == nil then
+    ns.db.uiScale = nil -- the game's own setting from now on (what is set stays until it is changed there)
+    return
+  end
+  value = math.floor(value / 0.05 + 0.5) * 0.05
+  ns.db.uiScale = math.max(UI_SCALE_MIN, math.min(UI_SCALE_MAX, value))
+  ns.ApplyUIScale()
+end
+
+scaleFrame = CreateFrame("Frame")
+for _, event in ipairs({ "PLAYER_ENTERING_WORLD", "UI_SCALE_CHANGED", "DISPLAY_SIZE_CHANGED" }) do
+  pcall(scaleFrame.RegisterEvent, scaleFrame, event)
+end
+scaleFrame:SetScript("OnEvent", function(self, event)
+  if event == "PLAYER_REGEN_ENABLED" then
+    self:UnregisterEvent("PLAYER_REGEN_ENABLED")
+  end
+  if ns.db then
+    ns.ApplyUIScale()
+  end
+end)
+
+local function BuildUIScale(body, width, section)
+  local stack = Stack(body)
+  local stepper = UI.Stepper(body, 52)
+  LabelRow(body, stack, "Interface scale", width, stepper, 104, 4)
+  local note = Wrapping(body, 12, "muted", width, "")
+  local function Refresh()
+    local value = ns.UIScale()
+    local shown = value or (UIParent and UIParent:GetScale()) or 1
+    stepper.value:SetText(("%d%%"):format(math.floor(shown * 100 + 0.5)))
+    stepper.less:SetEnabled(shown > UI_SCALE_MIN + 0.001)
+    stepper.more:SetEnabled(shown < UI_SCALE_MAX - 0.001)
+    note:SetText(value and ("Codex keeps the game's interface at %d%%. From 50%% to 115%%; changes in a fight wait "
+      .. "until it ends."):format(math.floor(value * 100 + 0.5))
+      or "The game's own setting (Options > Graphics). Change it here to let Codex keep it, also below the game's 64%.")
+  end
+  stepper.less:SetScript("OnClick", function()
+    ns.SetUIScale((ns.UIScale() or UIParent:GetScale() or 1) - 0.05)
+    Refresh()
+  end)
+  stepper.more:SetScript("OnClick", function()
+    ns.SetUIScale((ns.UIScale() or UIParent:GetScale() or 1) + 0.05)
+    Refresh()
+  end)
+  local pixel = UI.Button(body, 130, 24, "Pixel perfect")
+  local game = UI.Button(body, 130, 24, "Game's own")
+  game:SetPoint("LEFT", pixel, "RIGHT", 8, 0)
+  stack.Add(pixel, function() return 24 end, 0, 8)
+  pixel:SetScript("OnClick", function()
+    local value = ns.PixelPerfectScale()
+    if value then
+      ns.db.uiScale = value
+      ns.ApplyUIScale()
+      Refresh()
+    end
+  end)
+  game:SetScript("OnClick", function()
+    ns.SetUIScale(nil)
+    Refresh()
+  end)
+  stack.AddText(note, 6)
+  body.uiScaleStepper, body.uiScaleRefresh = stepper, Refresh
+  Refresh()
+  return { Height = stack.Layout, Refresh = Refresh }
+end
+
+ns.AddSection("general", { id = "uiscale", title = "Interface scale", order = 85, build = BuildUIScale,
+  keywords = { "ui scale size pixel perfect" } })
 
 ns.AddSection("general", { id = "codexwindow", title = "Codex window", order = 80, build = BuildCodexWindow,
   keywords = { "minimap button scale size" } })

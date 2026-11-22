@@ -10,6 +10,8 @@ move-folders:
   Codex/Themes/Classic: Codex_Classic
   Codex/Themes/Slate: Codex_Slate
   Codex/Themes/Dusk: Codex_Dusk
+  Codex/Themes/Obsidian: Codex_Obsidian
+  Codex/Themes/Onyx: Codex_Onyx
   Codex/Skins: Codex_Skins
 
 ignore:

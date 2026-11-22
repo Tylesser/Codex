@@ -1171,6 +1171,9 @@ OPTIONS.unitframes = function(card, parent, width, stack)
       if type(refresh) == "function" then
         pcall(refresh)
       end
+      if ns.resource and type(ns.resource.RefreshHealthColor) == "function" then
+        pcall(ns.resource.RefreshHealthColor) -- Personal bars' health
+      end
       if type(ns.RecolourPreviews) == "function" then
         ns.RecolourPreviews()
       end
@@ -1187,10 +1190,51 @@ OPTIONS.unitframes = function(card, parent, width, stack)
     ns.SmoothBars, function(on)
       ns.db.skins.smoothBars = on
     end)
+  -- where each frame's auras go (Settings.lua ns.AURA_PLACES)
+  options.auraPlaces = {}
+  for _, unit in ipairs({ { "target", "Target auras" }, { "focus", "Focus auras" }, { "party", "Party auras" } }) do
+    options.auraPlaces[#options.auraPlaces + 1] = PickerRow(parent, stack, unit[2], width, function()
+      local place = ns.AuraPlace(unit[1])
+      for _, choice in ipairs(ns.AURA_PLACES) do
+        if choice.key == place then
+          return choice.name
+        end
+      end
+      return place
+    end, function()
+      return ns.AURA_PLACES
+    end, function(key)
+      ns.db.skins.auraPos = ns.db.skins.auraPos or {}
+      ns.db.skins.auraPos[unit[1]] = key ~= "below" and key or nil
+      local refresh = ns.API.RefreshFrameStyle
+      if type(refresh) == "function" then
+        pcall(refresh)
+      end
+    end, function()
+      return ns.AuraPlace(unit[1])
+    end)
+  end
+  options.firstName = OptionCheck(parent, stack, "Players by first name only (no surname)", width, ns.FirstNameOnly,
+    function(on)
+      ns.db.skins.firstNameOnly = on and true or nil
+      local refresh = ns.API.RefreshNames
+      if type(refresh) == "function" then
+        pcall(refresh)
+      end
+    end, 4)
 end
 
 OPTIONS.nameplates = function(card, parent, width, stack)
   card.options.health = UnitTextRow(parent, stack, "Health text", "nameplate", width)
+  card.options.glow = OptionCheck(parent, stack, "Glow round the target's nameplate", width, function()
+    return not (ns.db.skins and ns.db.skins.nameplateGlow == false)
+  end, function(on)
+    ns.db.skins.nameplateGlow = (not on) and false or nil
+    local refresh = ns.API.RefreshPlateGlow
+    if type(refresh) == "function" then
+      pcall(refresh)
+    end
+  end, 4)
 end
 
 OPTIONS.auras = function(card, parent, width, stack)

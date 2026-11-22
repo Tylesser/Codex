@@ -224,6 +224,38 @@ function HB.Refresh()
   -- nothing on the banner changes yet; kept for the page and tests
 end
 
+-- The cover over the whole button as you see it: the button's box and its icon's together (the restyled icon can
+-- reach past the button's own box; the user's screenshot, 2026-11-22: the highlight covered part of it), in
+-- screen pixels so a scaled bar lines up. Falls back to the button's box.
+local function Box(region)
+  if type(region) ~= "table" or type(region.GetRect) ~= "function" or type(region.GetEffectiveScale) ~= "function" then
+    return nil
+  end
+  local ok, left, bottom, width, height = pcall(region.GetRect, region)
+  local okScale, scale = pcall(region.GetEffectiveScale, region)
+  if not (ok and okScale) or type(left) ~= "number" or type(bottom) ~= "number" or type(width) ~= "number"
+    or type(height) ~= "number" or type(scale) ~= "number" or width <= 0 or height <= 0 then
+    return nil
+  end
+  return left * scale, bottom * scale, (left + width) * scale, (bottom + height) * scale
+end
+
+local function CoverButton(button)
+  cover:ClearAllPoints()
+  local l, b, r, t = Box(button)
+  local icon = button.icon or button.Icon
+  local il, ib, ir, it = Box(icon)
+  local uiScale = UIParent.GetEffectiveScale and UIParent:GetEffectiveScale() or 1
+  if l and il and type(uiScale) == "number" and uiScale > 0 then
+    l, b, r, t = math.min(l, il), math.min(b, ib), math.max(r, ir), math.max(t, it)
+    cover:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", l / uiScale, b / uiScale)
+    cover:SetSize((r - l) / uiScale, (t - b) / uiScale)
+  else
+    cover:SetAllPoints(button)
+  end
+end
+HB.CoverButton = CoverButton
+
 -- One look per frame: a cover over the hovered action button while the mode is on.
 local function Watch()
   if not (banner and banner:IsShown()) then
@@ -235,8 +267,7 @@ local function Watch()
   local command, button = Hovered()
   if command and button then
     cover.command = command
-    cover:ClearAllPoints()
-    cover:SetAllPoints(button)
+    CoverButton(button)
     cover:Show()
     ShowTip()
   end

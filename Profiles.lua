@@ -32,7 +32,7 @@ local MAX_NAME = 32
 
 -- What is never part of a profile -------------------------------------------------------------------------
 
-local SKIP_TOP = { profiles = true, profileActive = true, sharedProfile = true, setupDone = true, setupStep = true,
+local SKIP_TOP = { profiles = true, profileActive = true, sharedProfile = true, setupDone = true, setupStep = true, whatsNewSeen = true,
   window = true, folded = true, areaTabs = true, trainerSpells = true }
 -- folded: which sections of the Codex window are folded (Areas.lua), not a setting; trainerSpells: the prices your
 -- class trainers asked (Modules/QoL/FutureSpells.lua), data
@@ -44,6 +44,7 @@ local SKIP_PATH = {
   ["highlight.saved"] = true, -- the player's own CVars
   ["movewindows.positions"] = true,
   ["skins.frames"] = true, ["skins.told"] = true, -- unit frame positions, a one-time hint
+  ["skins.frameScale"] = true, -- unit frame sizes (Edit Mode, with the positions)
   -- Commerce: what turn-ins gave, faction IDs, window places (data, not settings)
   ["commerce.learned"] = true, ["commerce.factionIDs"] = true, ["commerce.position"] = true,
   ["commerce.npcPosition"] = true, ["vendorsearch.boxOffset"] = true,
@@ -734,6 +735,21 @@ function P.Sanitize(settings)
     end
     if out.skins.healthColor ~= nil and out.skins.healthColor ~= "class" then
       out.skins.healthColor = nil
+    end
+    if type(out.skins.auraPos) == "table" then
+      for unit, place in pairs(out.skins.auraPos) do
+        if place ~= "above" and place ~= "right" and place ~= "left" then
+          out.skins.auraPos[unit] = nil
+        end
+      end
+    elseif out.skins.auraPos ~= nil then
+      out.skins.auraPos = nil
+    end
+    if out.skins.nameplateGlow ~= nil and out.skins.nameplateGlow ~= false then
+      out.skins.nameplateGlow = nil
+    end
+    if out.skins.firstNameOnly ~= nil and out.skins.firstNameOnly ~= true then
+      out.skins.firstNameOnly = nil
     end
     if out.skins.enabled ~= nil and type(out.skins.enabled) ~= "boolean" then
       out.skins.enabled = nil

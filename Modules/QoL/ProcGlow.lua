@@ -58,6 +58,12 @@ P.AURAS = {
     spells = { "Shred", "Maul", "Healing Touch", "Regrowth" } },
   { name = "Clearcasting", ids = { 16246 }, class = "SHAMAN",
     spells = { "Lightning Bolt", "Chain Lightning", "Chain Heal" } },
+  -- Missile Barrage (the user's request, 2026-11-22): the buff makes the next Arcane Missiles faster. Forever's own
+  -- buff 1326083 and the older Season of Discovery ones (wago.tools wowf SpellName / SpellEffect); notIDs: the talent
+  -- and rune themselves (400588 the passive, 401736 the rune), also named "Missile Barrage", never light it.
+  { name = "Missile Barrage", ids = { 1326083, 400589, 467409 }, notIDs = { [400588] = true, [401736] = true },
+    class = "MAGE", spells = { "Arcane Missiles" },
+    spellIDs = { 5143, 5144, 5145, 8416, 8417, 10211, 10212, 25345 } },
 }
 
 -- Unsealed Wrath (Forever paladin talent 1310735): melee attacks store copies of your seal as an "Echo of <seal>"
@@ -1169,6 +1175,9 @@ function P.ActiveAuras()
       P.NoteSeal(name)
     end
     local match = (id and P.auraIDs[id]) or (name and P.auraNames[Lower(name)])
+    if match and id and match.notIDs and match.notIDs[id] then
+      match = nil -- a talent's own passive with the proc's name
+    end
     if match and match.stacks then
       local count = aura.applications
       if count ~= nil and not Readable(count) then
@@ -1985,7 +1994,8 @@ Q.AddToggle({
     .. "Counterattack, Mongoose Bite, Hammer of Wrath (and Victory Rush where the game has it). Also Shadow Bolt "
     .. "with Shadow Trance (Nightfall), and with Clearcasting: Arcane Missiles, Arcane Explosion, Blizzard and "
     .. "Flamestrike (mage), Shred, Maul, Healing Touch and Regrowth (druid), Lightning Bolt, Chain Lightning and "
-    .. "Chain Heal (shaman). What the game already lights itself keeps the game's glow. With the art on, the "
+    .. "Chain Heal (shaman), and with Missile Barrage: Arcane Missiles (mage). What the game already lights itself "
+    .. "keeps the game's glow. With the art on, the "
     .. "game's proc art shows on both sides of your character too (two swords for Blade of Justice).",
   order = 50,
   Enable = P.Enable,

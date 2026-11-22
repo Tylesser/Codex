@@ -68,7 +68,7 @@ ns.AREA_TABS = {
   bars = {
     { "Look", { "part-actionbars" } }, { "Visibility", { "barfade" } }, { "Proc glow", { "qol-procGlow" } },
     { "Spells", { "qol-spellRanks", "qol-futureSpells" } }, { "Cooldown manager", { "part-cooldowns" } },
-    { "Buttons", { "qol-hoverBind", "qol-cooldownNumbers" } },
+    { "Buttons", { "qol-hoverBind", "qol-cooldownNumbers", "qol-greyOut", "qol-hideEmpty" } },
   },
   units = {
     { "Player and target", { "part-unitframes" } }, { "Party", { "part-partyframes" } },

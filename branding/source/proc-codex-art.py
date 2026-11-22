@@ -9,7 +9,8 @@ soft glow and a lighter inner edge), and a few particles of its own along the ar
 the game's art. With a second argument it also writes a contact sheet of every piece (for a look).
 
 Keys (ProcArt.lua, A.CODEX): overpower, revenge, execute, victory_rush, riposte, counterattack, mongoose_bite,
-hammer_of_wrath, unsealed_wrath, shadow_trance, clearcasting_mage, clearcasting_druid, clearcasting_shaman.
+hammer_of_wrath, unsealed_wrath, shadow_trance, clearcasting_mage, clearcasting_druid, clearcasting_shaman,
+missile_barrage.
 """
 import math
 import os
@@ -309,6 +310,16 @@ def e_clearcasting_shaman(d):
         disc(d, x, y, r)
 
 
+def e_missile_barrage(d):
+    # three arcane missiles flying up and out: a thin trail widening to a bright round head
+    for dx, dy, length in ((-11, 9, 26), (0, 0, 32), (11, -9, 26)):
+        tail = rotate([(0, length / 2)], -40)[0]
+        head = rotate([(0, -length / 2)], -40)[0]
+        stroke(d, [(dx + tail[0], dy + tail[1]), (dx + head[0], dy + head[1])], 1.4, 3.6)
+        disc(d, dx + head[0], dy + head[1], 4.6)
+        disc(d, dx + head[0], dy + head[1], 1.6, fill=0)
+
+
 # The procs: key -> emblem, colours { core, glow, arc, particles }, particle kind -----------------------------------
 
 ARTS = {
@@ -330,6 +341,8 @@ ARTS = {
     "clearcasting_mage": (e_clearcasting_mage, (226, 236, 255), (90, 120, 255), (150, 170, 255), "motes"),
     "clearcasting_druid": (e_clearcasting_druid, (230, 255, 225), (60, 190, 90), (130, 225, 140), "motes"),
     "clearcasting_shaman": (e_clearcasting_shaman, (225, 252, 255), (40, 180, 240), (120, 220, 255), "sparks"),
+    # (new pieces go last: each piece's particles come from its place in this list)
+    "missile_barrage": (e_missile_barrage, (255, 228, 255), (200, 80, 255), (225, 145, 255), "sparks"),
 }
 
 

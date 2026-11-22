@@ -113,6 +113,9 @@ frame:SetScript("OnEvent", function(self, event, name)
     if ns.MaybeShowSetup then
       ns.MaybeShowSetup() -- the first-run setup, once (Setup.lua)
     end
+    if ns.MaybeShowWhatsNew then
+      ns.MaybeShowWhatsNew() -- once per new version (WhatsNew.lua)
+    end
   end
 end)
 
@@ -124,6 +127,8 @@ SlashCmdList.CODEX = function(input)
     ns.ToggleWindow()
   elseif command == "feedback" then
     ns.T.ShowFeedback()
+  elseif command == "whatsnew" or command == "news" or command == "changes" then
+    ns.ShowWhatsNew()
   elseif command == "setup" then
     if ns.ShowSetup then
       ns.ShowSetup(1)
@@ -212,6 +217,7 @@ SlashCmdList.CODEX = function(input)
       names[#names + 1] = module.id
     end
     ns.Say("/codex opens the window. /codex <" .. table.concat(names, "|") .. "|settings> opens a page. "
-      .. "/codex setup runs the setup again, /codex profile opens the profiles, /codex feedback shows the feedback link.")
+      .. "/codex setup runs the setup again, /codex whatsnew shows what changed, /codex profile opens the profiles, "
+      .. "/codex feedback shows the feedback link.")
   end
 end
