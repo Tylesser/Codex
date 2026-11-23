@@ -146,8 +146,8 @@ local function BlockOnEnter(self)
 end
 
 -- Auction house searches ----------------------------------------------------------------------------------
--- While the auction house is open the block gets two buttons: Search (the recipe's item) and Reagents (the
--- reagents you still lack, or all of them when you have everything). They run the Auction House module's
+-- While the auction house is open the block gets two buttons: Search (the recipe's item) and Reagents (every
+-- reagent of the recipe, whether you have it or not: the user's request, 2026-11-24). They run the Auction House module's
 -- shopping search on a temporary list (not saved), so the results show in the Codex auction panel, where a
 -- click opens the game's own buy view. Codex never buys.
 
@@ -156,8 +156,9 @@ function P.AuctionOpen()
   return (A and A.running and A.open and A.IsModern and A.IsModern()) and true or false
 end
 
--- Searches the auction house for each name (exact). Returns true when the search started.
-function P.SearchAuction(listName, names)
+-- Searches the auction house for each name (exact; quantities[name] = how many to buy, put in the game's buy view
+-- when that result is opened). Returns true when the search started.
+function P.SearchAuction(listName, names, quantities)
   local A = ns.auction
   if InCombatLockdown() then
     ns.Say("auction searches wait until the fight is over.")
@@ -168,7 +169,7 @@ function P.SearchAuction(listName, names)
   end
   local list = { name = listName, terms = {} }
   for _, name in ipairs(names) do
-    list.terms[#list.terms + 1] = { text = name, exact = true }
+    list.terms[#list.terms + 1] = { text = name, exact = true, quantity = quantities and quantities[name] or nil }
   end
   local ok, why = A.SearchList(list)
   if not ok then
@@ -186,9 +187,25 @@ function P.SearchItem(entry)
   return P.SearchAuction("Recipe: " .. entry.name, { name })
 end
 
--- The reagents you still lack for one craft; all of them when you have everything.
+-- How many crafts the recipe window's count box asks for (forever Blizzard_ProfessionsCrafting.xml:
+-- CraftingPage.CreateMultipleInputBox, a NumericInputSpinner), at least one.
+function P.CraftCount()
+  local page = type(ProfessionsFrame) == "table" and ProfessionsFrame.CraftingPage
+  local box = type(page) == "table" and page.CreateMultipleInputBox
+  local ok, value = false, nil
+  if type(box) == "table" and type(box.GetValue) == "function" then
+    ok, value = pcall(box.GetValue, box)
+  end
+  value = ok and tonumber(value) or nil
+  return value and value >= 1 and math.floor(value) or 1
+end
+
+-- Every reagent of one craft (the ones you have too, so you can compare prices), how many names haven't loaded,
+-- and how many of each to buy (2026-11-24, the user's "set the quantity to what the recipe requires"): what the
+-- crafts in the count box need minus what you have, or all of it when you have enough.
 function P.ReagentNames(entry)
-  local missing, all, unnamed = {}, {}, 0
+  local all, unnamed, quantities = {}, 0, {}
+  local crafts = P.CraftCount()
   for _, reagent in ipairs(entry.reagents) do
     local itemID = reagent.chosenItemID or reagent.itemID
     if reagent.source == "craft" then
@@ -197,22 +214,22 @@ function P.ReagentNames(entry)
     local name = reagent.name or P.ItemName(itemID)
     if name then
       all[#all + 1] = name
-      if P.OwnedCount(itemID) < reagent.count then
-        missing[#missing + 1] = name
-      end
+      local need = (tonumber(reagent.count) or 1) * crafts
+      local missing = need - (P.OwnedCount(itemID) or 0)
+      quantities[name] = (quantities[name] or 0) + (missing > 0 and missing or need)
     else
       unnamed = unnamed + 1
     end
   end
-  return #missing > 0 and missing or all, unnamed
+  return all, unnamed, quantities
 end
 
 function P.SearchReagents(entry)
-  local names, unnamed = P.ReagentNames(entry)
+  local names, unnamed, quantities = P.ReagentNames(entry)
   if unnamed > 0 then
     ns.Say(("%d reagent name(s) haven't loaded yet; try again in a moment."):format(unnamed))
   end
-  return P.SearchAuction("Reagents: " .. entry.name, names)
+  return P.SearchAuction("Reagents: " .. entry.name, names, quantities)
 end
 
 local SEARCH_ICON = "Interface\\Common\\UI-Searchbox-Icon"
@@ -283,8 +300,9 @@ local function CreateBlock(parent)
   block.searchButton = SearchButton("Search", "Search the auction house for this recipe's item. Results show "
     .. "in the Codex auction panel.", P.SearchItem)
   block.searchButton:SetPoint("BOTTOMLEFT", BOX_PAD, BOX_PAD - 2)
-  block.reagentsButton = SearchButton("Reagents", "Search the auction house for the reagents you still need "
-    .. "(all of them when you have everything). Results show in the Codex auction panel.", P.SearchReagents)
+  block.reagentsButton = SearchButton("Reagents", "Search the auction house for every reagent of this recipe, "
+    .. "also the ones you have. Results show in the Codex auction panel; opening one puts in the amount the "
+    .. "recipe needs.", P.SearchReagents)
   block.reagentsButton:SetPoint("BOTTOMRIGHT", -BOX_PAD, BOX_PAD - 2)
   return block
 end

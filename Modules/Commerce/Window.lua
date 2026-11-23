@@ -376,6 +376,27 @@ local function DeliveryRow()
     GameTooltip:Show()
   end)
   row.way:SetScript("OnLeave", HideTooltip)
+  row.start = UI.Button(row, 48, 17, "Start")
+  row.start:SetPoint("RIGHT", row.way, "LEFT", -4, 0)
+  row.start:SetScript("OnClick", function()
+    local writID = row.group and C.StartableWrit(row.group)
+    if writID then
+      local ok, why = C.StartWrit(writID)
+      if not ok and why then
+        ns.Say(why)
+      end
+    end
+  end)
+  row.start:SetScript("OnEnter", function(self)
+    local writID = row.group and C.StartableWrit(row.group)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine("Start")
+    GameTooltip:AddLine(("Opens the quest of %s: your bags hold what it asks for. Each click starts one writ."):format(
+      writID and WritName(writID) or "the writ"), 1, 1, 1, true)
+    GameTooltip:Show()
+  end)
+  row.start:SetScript("OnLeave", HideTooltip)
+  row.start:Hide()
   row.name = Text(row)
   row.name:SetPoint("LEFT", 2, 0)
   row.name:SetPoint("RIGHT", row.way, "LEFT", -6, 0)
@@ -671,6 +692,9 @@ local function Deliveries(counts)
       end
       SetText(row.name, text)
       row.way:SetShown(group ~= nil and (group.customer ~= nil or group.writs[1].questID ~= nil))
+      local startable = group ~= nil and C.StartableWrit(group) ~= nil and not (InCombatLockdown and InCombatLockdown())
+      row.start:SetShown(startable)
+      row.name:SetPoint("RIGHT", startable and row.start or row.way, "LEFT", -6, 0)
       row:Show()
     else
       row:Hide()

@@ -748,6 +748,52 @@ actions / windows / rings, `R.Choices(kind, ring)`, search, a click = `R.SetSlic
   sets `P.castWorks = false`); a 0 is trusted only after a drop was seen. Counting now dedupes per item
   (`guess.item`): two updates of one item in a frame count twice. The tooltip's cast time drops with the stacks (the
   user, 2026-11-23); `/codex procglow` prints the reading.
+  **Per-ability lists (2026-11-23, the user's request):** `EachList` (ProcGlow.lua) lists `P.ClassKeys()` (the
+  player's class: `class` on P.REACTIVE entries and class auras, `listClass` = list only, Shadow Trance;
+  `P.SoundKeys()` without a class is every proc), under a header button (`sub.header`, `UI.FoldArrow`, "<Class>
+  procs (n)") that folds it (`CodexDB.qol.procEachFolded[eachKey]`, `P.SetEachFolded`). The art list's sixth
+  argument (art and side lists) builds ProcArt's `A.PreviewPanel` right of the rows (160x176): the art round an
+  empty centre on the proc's side (`A.PREVIEW_COORDS` turn the side file), then name / art / side lines; no glow
+  there (the user, 2026-11-24: the glow's preview is the one beside the glow style, `P.BuildPreview`, showing
+  `P.ButtonIcon` of the class's first proc). The art list's seventh argument (`Swatch`) adds a colour square per
+  row: `A.ColorFor` / `A.SetColorFor` (`procArtColorFor[name]`, only while `procArtLookEach`), `A.PickColor(name)`,
+  right-click or the row's reset button (`row.reset`, UI-RefreshButton, shown only with an own colour) clears;
+  `A.TintFor` takes it first; dimmed when the art isn't tinted (Codex art pieces). Art colour row: `button2`
+  Reset (`A.ResetColor`; both pages support `button2`); `A.PaintGallery` re-tints the gallery on show, on
+  `A.Refresh` and on `P.Repaint`. Proc Glow's Options.lua places the returned preview frame itself (it never
+  did, so the glow style preview never showed there until 2026-11-24); it shows the hovered row, else `sub.selected` (first row, then the last picker clicked;
+  marked in the accent). One hovered row per list (`sub.hovered`, `SetHover`): a `hover` band, kept while the
+  pointer is on its picker / buttons (HookScript + IsMouseOver), and the box's OnUpdate drops it when the pointer
+  left without a leave event (a band stayed lit, 2026-11-24). The selected row's `mark` is a 3 px accent bar,
+  shown only once the player picked on a row (`sub.picked`), never for the default first row. The standalone's Shim has its
+  own `UI.FoldArrow` (Media/FoldArrow.tga copied).
+- **Proc glow, the suggestion list (2026-11-24, the user's "do all"):** your own procs (`procCustom` = { buff = ID
+  or name, spell, class }; `P.CustomAura` makes P.AURAS-like tables kept per saved entry, `P.CustomList(class)`,
+  `P.AddCustom` / `P.RemoveCustom` / `P.CustomChanged` (lookup reset + Scan); in the lookup, the per-ability lists
+  and `P.ButtonIcon`; page: `BuildCustom` / `RefreshCustom`, edit boxes `ns.UI.EditBox`, the standalone's Shim has
+  one; Pick buttons open `P.OpenPicker("buff" | "spell", onPick)`: `P.PickerCategories` = buffs on you now, gear
+  with a use spell, bag consumables by GetItemInfoInstant's sub type, other bag items, spells by spellbook tab (no
+  passives); a pick writes "Name (ID)", `P.BoxValue` reads the ID; spells are saved by name, every rank lights).
+  Build-up counts: readable counts, the cast time, and in a fight the cooldown manager's counted stacks, but not an
+  echo's right after a seal change (`P.sealChanged`, set by `P.NoteSeal`, cleared when the item updates, goes or
+  shows inactive): the one Unsealed Wrath item may still show the old seal's echoes (a first step with no echo,
+  the user's screenshot); dropping the counted stacks entirely stopped the build-up in fights ("stacking procs
+  not working"). Faint glow `procGlowDim` (default on, `P.DIM` 0.35): `P.Lit`'s 4th return for a reactive ability whose
+  slot is "no mana" (`P.Usable` returns usable, noMana), and buff procs whose spell isn't castable; `SetDim` puts
+  it in the tinted textures' colour alpha (our glows pulse their frame's alpha) or the alert frame's alpha; a faint
+  reactive one gives no sound or art. Glow per ability `procGlowEach` / `procGlowStyleFor` / `procGlowColorFor`:
+  `P.StyleFor`, `P.ColorFor`, `Wanted(target, proc)`, glows remember `proc`; EachList with a Swatch. Build-up
+  `procArtBuild` (default on): `active.counts[aura]` (readable, counted, cast time) -> `A.Update(order, build,
+  stacks)`, Codex art pieces in steps (`A.STAGED`, `A.StageArt`: `<key>_s1` the inner arc,
+  `_s2` both arcs, from proc-codex-art.py's STAGED; the round stack marks were dropped, the user disliked them), other
+  looks faint (`A.FaintAlpha` on the texture, the piece's own alpha is its fade). `procArtCombat` (PLAYER_REGEN_DISABLED added). Mover `procArtPos` offset: `A.Mover` /
+  `A.ToggleMover` / the option button, and EventRegistry "EditMode.Enter" / "EditMode.Exit" (never hook
+  EditModeManagerFrame: the buffs test's stand-in takes one hook). `P.TestProc(name)` = the panel's Play (glow via
+  `P.testProc`, art `A.Test(name)`, sound). `procSoundGap` stepper (`P.SoundGap`).
+- **Reagent amounts (2026-11-24):** the Reagents search's terms carry `quantity` (`P.ReagentNames`' third return:
+  missing for `P.CraftCount()` crafts, CraftingPage.CreateMultipleInputBox, else the full need); `A.OpenResult`
+  sets it in CommoditiesBuyFrame.BuyDisplay like typing (QuantityInput:SetQuantity + the frame's
+  CommoditiesQuantitySelectionChanged event), again once after COMMODITY_SEARCH_RESULTS_UPDATED for that item.
 - **Codex quest tracker (Modules/QuestTracker, module `questtracker`, area quests, 2026-11-20, the user's "show the
   zone names as groups", option 2 = our own tracker):** Data.lua (`ns.questtracker` = QT: `QT.Groups()` from
   `ns.QuestOrder.Sorted()` (root QuestOrder.lua, shared with TrackerSort), `QT.Rows`, `QT.Shape`; objectives
@@ -861,9 +907,12 @@ Hammer of Wrath, 2026-11-21).
 themes), tinted (ADD) by `A.TintFor`: `procArtColor` proc (default: `A.COLORS` = the Codex pieces' glow colours,
 `A.COLOR_LIKE`, else the class colour) / glow / custom (`procArtCustom`, the game's ColorPickerFrame via `A.PickColor`); keys in ProcArt.lua `A.STYLES`, looks `style:<key>`, per ability `procArtLookEach` / `procArtLookFor`.
 
-`branding/source/proc-sounds.py <outDir>` (stdlib only) synthesises the fourteen spell-themed proc sounds (`P.SOUNDS` group "codex",
-`file`; "match" = each proc its own: `P.PROC_SOUNDS`, `P.MatchSound`) as WAV; encode to OGG with vorbis-tools in the ubuntu:24.04 container (command in its docstring) and copy to
-`Modules/QoL/Media/Sounds/` and ProcGlow's `Media/Sounds/`. Played with PlaySoundFile from `P.SOUND_DIR`.
+The fourteen proc sounds (`P.SOUNDS` group "codex", `file`; "match" = each proc its own: `P.PROC_SOUNDS`,
+`P.MatchSound`) in `Modules/QoL/Media/Sounds/` (and ProcGlow's `Media/Sounds/`) are public-domain (CC0) recordings since
+2026-11-24 (the user: the synthesised ones were "terrible", find royalty-free ones): picked, trimmed and evened out
+with the workspace's `tools/sounds` (README there: which recording per name and how to swap one). Keep them CC0 or
+public domain (nothing that needs credits). `branding/source/proc-sounds.py` (the old synthesiser) is superseded:
+don't regenerate from it. Played with PlaySoundFile from `P.SOUND_DIR`.
 
 `branding/source/arrow-art.py <codexDir>` (Pillow) renders `Media/FoldArrow.tga`: the smooth fold arrow of `UI.FoldArrow`
 (32 px white triangle, drawn at 8x, shown at 18 px and turned a quarter with SetRotation for "open"; it replaced

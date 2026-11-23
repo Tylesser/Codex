@@ -502,6 +502,12 @@ function A.OpenResult(entry)
     end
     local ok = pcall(frame.SelectBrowseResult, frame, entry.result)
     if ok then
+      local quantity = entry.term and tonumber(entry.term.quantity)
+      local itemID = entry.result and entry.result.itemKey and entry.result.itemKey.itemID
+      if quantity and quantity > 0 and itemID then
+        A.wantQuantity = { itemID = itemID, quantity = math.floor(quantity), untilTime = GetTime() + 15 }
+        A.SetBuyQuantity()
+      end
       return true
     end
   end
@@ -512,6 +518,35 @@ function A.OpenResult(entry)
     return true
   end
   return false
+end
+
+-- The amount to buy in the game's commodity buy view (a reagent search's result: what the recipe needs; 2026-11-24).
+-- Done the way typing in its box does it (forever Blizzard_AuctionHouseCommoditiesBuyFrame.lua: the QuantityInput's
+-- changed callback sets the box and triggers CommoditiesQuantitySelectionChanged, which BuyDisplay and the list
+-- listen to); again a frame after the item's search results come (before them the price can't be totalled, and
+-- the game caps the amount at what is on sale). Nothing is bought: the player still presses Buy.
+function A.SetBuyQuantity()
+  local want = A.wantQuantity
+  local frame = AuctionHouseFrame
+  local buy = frame and frame.CommoditiesBuyFrame
+  local display = buy and buy.BuyDisplay
+  if not want or GetTime() > want.untilTime or not display or not display.QuantityInput then
+    return false
+  end
+  local ok, shownID = pcall(display.GetItemID, display)
+  if not ok or shownID ~= want.itemID or not (display.IsShown and display:IsShown()) then
+    return false
+  end
+  local input = display.QuantityInput
+  pcall(input.SetQuantity, input, want.quantity)
+  local event = AuctionHouseFrameMixin and AuctionHouseFrameMixin.Event
+    and AuctionHouseFrameMixin.Event.CommoditiesQuantitySelectionChanged
+  if event and frame.TriggerEvent then
+    pcall(frame.TriggerEvent, frame, event, want.quantity)
+  elseif display.SetQuantitySelected then
+    pcall(display.SetQuantitySelected, display, want.quantity)
+  end
+  return true
 end
 
 -- Events ----------------------------------------------------------------------------------------------------
@@ -558,6 +593,14 @@ end
 
 function handlers.COMMODITY_SEARCH_RESULTS_UPDATED(itemID)
   FromCommodity(itemID)
+  local want = A.wantQuantity
+  if want and want.itemID == itemID and C_Timer and C_Timer.After then
+    C_Timer.After(0, function()
+      if A.wantQuantity == want and A.SetBuyQuantity() then
+        A.wantQuantity = nil -- once: after a purchase the game's own reset to 1 stays
+      end
+    end) -- (after the buy view has its results: it totals the price then)
+  end
 end
 
 function handlers.ITEM_SEARCH_RESULTS_UPDATED(itemKey)

@@ -82,7 +82,7 @@ local function Reason(option)
   return ok and text or nil
 end
 
-local GREYED = { "check", "picker", "button", "extra", "less", "more" }
+local GREYED = { "check", "picker", "button", "extra", "extra2", "less", "more" }
 
 local function Grey(sub, on)
   local reason = on and Reason(sub.option) or nil
@@ -224,6 +224,14 @@ local function BuildOption(body, option, last)
         option.button.Click()
       end)
       after = sub.extra
+    end
+    if option.button2 then -- (a second one, e.g. the art colour's Reset)
+      sub.extra2 = UI.Button(holder, 80, 22, option.button2.name)
+      sub.extra2:SetPoint("LEFT", after, "RIGHT", 8, 0)
+      sub.extra2:SetScript("OnClick", function()
+        option.button2.Click()
+      end)
+      after = sub.extra2
     end
     if option.preview then
       local ok, frame = pcall(option.preview, holder)

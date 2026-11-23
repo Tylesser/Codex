@@ -8,6 +8,11 @@ fading out at both ends) in the proc's own colours, the proc's emblem just insid
 soft glow and a lighter inner edge), and a few particles of its own along the arc. All drawn here, nothing taken from
 the game's art. With a second argument it also writes a contact sheet of every piece (for a look).
 
+Stacking procs (STAGED: Heating Up and the seal echoes, 3 stacks) are built up in steps (2026-11-24, the user's
+"one stack the inner arc, the second arc with the second, and the symbol when the stacks are full"): their inner arc
+is a little brighter (as thin as the others'), and two more files show the steps: <key>_s1.tga = the inner arc alone,
+<key>_s2.tga = both arcs; <key>.tga (full) adds the emblem and the particles.
+
 Keys (ProcArt.lua, A.CODEX): overpower, revenge, execute, victory_rush, riposte, counterattack, mongoose_bite,
 hammer_of_wrath, unsealed_wrath, shadow_trance, clearcasting_mage, clearcasting_druid, clearcasting_shaman,
 missile_barrage, heating_up.
@@ -369,7 +374,13 @@ def fade_mask():
     return strip.resize((W * S, H * S))
 
 
-def arc_masks():
+STAGED = {"heating_up", "echo_of_command", "echo_of_righteousness", "echo_of_justice", "echo_of_fury",
+          "echo_of_light", "echo_of_wisdom"}
+
+
+def arc_masks(strong=False):
+    """The outer arc (core) and the thin inner one (echo); `strong`: the inner one as a full arc of its own (the
+    first stack of a stacking proc)."""
     core = Image.new("L", (W * S, H * S), 0)
     d = ImageDraw.Draw(core)
     box = [(CX - R) * S, (CY - R) * S, (CX + R) * S, (CY + R) * S]
@@ -377,7 +388,8 @@ def arc_masks():
     echo = Image.new("L", (W * S, H * S), 0)
     d = ImageDraw.Draw(echo)
     r2 = R - 18
-    d.ellipse([(CX - r2) * S, (CY - r2) * S, (CX + r2) * S, (CY + r2) * S], outline=95, width=int(2 * S))
+    d.ellipse([(CX - r2) * S, (CY - r2) * S, (CX + r2) * S, (CY + r2) * S], outline=170 if strong else 95,
+              width=int(2 * S))  # (thin as ever: a thicker one looked too big, the user 2026-11-24)
     fade = fade_mask()
     core = ImageChops.multiply(core, fade)
     echo = ImageChops.multiply(echo, fade)
@@ -421,9 +433,11 @@ def scaled(mask, factor):
     return mask.point(lambda v: min(255, int(v * factor)))
 
 
-def render(key, emblem, core, glow, arc, kind, seed):
+def render(key, emblem, core, glow, arc, kind, seed, stage=None):
+    """stage: None = the full piece; 1 = the inner arc alone, 2 = both arcs (stacking procs, STAGED)."""
     size = (W * S, H * S)
-    arc_core, arc_echo = arc_masks()
+    strong = key in STAGED
+    arc_core, arc_echo = arc_masks(strong)
     arc_glow = arc_core.filter(ImageFilter.GaussianBlur(9 * S))
     mark = Image.new("L", size, 0)
     emblem(ImageDraw.Draw(mark))
@@ -433,17 +447,22 @@ def render(key, emblem, core, glow, arc, kind, seed):
     dust = particles(kind, seed)
     dust_glow = dust.filter(ImageFilter.GaussianBlur(2 * S))
 
+    full = stage is None
     out = Image.new("RGBA", size, (0, 0, 0, 0))
-    out.alpha_composite(layer(glow, scaled(mark_halo, 1.1)))
-    out.alpha_composite(layer(glow, scaled(arc_glow, 1.6)))
+    if full:
+        out.alpha_composite(layer(glow, scaled(mark_halo, 1.1)))
+    if full or stage >= 2:
+        out.alpha_composite(layer(glow, scaled(arc_glow, 1.6)))
     out.alpha_composite(layer(arc, arc_echo))
-    out.alpha_composite(layer(arc, arc_core))
-    out.alpha_composite(layer(core, scaled(arc_core, 0.55)))
-    out.alpha_composite(layer(glow, scaled(dust_glow, 1.4)))
-    out.alpha_composite(layer(core, dust))
-    out.alpha_composite(layer(glow, scaled(mark_glow, 2.2)))
-    out.alpha_composite(layer(arc, mark))
-    out.alpha_composite(layer(core, scaled(inner, 0.9)))
+    if full or stage >= 2:
+        out.alpha_composite(layer(arc, arc_core))
+        out.alpha_composite(layer(core, scaled(arc_core, 0.55)))
+    if full:
+        out.alpha_composite(layer(glow, scaled(dust_glow, 1.4)))
+        out.alpha_composite(layer(core, dust))
+        out.alpha_composite(layer(glow, scaled(mark_glow, 2.2)))
+        out.alpha_composite(layer(arc, mark))
+        out.alpha_composite(layer(core, scaled(inner, 0.9)))
     # a glow reaching the texture's edge was cut there in a straight line (the user's "glow is cut and looks
     # square", Hammer of Wrath, 2026-11-21): fade every piece out towards both edges
     alpha = out.getchannel("A")
@@ -471,6 +490,13 @@ def main():
     os.makedirs(folder, exist_ok=True)
     images = []
     for index, (key, (emblem, core, glow, arc, kind)) in enumerate(ARTS.items()):
+        if key in STAGED:
+            for stage in (1, 2):
+                step = render(key, emblem, core, glow, arc, kind, 1000 + index, stage)
+                path = os.path.join(folder, "%s_s%d.tga" % (key, stage))
+                step.save(path)
+                images.append(("%s_s%d" % (key, stage), step))
+                print("wrote", path)
         image = render(key, emblem, core, glow, arc, kind, 1000 + index)
         path = os.path.join(folder, key + ".tga")
         image.save(path)

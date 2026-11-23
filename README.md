@@ -53,7 +53,7 @@ Home shows a card for each feature with what it is doing right now; click a card
   standing, Merchant's Favor, your writs grouped by who takes them (with waypoints) and the crates you have to fill
   (click one at the auction house to search for what fills it), the next standings and the
   cheapest reputation by writ, NPC or zone, with a buy list for the Codex shopping lists; "All NPCs" lists every
-  NPC who takes writs. Codex learns what your turn-ins really give. Uses Codex's own auction prices and the
+  NPC who takes writs, grouped by continent and zone; a ready writ you haven't opened gets a Start button. Codex learns what your turn-ins really give. Uses Codex's own auction prices and the
   Professions module's craft costs. Formerly Tylesser - Commerce Authority.
 - **Vendor search**: a search box on the vendor window that filters its own items by name, type or slot (every
   word must match), with "Unknown recipes" and "Usable" filters, a fade mode that keeps the vendor's pages, and
@@ -104,8 +104,11 @@ Home shows a card for each feature with what it is doing right now; click a card
   lightning, vines, crystal shards, stars, swords, daggers, arrows, claw marks, skulls, snowflakes, rays of light,
   arcane sigils) in each proc's own colour, the glow colour or one you pick; or the spell's icon, or a plain arc, for all procs or
   per ability. Several procs show
-  together: two left and right, a third on top, a fourth below; or all on one side you choose (left, right, top or
-  bottom), and each ability can have a side of its own. The art and glow wait while the ability can't be cast (no mana, on its own cooldown; the global cooldown doesn't count). Size, opacity and a
+  together: two left and right, a third on top, a fourth below; or top and bottom, or all on one side you choose (left,
+  right, top or bottom), and each ability can have a side of its own; move the art where you like (also in Edit Mode).
+  Stacking procs build up: one arc, two arcs, then the symbol. Add your own procs (a buff of yours lights a spell),
+  picked from your buffs, gear, consumables and spells; glow style and colour per ability, a faint glow while you
+  can't cast it yet. The art and glow wait while the ability can't be cast (no mana, on its own cooldown; the global cooldown doesn't count). Size, opacity and a
   "Show the art" test button. In combat the game hides your buffs from addons, so buff procs show there only for
   buffs you track in the game's cooldown manager. Put new spell ranks on your
   action bars: when you learn a higher rank, buttons with the old one get it (after the fight if you're in one),
