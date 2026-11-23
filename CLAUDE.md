@@ -848,6 +848,15 @@ fades to 0 over 16 px towards the inner (right) edge and 6 px at the outer one (
 a glow reaching the texture edge was cut there in a straight line (the user's "glow is cut and looks square",
 Hammer of Wrath, 2026-11-21).
 
+`branding/source/proc-art-styles.py <codexDir> [sheet.png]` (Pillow; imports proc-codex-art.py's helpers) renders
+`Modules/QoL/Media/ProcArt/style_<key>.tga`: sixteen white side pieces for any proc (2026-11-23; the second eight game
+themes), tinted (ADD) by `A.TintFor`: `procArtColor` proc (default: `A.COLORS` = the Codex pieces' glow colours,
+`A.COLOR_LIKE`, else the class colour) / glow / custom (`procArtCustom`, the game's ColorPickerFrame via `A.PickColor`); keys in ProcArt.lua `A.STYLES`, looks `style:<key>`, per ability `procArtLookEach` / `procArtLookFor`.
+
+`branding/source/proc-sounds.py <outDir>` (stdlib only) synthesises the fourteen spell-themed proc sounds (`P.SOUNDS` group "codex",
+`file`; "match" = each proc its own: `P.PROC_SOUNDS`, `P.MatchSound`) as WAV; encode to OGG with vorbis-tools in the ubuntu:24.04 container (command in its docstring) and copy to
+`Modules/QoL/Media/Sounds/` and ProcGlow's `Media/Sounds/`. Played with PlaySoundFile from `P.SOUND_DIR`.
+
 `branding/source/arrow-art.py <codexDir>` (Pillow) renders `Media/FoldArrow.tga`: the smooth fold arrow of `UI.FoldArrow`
 (32 px white triangle, drawn at 8x, shown at 18 px and turned a quarter with SetRotation for "open"; it replaced
 arrows drawn from 1 px columns, which stepped: the user's "arrows are low quality", 2026-11-21).

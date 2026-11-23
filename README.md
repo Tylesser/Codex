@@ -96,12 +96,16 @@ Home shows a card for each feature with what it is doing right now; click a card
   Shadow Bolt with Shadow Trance, Arcane Missiles with Missile Barrage, Pyroblast at 3 stacks of Heating Up;
   Clearcasting shows only its art. What the game already lights keeps its own glow. Pick the glow's style (the game's spell alert, pulsing border, marching sparkles, soft glow, flash or
   ring, with a preview), its colour (gold, theme, class or a fixed colour), pulse speed and thickness. Optional
-  sound when one starts: 14 of the game's sounds, soft or loud, with a Test button, only in combat if you like,
+  sound when one starts: 14 sounds made for procs (or each proc its own) and 14 of the game's, soft or loud, with a Test button, only in combat if you like,
   and a different sound per ability if you want. While an ability procs, art shows on both sides of your
   character as in later expansions: Codex's own art, a piece drawn for each proc it knows (Overpower, Execute,
   Hammer of Wrath, Shadow Trance, Clearcasting and the paladin's Unsealed Wrath echoes, one per seal, at 3 stacks),
-  with "Show all arts" to see them; or the game's own art, the spell's icon, or a plain arc. Several procs show
-  together: two left and right, a third on top, a fourth below. The art and glow wait while the ability can't be cast (no mana, on cooldown). Size, opacity and a
+  with "Show all arts" to see them; sixteen styles for any proc (flames, runes, feathers, crescent moons,
+  lightning, vines, crystal shards, stars, swords, daggers, arrows, claw marks, skulls, snowflakes, rays of light,
+  arcane sigils) in each proc's own colour, the glow colour or one you pick; or the spell's icon, or a plain arc, for all procs or
+  per ability. Several procs show
+  together: two left and right, a third on top, a fourth below; or all on one side you choose (left, right, top or
+  bottom), and each ability can have a side of its own. The art and glow wait while the ability can't be cast (no mana, on its own cooldown; the global cooldown doesn't count). Size, opacity and a
   "Show the art" test button. In combat the game hides your buffs from addons, so buff procs show there only for
   buffs you track in the game's cooldown manager. Put new spell ranks on your
   action bars: when you learn a higher rank, buttons with the old one get it (after the fight if you're in one),

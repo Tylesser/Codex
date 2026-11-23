@@ -31,7 +31,12 @@ local function NewRow(content)
   row.level = D.Text(row, "body", 14)
   row.level:SetWordWrap(false)
   row.title = D.Text(row, "body", 14)
-  row.title:SetWordWrap(false)
+  -- a long option goes on to a new line, the row grows with it (2026-11-23, the user's screenshot: options cut
+  -- with "..."); at most 3 lines
+  row.title:SetWordWrap(true)
+  if row.title.SetMaxLines then
+    row.title:SetMaxLines(3)
+  end
   row.tag = D.Text(row, "body", 12)
   row.tag:SetJustifyH("RIGHT")
   row.tag:SetWordWrap(false)
@@ -56,8 +61,30 @@ local function NewRow(content)
   row:SetScript("OnLeave", function()
     GameTooltip:Hide()
   end)
-  function row:Measure()
-    return self.rowHeight or 26
+  -- the row's height: one line, or what the wrapped title needs (its width = the row's less the keycap / mark /
+  -- icon / level on the left and the tag on the right). Secret texts (pcall) stay one line.
+  function row:Measure(width)
+    local base = self.rowHeight or 26
+    width = width or self:GetWidth()
+    if type(width) ~= "number" or width <= 0 then
+      return base
+    end
+    local tagWidth = 0
+    local okTag, w = pcall(self.tag.GetStringWidth, self.tag)
+    if okTag and type(w) == "number" and (not issecretvalue or not issecretvalue(w)) and w > 0 then
+      tagWidth = math.ceil(w) + 6
+    end
+    local titleWidth = math.max(40, width - (self.titleX or 0) - tagWidth - 8)
+    self.title:SetWidth(titleWidth)
+    local ok, height = pcall(D.TextHeight, self.title, titleWidth, self.size or 14, self.raw)
+    if ok and type(height) == "number" and (not issecretvalue or not issecretvalue(height)) then
+      -- one line keeps the row's own height; each further line adds its height
+      local line = math.ceil((self.size or 14) * 1.3)
+      if height > line * 1.5 then
+        return base + math.ceil(height - line)
+      end
+    end
+    return base
   end
   return row
 end
@@ -120,13 +147,14 @@ function D.ListRow(content, data, index)
   local trivial = data.kind == "quest" and data.trivial
   UI.Font(row.title, "body", size, trivial and palette.muted or palette.text)
   D.SetText(row.title, data.title)
+  row.titleX, row.size, row.raw = x, size, D.Str(data.title)
   UI.Font(row.tag, "body", D.FontSize(-2), data.tagColor == "good" and palette.good or palette.muted)
   row.tag:SetText(data.tag or "")
   row.tag:ClearAllPoints()
   row.tag:SetPoint("RIGHT", -8, 0)
   row.title:ClearAllPoints()
-  row.title:SetPoint("LEFT", x, 0)
-  row.title:SetPoint("RIGHT", row.tag, "LEFT", -6, 0)
+  row.title:SetPoint("LEFT", x, 0) -- (its width comes from Measure: wrapped lines need one)
+  row.title:SetJustifyH("LEFT")
   D.rowsShown[#D.rowsShown + 1] = data
   return row
 end

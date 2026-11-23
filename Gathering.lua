@@ -32,6 +32,7 @@ local NODES = {
     ["Rich Thorium Vein"] = 275,
     ["Ooze Covered Rich Thorium Vein"] = 275,
     ["Hakkari Thorium Vein"] = 275,
+    ["Heavy Thorium Vein"] = 300, -- WoW Forever (the user, 2026-11-23)
     ["Small Obsidian Chunk"] = 305,
     ["Large Obsidian Chunk"] = 305,
   },
