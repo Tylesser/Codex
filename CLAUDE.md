@@ -740,6 +740,14 @@ actions / windows / rings, `R.Choices(kind, ring)`, search, a click = `R.SetSlic
   (`P.NoteSeal`: a readable seal buff in `P.ActiveAuras`, or a readable `UNIT_SPELLCAST_SUCCEEDED` spell; a seal
   without an echo, the Crusader, clears it), unknown seal = nothing; a removal zeroes every echo. A pasted idea
   counted every player UNIT_AURA in a fight, which counts every other buff and debuff too.
+  **Stacks from a cast time (2026-11-23, a crit gives Heating Up two stacks in one change):** an entry's `castTime =
+  { spell, ref, step }` reads the count from `C_Spell.GetSpellInfo(spell).castTime / ...(ref).castTime` (no secret
+  flag; the ref spell cancels haste) against that ratio learned at a known 0 (`P.LearnCast`: a fully readable buff
+  list without it, or the viewer item off); `P.CastStacks` overrides the counted guess in `P.ActiveAuras` and works
+  without the cooldown manager. Never learned from a count above 0 (only checked: a readable count that reads 0
+  sets `P.castWorks = false`); a 0 is trusted only after a drop was seen. Counting now dedupes per item
+  (`guess.item`): two updates of one item in a frame count twice. The tooltip's cast time drops with the stacks (the
+  user, 2026-11-23); `/codex procglow` prints the reading.
 - **Codex quest tracker (Modules/QuestTracker, module `questtracker`, area quests, 2026-11-20, the user's "show the
   zone names as groups", option 2 = our own tracker):** Data.lua (`ns.questtracker` = QT: `QT.Groups()` from
   `ns.QuestOrder.Sorted()` (root QuestOrder.lua, shared with TrackerSort), `QT.Rows`, `QT.Shape`; objectives

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.1
+
+- Heating Up: the stack count now comes from Pyroblast's cast time (each stack takes 25 % off it), so a critical strike that gives two stacks at once is counted right, and Pyroblast lights at 3 stacks in combat even when Heating Up isn't tracked in the cooldown manager. `/codex procglow` shows the reading.
+
 ## 1.5.0
 
 - Quest windows: a long gossip option goes on to a new line (up to three) instead of being cut off with "...".
