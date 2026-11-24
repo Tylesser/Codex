@@ -774,6 +774,11 @@ actions / windows / rings, `R.Choices(kind, ring)`, search, a click = `R.SetSlic
   sets `P.castWorks = false`); a 0 is trusted only after a drop was seen. Counting now dedupes per item
   (`guess.item`): two updates of one item in a frame count twice. The tooltip's cast time drops with the stacks (the
   user, 2026-11-23); `/codex procglow` prints the reading.
+  **The cast time lags the buff in game** (2026-11-24, Heating Up only after the fight with the build-up off):
+  the ratio without the buff is the longest one seen at a known 0 (a stale short reading right after the drop can't
+  lower it), `P.castWorks = false` only when two readings `P.CAST_DOUBT` (0.5 s) apart disagree with a known count
+  (`P.castDoubt`, a re-check timer), and `P.ForgetCast()` relearns on talent changes (PLAYER_TALENT_UPDATE,
+  TRAIT_CONFIG_UPDATED, ACTIVE_TALENT_GROUP_CHANGED, out of combat).
   **Per-ability lists (2026-11-23, the user's request):** `EachList` (ProcGlow.lua) lists `P.ClassKeys()` (the
   player's class: `class` on P.REACTIVE entries and class auras, `listClass` = list only, Shadow Trance;
   `P.SoundKeys()` without a class is every proc), under a header button (`sub.header`, `UI.FoldArrow`, "<Class>

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.1
+
+- Proc glow: Heating Up now shows in a fight at 3 stacks with "Show stacking procs as they build up" off too. Its stacks are read from Pyroblast's cast time, which can change a moment after the buff; one early reading could switch that reading off until the fight ended.
+- Quest windows: quests are marked with the game's own quest icons (new, in progress, ready, repeatable) instead of a "!" or "?" in text.
+
 ## 1.7.0
 
 - New theme, **Bronze**: the calm one. Warm dark brown close to the game's own frames, one thin bronze line, panels you can see the world through and the game's own font; gold only for titles and what is selected. Its quest window book page is a dull parchment with every text colour made to read on it. Pick it in Look > Theme.

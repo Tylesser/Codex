@@ -91,6 +91,54 @@ function D.InkTable(key, base)
   return setmetatable(own, { __index = base })
 end
 
+-- The game's quest icon on a texture of ours: QuestUtil's choice (atlas or file), the plain files when this build
+-- lacks the helper or the atlas. data = a quest row (active, complete, repeatable, daily, legendary).
+local QUEST_FILES = { offer = "Interface/GossipFrame/AvailableQuestIcon",
+  offerRepeat = "Interface/GossipFrame/DailyActiveQuestIcon", active = "Interface/GossipFrame/ActiveQuestIcon",
+  activeRepeat = "Interface/GossipFrame/DailyActiveQuestIcon", incomplete = "Interface/GossipFrame/IncompleteQuestIcon" }
+function D.QuestIcon(texture, data)
+  local frequency = data.daily and 1 or 0
+  local asset, isAtlas
+  local util = _G.QuestUtil
+  if type(util) == "table" then
+    local get = data.active and util.GetQuestIconActive or util.GetQuestIconOffer
+    if type(get) == "function" then
+      local ok, a, b
+      if data.active then
+        ok, a, b = pcall(get, data.complete and true or false, data.legendary and true or false, frequency,
+          data.repeatable and true or false, false, false, false, false)
+      else
+        ok, a, b = pcall(get, data.legendary and true or false, frequency, data.repeatable and true or false, false,
+          false, false, false)
+      end
+      if ok and type(a) == "string" then
+        asset, isAtlas = a, b and true or false
+      end
+    end
+  end
+  if isAtlas and not (C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(asset)) then
+    asset = nil -- (an atlas this build doesn't have: the files below)
+  end
+  if not asset then
+    isAtlas = false
+    if data.active then
+      asset = not data.complete and QUEST_FILES.incomplete or (data.repeatable and QUEST_FILES.activeRepeat or QUEST_FILES.active)
+    else
+      asset = data.repeatable and QUEST_FILES.offerRepeat or QUEST_FILES.offer
+    end
+  end
+  if isAtlas then
+    texture:SetAtlas(asset, false)
+  else
+    texture:SetTexture(asset)
+    texture:SetTexCoord(0, 1, 0, 1)
+  end
+  texture:SetSize(16, 16)
+  texture:SetVertexColor(1, 1, 1, 1)
+  texture:SetDesaturated(false)
+  return asset, isAtlas
+end
+
 function D.MarkColor(palette, which)
   return (palette.ink and D.InkTable("inkMark", D.MARK_INK) or D.MARK)[which] or D.MARK.gold
 end

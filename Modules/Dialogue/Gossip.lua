@@ -22,10 +22,11 @@ local function NewRow(content)
   row.hover = row:CreateTexture(nil, "HIGHLIGHT")
   row.hover:SetAllPoints()
   row.key = D.Keycap(row)
-  row.mark = row:CreateFontString(nil, "OVERLAY")
-  row.mark:SetFont(GAME_FONT, 16, "OUTLINE")
-  row.mark:SetWidth(14)
-  row.mark:SetJustifyH("CENTER")
+  -- the quest's mark: the game's own quest icon ("!" new, "?" yours, blue for repeatable), as Blizzard's gossip
+  -- window shows it (QuestUtil, forever Blizzard_FrameXMLUtil/Mainline/QuestUtils.lua). It replaced a "?" / "!" in
+  -- outlined text, which looked crude on the light paper (the user's screenshot, 2026-11-24).
+  row.mark = row:CreateTexture(nil, "ARTWORK")
+  row.mark:SetSize(16, 16)
   row.icon = row:CreateTexture(nil, "ARTWORK")
   row.icon:SetSize(16, 16)
   row.level = D.Text(row, "body", 14)
@@ -114,13 +115,10 @@ function D.ListRow(content, data, index)
   local levelShown = false
   if data.kind == "quest" then
     row.icon:Hide()
-    local which = data.active and not data.complete and "grey" or (data.repeatable and "blue" or "gold")
-    local mark = D.MarkColor(palette, which)
-    row.mark:SetText(data.active and "?" or "!")
-    row.mark:SetTextColor(mark[1], mark[2], mark[3], 1)
+    D.QuestIcon(row.mark, data)
     row.mark:SetPoint("LEFT", x, 0)
     row.mark:Show()
-    x = x + 14 + 7
+    x = x + 16 + 7
     if D.DB().levels and data.level then
       UI.Font(row.level, "body", size, D.DiffColor(palette, data.difficulty))
       row.level:SetText("[" .. data.level .. "]")
