@@ -202,6 +202,23 @@ end
 B.SetQuality = SetQuality
 
 -- "N in your bags (M stacks)" under a combined button's item tooltip.
+-- A Free box's tooltip: which bags its count is for (2026-11-24, the user: "can't understand which free is the
+-- real bag and which the reagent bag").
+function B.FreeTooltip(button)
+  local count = button.codexFreeCount
+  if count == nil or not button.codexFree:IsShown() then
+    return
+  end
+  GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+  if button.codexFreeKind == "reagent" then
+    GameTooltip:SetText(("%d free slot%s in your reagent bag"):format(count, count == 1 and "" or "s"))
+    GameTooltip:AddLine("Only reagents go in there.", 0.6, 0.6, 0.6, true)
+  else
+    GameTooltip:SetText(("%d free slot%s in your bags"):format(count, count == 1 and "" or "s"))
+  end
+  GameTooltip:Show()
+end
+
 function B.AddStacksLine(button)
   local stacks = button.codexStacks
   if not stacks or stacks < 2 or not GameTooltip:IsOwned(button) then
@@ -262,6 +279,7 @@ local function LiveButton(set, bagID, slot)
   button.codexFree:Hide()
   button.codexFreeLabel:Hide()
   button:HookScript("OnEnter", B.AddStacksLine)
+  button:HookScript("OnEnter", B.FreeTooltip)
   button:Hide()
   list[slot] = button
   return button
@@ -317,6 +335,8 @@ local function FillLive(button, bagID, slot)
   button.codexFreeLabel:SetShown(showFree)
   if showFree then
     button.codexFree:SetText(freeCount)
+    -- which bags: "bags" or "reagent" under the count (both said "free")
+    button.codexFreeLabel:SetText(button.codexFreeKind == "reagent" and "reagent" or "bags")
   end
   button.codexEntry = info and { link = info.hyperlink } or nil
   -- Stat Delta's upgrade arrow, when that module runs
@@ -382,6 +402,7 @@ function B.CategorySections(entries, free)
   for _, kind in ipairs({ free.normal, free.reagent }) do
     if kind.first then
       kind.first.free = kind.count
+      kind.first.freeKind = kind == free.reagent and "reagent" or "bags"
       freeEntries[#freeEntries + 1] = kind.first
     end
   end
@@ -613,7 +634,7 @@ function B.PlaceLive(set, packed, pool, content)
     local button = LiveButton(set, entry.bagID, entry.slot)
     if button then
       shown[button] = true
-      button.codexFreeCount = entry.free
+      button.codexFreeCount, button.codexFreeKind = entry.free, entry.freeKind
       local combined = entry.stacks and entry.stacks > 1
       button.codexTotal = combined and entry.total or nil
       button.codexStacks = combined and entry.stacks or nil

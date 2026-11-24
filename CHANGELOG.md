@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.1
+
+- Bags: "Combine identical items" no longer stays off after you leave a vendor, bank, mailbox or auction house without its close being noticed: the game is asked whether that window is still open.
+- Bags: the two Free boxes say which bags they count, "bags" or "reagent" under the number, with a tooltip.
+
 ## 1.6.0
 
 - Proc art: **Top and bottom** as an Art side (also per ability): one proc's art above and below you, a second on the other edge, then left and right.

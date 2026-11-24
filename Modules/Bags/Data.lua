@@ -523,7 +523,9 @@ end
 B.interacting = {}
 
 function B.SetInteracting(what, open)
-  local before = B.ShouldCombine()
+  local db = B.db
+  -- (the layout as it is: no stale flag dropped here, or a close looked like no change and nothing redrew)
+  local before = db ~= nil and db.combine and db.categories and next(B.interacting) == nil or false
   B.interacting[what] = open and true or nil
   if before ~= B.ShouldCombine() then
     ns.Fire("BAGS_CHANGED", "combine")
@@ -533,8 +535,55 @@ function B.SetInteracting(what, open)
   end
 end
 
--- Combined now: the option is on, the view is grouped and no window wants single stacks.
+-- Whether a window set by its open event is still open (2026-11-24, the user's screenshot: "shown one by one: a bank,
+-- trade, mail, vendor or auction window is open" with none open, a close event that never came). The game's own
+-- C_PlayerInteractionManager.IsInteractingWithNpcOfType for the NPC windows (forever PlayerInteractionManager
+-- documentation; PlayerInteractionType Merchant 5, Banker 8, GuildBanker 10, MailInfo 17, Auctioneer 21,
+-- CharacterBanker 67), else the window itself; trade (with a player) and anything unknown trust the events.
+B.INTERACTION_TYPES = { bank = { "Banker", "CharacterBanker", "AccountBanker" }, merchant = { "Merchant" },
+  mail = { "MailInfo" }, auction = { "Auctioneer" }, guildbank = { "GuildBanker" } }
+B.INTERACTION_FRAMES = { bank = "BankFrame", mail = "MailFrame", merchant = "MerchantFrame",
+  auction = "AuctionHouseFrame", guildbank = "GuildBankFrame" } -- (trade, with a player: its events are trusted)
+function B.StillInteracting(what)
+  local manager = C_PlayerInteractionManager
+  local types = Enum and Enum.PlayerInteractionType
+  local names = B.INTERACTION_TYPES[what]
+  if names and type(manager) == "table" and type(manager.IsInteractingWithNpcOfType) == "function"
+    and type(types) == "table" then
+    local asked = false
+    for _, name in ipairs(names) do
+      if types[name] ~= nil then
+        asked = true
+        local ok, on = pcall(manager.IsInteractingWithNpcOfType, types[name])
+        if ok and on == true then
+          return true
+        end
+      end
+    end
+    if asked then
+      return false
+    end
+  end
+  local frame = _G[B.INTERACTION_FRAMES[what] or ""]
+  if type(frame) == "table" and type(frame.IsShown) == "function" then
+    local ok, shown = pcall(frame.IsShown, frame)
+    return ok and shown == true
+  end
+  return true
+end
+
+-- Combined now: the option is on, the view is grouped and no window wants single stacks (stale ones dropped).
 function B.ShouldCombine()
+  local dropped = false
+  for what in pairs(B.interacting) do
+    if not B.StillInteracting(what) then
+      B.interacting[what] = nil
+      dropped = true
+    end
+  end
+  if dropped and B.RequestRefresh then
+    B.RequestRefresh() -- as its close event would have: the bags combine again
+  end
   local db = B.db
   return db ~= nil and db.combine and db.categories and next(B.interacting) == nil or false
 end
