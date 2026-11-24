@@ -17,12 +17,15 @@ Gathering.lua
 QuestOrder.lua
 Theme.lua
 Widgets.lua
+FontStyles.lua
 Window.lua
 Areas.lua
+Info.lua
 Search.lua
 Home.lua
 Settings.lua
 SettingsUI.lua
+FontStylesUI.lua
 Profiles.lua
 Setup.lua
 WhatsNewData.lua

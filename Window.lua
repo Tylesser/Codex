@@ -4,11 +4,15 @@ local addonName, ns = ...
 -- Profiles) and the selected page. Every page but Home is one scrolling page of foldable sections (Areas.lua).
 
 local UI = ns.UI
-local WIDTH, HEIGHT, SIDE = 920, 610, 200
+local BASE_WIDTH, HEIGHT, SIDE = 920, 610, 200
+-- the info panel (Info.lua) on the right: the window grows by its width and the gap, the pages keep theirs
+local INFO_GAP = 14
+ns.INFO_WIDTH = 262 -- the info panel (Info.lua)
+local WIDTH = BASE_WIDTH + ns.INFO_WIDTH + INFO_GAP
 -- The page area's size (pages are built before the window has been laid out, so they read these). AREA_WIDTH is
 -- the whole page (Home, an area page); PAGE_WIDTH is what a module's own page gets inside its section (Areas.lua:
 -- the page less the scroll thumb's room and the section's indent), the width module builders lay themselves out in.
-ns.AREA_WIDTH = WIDTH - 10 - SIDE - 38
+ns.AREA_WIDTH = BASE_WIDTH - 10 - SIDE - 38
 ns.PAGE_WIDTH = ns.AREA_WIDTH - 14 - 18
 ns.PAGE_HEIGHT = HEIGHT - 80
 
@@ -97,6 +101,14 @@ function ns.ShowPage(id, widget)
       geterrorhandler()(err)
     end
   end
+  if type(ns.InfoForPage) == "function" then
+    local section = sectionId and ns.SectionFrame and ns.SectionFrame(sectionId)
+    if section and type(ns.InfoHover) == "function" then
+      ns.InfoHover(section)
+    else
+      ns.InfoForPage(page.sections and page or nil, ns.AREA_BY_ID and ns.AREA_BY_ID[area])
+    end
+  end
   if sectionId then
     ns.FocusSection(sectionId, widget)
   end
@@ -123,7 +135,7 @@ local function CreateBanner()
   -- a strip under the page (the page area shrinks while it shows), never over the page's text
   local banner = CreateFrame("Frame", nil, window)
   banner:SetPoint("BOTTOMLEFT", window.side, "BOTTOMRIGHT", 18, 14)
-  banner:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -20, 14)
+  banner:SetPoint("BOTTOMRIGHT", window.content, "BOTTOMRIGHT", 0, -44)
   banner:SetHeight(34)
   banner:SetFrameLevel(window.content:GetFrameLevel() + 20)
   UI.Inset(window, banner)
@@ -314,14 +326,21 @@ function ns.CreateWindow()
   navScroll:Update()
   window.navButtons = navButtons
 
-  -- page area
+  -- page area, and the info panel on its right (Info.lua)
   local content = CreateFrame("Frame", nil, window)
   window.content = content
   window.side = side
+  local info = type(ns.BuildInfoPanel) == "function" and ns.BuildInfoPanel(window) or nil
+  window.info = info
+  local infoRoom = info and (ns.INFO_WIDTH + INFO_GAP) or 0
+  if info then
+    info:SetPoint("TOPRIGHT", bar, "BOTTOMRIGHT", -9, -14)
+    info:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -14, 18)
+  end
   function window.PlaceContent(bannerShown)
     content:ClearAllPoints()
     content:SetPoint("TOPLEFT", side, "TOPRIGHT", 18, -14)
-    content:SetPoint("BOTTOMRIGHT", -20, bannerShown and 58 or 18)
+    content:SetPoint("BOTTOMRIGHT", -20 - infoRoom, bannerShown and 58 or 18)
   end
   window.PlaceContent(false)
 

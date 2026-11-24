@@ -337,6 +337,7 @@ for _, toggle in ipairs(Q.toggles) do
     folded = place.folded,
     aliases = { key },
     keywords = { toggle.name, toggle.desc },
+    desc = toggle.desc,
     switch = {
       get = function()
         return Q.DB()[key] and not ModuleOff()

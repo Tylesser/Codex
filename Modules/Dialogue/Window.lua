@@ -63,7 +63,8 @@ function D.Palette(style)
       rule = tokens.pageRule, hover = tokens.pageHover, icon = tokens.pageIcon,
       key = { fill = tokens.pageHover, line = tokens.pageRule, text = tokens.inkMuted },
       button = tokens.pageButton, primary = tokens.primary, select = tokens.pageHover, selLine = tokens.inkHead,
-      good = light and D.DIFF_INK.green or theme.good, bad = light and D.DIFF_INK.red or theme.bad,
+      good = light and D.InkTable("inkDiff", D.DIFF_INK).green or theme.good,
+      bad = light and D.InkTable("inkDiff", D.DIFF_INK).red or theme.bad,
       chip = { fill = tokens.pageHover, line = tokens.pageRule },
       bar = { back = { 0, 0, 0, 0.15 }, fill = tokens.inkHead },
     }
@@ -80,18 +81,28 @@ function D.Palette(style)
   }
 end
 
+-- The ink colours (marks, difficulty, qualities on light paper): a theme whose paper is darker than the usual cream
+-- gives its own (dialogue.inkMark / inkDiff / inkQuality, key by key over these), so they keep reading on it.
+function D.InkTable(key, base)
+  local own = D.Tokens()[key]
+  if type(own) ~= "table" then
+    return base
+  end
+  return setmetatable(own, { __index = base })
+end
+
 function D.MarkColor(palette, which)
-  return (palette.ink and D.MARK_INK or D.MARK)[which] or D.MARK.gold
+  return (palette.ink and D.InkTable("inkMark", D.MARK_INK) or D.MARK)[which] or D.MARK.gold
 end
 
 function D.DiffColor(palette, which)
-  return (palette.ink and D.DIFF_INK or D.DIFF)[which] or D.DIFF.yellow
+  return (palette.ink and D.InkTable("inkDiff", D.DIFF_INK) or D.DIFF)[which] or D.DIFF.yellow
 end
 
 function D.QualityColor(palette, quality)
   quality = type(quality) == "number" and quality or 1
   if palette.ink then
-    return QUALITY_INK[quality] or palette.text
+    return D.InkTable("inkQuality", QUALITY_INK)[quality] or palette.text
   end
   return QUALITY_TEXT[quality] or QUALITY[quality] or palette.text
 end
@@ -520,6 +531,8 @@ D.frames = frames
 
 local function Own(frame)
   D.ownFrames[frame] = true
+  -- the Quests page's Fonts tab: headings and the rest of the text (FontStyles.lua)
+  UI.FontRole(frame, "dialogue.title", "dialogue.text")
   frame:SetClampedToScreen(true)
   frame:EnableMouse(true)
   frame:SetFrameStrata("MEDIUM")
@@ -586,6 +599,9 @@ local function CreateC()
   local frame = Own(CreateFrame("Frame", "CodexDialogueBook", UIParent))
   local tokens = D.Tokens()
   local page = tokens.page or {}
+  if not page.dark then
+    UI.Paper(frame) -- dark text on light paper: no drop shadow (it blurred the text)
+  end
   frame.paper = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
   frame.paper:SetAllPoints()
   T.Gradient(frame.paper, "VERTICAL", page.from, page.to, page.from[4] or 1, page.to[4] or 1)
@@ -616,21 +632,27 @@ local function CreateC()
   frame.zone:SetPoint("TOPLEFT", frame.name, "BOTTOMLEFT", 0, -2)
   frame.zone:SetPoint("TOPRIGHT", frame.name, "BOTTOMRIGHT", 0, -2)
   frame.zone:SetWordWrap(false)
-  -- the ornament: line, a small diamond, line
-  frame.diamond = frame:CreateTexture(nil, "ARTWORK")
+  -- the ornament: line, a small diamond, line. All three hang on one band under the zone, so both anchors of a line
+  -- are at the same height: a line anchored to the diamond on one end and to the window's LEFT edge on the other
+  -- took the window's middle for its height and ran through the text (the user's screenshot, 2026-11-24).
+  frame.ornament = CreateFrame("Frame", nil, frame)
+  frame.ornament:SetPoint("TOPLEFT", frame.zone, "BOTTOMLEFT", 30, -11)
+  frame.ornament:SetPoint("TOPRIGHT", frame.zone, "BOTTOMRIGHT", -30, -11)
+  frame.ornament:SetHeight(12)
+  frame.diamond = frame.ornament:CreateTexture(nil, "ARTWORK")
   frame.diamond:SetSize(6, 6)
   if frame.diamond.SetRotation then
     frame.diamond:SetRotation(math.rad(45))
   end
-  frame.diamond:SetPoint("TOP", frame.zone, "BOTTOM", 0, -14)
-  frame.ruleLeft = frame:CreateTexture(nil, "ARTWORK")
+  frame.diamond:SetPoint("CENTER", frame.ornament, "CENTER", 0, 0)
+  frame.ruleLeft = frame.ornament:CreateTexture(nil, "ARTWORK")
   frame.ruleLeft:SetHeight(1)
+  frame.ruleLeft:SetPoint("LEFT", frame.ornament, "LEFT", 0, 0)
   frame.ruleLeft:SetPoint("RIGHT", frame.diamond, "LEFT", -8, 0)
-  frame.ruleLeft:SetPoint("LEFT", frame, "LEFT", 52, 0)
-  frame.ruleRight = frame:CreateTexture(nil, "ARTWORK")
+  frame.ruleRight = frame.ornament:CreateTexture(nil, "ARTWORK")
   frame.ruleRight:SetHeight(1)
   frame.ruleRight:SetPoint("LEFT", frame.diamond, "RIGHT", 8, 0)
-  frame.ruleRight:SetPoint("RIGHT", frame, "RIGHT", -52, 0)
+  frame.ruleRight:SetPoint("RIGHT", frame.ornament, "RIGHT", 0, 0)
   NewScroll(frame)
   Footer(frame)
   return frame
@@ -786,6 +808,7 @@ end
 local function Header(frame, page, palette, style)
   frame.portrait:SetUnit(page.unit)
   UI.Font(frame.name, "body", style == "c" and D.FontSize(6) or D.FontSize(3), palette.bright)
+  ns.RestyleFont(frame.name, "dialogue.title") -- the NPC's name is a title too
   UI.Font(frame.zone, "body", D.FontSize(-1), palette.muted)
   D.SetText(frame.name, page.npc)
   D.SetText(frame.zone, page.zone)

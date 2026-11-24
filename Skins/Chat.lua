@@ -145,6 +145,7 @@ local function TabColors(tab, selected)
   local text = TabText(tab)
   if text then
     S.Font(text, "body", WhisperColor(tab) or (look.isSelected and "accent" or "muted"))
+    S.RestyleFont(text, "chat.tabs")
   end
   if look.isSelected and tab.GetAlpha and (Number(tab:GetAlpha()) or 1) < 1 then
     tabAlphaGuard = true
@@ -398,7 +399,7 @@ end
 local settingFont = false
 local function KeepFont(frame)
   local path = S.Theme().font.body
-  if settingFont or not path or not frame.GetFont then
+  if settingFont or frame.codexRestyling or not path or not frame.GetFont then
     return
   end
   local current, size, flags = frame:GetFont()
@@ -504,6 +505,12 @@ local function SkinChat(frame)
     KeepFont(frame)
     S.HookMethod(frame, "SetFont", KeepFont)
   end
+  -- Chat > Fonts (Codex FontStyles.lua): the style over whatever size the game's chat settings give the window,
+  -- again each time the game sets the font (hooked after KeepFont, so it lays over the theme's face)
+  S.RestyleFont(frame, "chat.text")
+  S.HookMethod(frame, "SetFont", function(self)
+    S.RestyleFont(self, "chat.text")
+  end)
   SkinTab(S.Child(frame, "tab") or (name and S.Get(name .. "Tab")))
   SkinEditBox(S.Child(frame, "editBox") or (name and S.Get(name .. "EditBox")), frame)
   WatchLines(frame)
@@ -540,6 +547,18 @@ end
 
 S.Part("chat", function()
   SkinAll()
+  -- Chat > Fonts changed a style (Codex FontStyles.lua): every window's lines and tabs again
+  if type(TylesserCodex.OnFontStyle) == "function" then
+    TylesserCodex.OnFontStyle(function(key)
+      if key == "chat.text" then
+        for frame in pairs(windows) do
+          S.RestyleFont(frame, "chat.text")
+        end
+      elseif key == "chat.tabs" then
+        AllTabColors()
+      end
+    end)
+  end
   -- tab colours follow Blizzard's own selected / unselected colouring
   S.HookGlobal("FCFTab_UpdateColors", function(tab, selected)
     TabColors(tab, selected and true or false)

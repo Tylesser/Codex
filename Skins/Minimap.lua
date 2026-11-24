@@ -31,7 +31,7 @@ local DOT = " \194\183 " -- " · "
 local TICK = 0.5 -- seconds between coordinate updates (only while the plate is shown)
 local SHAPES = { round = true, square = true, header = true }
 local THEME_SHAPE = { runestone = "round", hearthwood = "round", classic = "header", slate = "square", dusk = "round",
-  obsidian = "round", onyx = "round" } -- board miniDefault (the same as Settings.lua ns.MINIMAP_THEME_SHAPE)
+  obsidian = "round", onyx = "round", bronze = "round" } -- board miniDefault (the same as Settings.lua ns.MINIMAP_THEME_SHAPE)
 local HEADER_HEIGHT = 22
 
 -- Forever's round frame art (and its underlay when the map rotates).

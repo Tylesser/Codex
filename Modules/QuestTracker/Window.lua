@@ -308,6 +308,8 @@ local function FillRow(row, data)
     row.text:SetPoint("TOPLEFT", row, "TOPLEFT", 14, 0)
     row.text:SetPoint("RIGHT", row, "RIGHT", -24, 0)
     UI.Font(row.text, "body", 12.5, "accent")
+    ns.RestyleFont(row.text, "tracker.header") -- the Fonts tab's styles (FontStyles.lua)
+    ns.RestyleFont(row.count, "tracker.header")
     row.count:SetText(data.count)
   elseif kind == "quest" then
     -- a quest with an item: the row's own clicks stop short of the item button
@@ -315,10 +317,12 @@ local function FillRow(row, data)
     row.text:SetPoint("TOPLEFT", row, "TOPLEFT", 4, 0)
     row.text:SetPoint("RIGHT", row, "RIGHT", data.item and -(ITEM + 4) or 0, 0)
     UI.Font(row.text, "body", 12, "text")
+    ns.RestyleFont(row.text, "tracker.quest")
   else
     row.text:SetPoint("TOPLEFT", row, "TOPLEFT", 14, 0)
     row.text:SetPoint("RIGHT", row, "RIGHT", 0, 0)
     UI.Font(row.text, "body", 11.5, "text")
+    ns.RestyleFont(row.text, "tracker.objective")
   end
   local text = data.text or ""
   if kind == "objective" then
@@ -468,6 +472,8 @@ function QT.Build()
   header.title:SetText(_G.TRACKER_HEADER_QUESTS or "Quests")
   header.count = UI.Text(header, "body", 11, "muted")
   header.count:SetPoint("RIGHT", 0, 0)
+  ns.RestyleFont(header.title, "tracker.header")
+  ns.RestyleFont(header.count, "tracker.header")
   header:SetScript("OnClick", function()
     QT.ToggleCollapsed()
   end)
@@ -625,6 +631,16 @@ end
 
 -- New data. Out of combat: a full layout (and again next frame, once the texts are measured). In a fight: rows of
 -- the same shape are refilled in place; any other change waits for the fight to end.
+-- a font style of the tracker changed (the Fonts tab): the header now, the rows at the next update
+function QT.Restyle()
+  if not frame then
+    return
+  end
+  ns.RestyleFont(header.title, "tracker.header")
+  ns.RestyleFont(header.count, "tracker.header")
+  QT.Refresh()
+end
+
 function QT.Show(data, countText)
   if not frame then
     return

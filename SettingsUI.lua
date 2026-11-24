@@ -1062,6 +1062,7 @@ local function PickerRow(parent, stack, labelText, width, get, choices, set, cur
   end)
   pick:refresh()
   pick.row = row
+  pick.codexLabel = labelText -- the info panel names the option by its row
   stack.Add(row, function()
     return math.max(24, TextHeight(label, 12, LABEL_WIDTH) + 5)
   end)
@@ -1412,7 +1413,10 @@ function ns.BuildPartCard(parent, part, width, section)
   local card = CreateFrame("Frame", nil, parent)
   card:SetWidth(width)
   card.id = part.id
-  local columns = width >= TWO_COLUMNS and 2 or 1
+  -- in the Codex window the picture shows in the info panel (Info.lua), larger, when the section is hovered; the
+  -- card is then one column of text and options. Built elsewhere (no section), the card keeps it beside the text.
+  card.pictureInPanel = section ~= nil and ns.infoPanel ~= nil
+  local columns = (not card.pictureInPanel and width >= TWO_COLUMNS) and 2 or 1
   local pictureWidth = math.min(PICTURE_WIDTH, width)
   local inner = columns == 2 and (width - pictureWidth - PICTURE_GAP) or width
   card.inner, card.columns = inner, columns
@@ -1424,6 +1428,12 @@ function ns.BuildPartCard(parent, part, width, section)
     local old = card.picture
     card.picture = Picture(card, part.id, pictureWidth)
     old:Hide()
+    if card.pictureInPanel then
+      card.picture:Hide()
+      if type(ns.RefreshInfo) == "function" then
+        ns.RefreshInfo()
+      end
+    end
     if card.Relayout then
       card.Relayout()
     end
@@ -1445,10 +1455,16 @@ function ns.BuildPartCard(parent, part, width, section)
   function card.Measure()
     local y = 0
     local pictureHeight = card.picture:GetHeight() or 76
-    card.picture:ClearAllPoints()
-    if columns == 2 then
+    if card.pictureInPanel then
+      pictureHeight = 0
+      if card.picture:GetParent() == card then
+        card.picture:Hide()
+      end
+    elseif columns == 2 then
+      card.picture:ClearAllPoints()
       card.picture:SetPoint("TOPLEFT", card, "TOPLEFT", inner + PICTURE_GAP, 0)
     else
+      card.picture:ClearAllPoints()
       card.picture:SetPoint("TOPLEFT", card, "TOPLEFT", 0, 0)
       y = pictureHeight + 10
     end

@@ -311,9 +311,13 @@ local function HeadFont(fontString, size)
   SetFont(fontString, font.head or font.body or GAME_FONT, size * (font.head and font.headSize or 1))
 end
 
-local function BodyFont(fontString, size, path, flags)
+-- `key`: a font style (Unit frames > Fonts, FontStyles.lua in Codex) laid over the font
+local function BodyFont(fontString, size, path, flags, key)
   local font = S.Theme().font or {}
   SetFont(fontString, font.body or path or GAME_FONT, size * (font.body and font.bodySize or 1), flags)
+  if key and type(TylesserCodex.RestyleFont) == "function" then
+    TylesserCodex.RestyleFont(fontString, key)
+  end
 end
 
 local function TextColor(fontString, color)
@@ -340,9 +344,14 @@ local function Paint(bar, colors)
   bar:SetStatusBarColor(top[1], top[2], top[3])
   local texture = bar.GetStatusBarTexture and bar:GetStatusBarTexture()
   if S.IsRegion(texture) and texture.SetGradient and CreateColor then
-    -- dark at the bottom (or the left, with "Left to right": CodexDB.skins.barGradient), light at the top (right)
+    -- dark at the bottom (or the left, with "Left to right": CodexDB.skins.barGradient), light at the top (right).
+    -- A frame with its portrait on the right (target, focus: the picture mirrored) gets the side gradient mirrored
+    -- too, dark next to the portrait (bar.codexMirrored, set by Layout; the user's request, 2026-11-24).
     local skins = type(CodexDB) == "table" and type(CodexDB.skins) == "table" and CodexDB.skins
     local direction = skins and skins.barGradient == "horizontal" and "HORIZONTAL" or "VERTICAL"
+    if direction == "HORIZONTAL" and bar.codexMirrored then
+      bottom, top = top, bottom
+    end
     pcall(texture.SetGradient, texture, direction, CreateColor(bottom[1], bottom[2], bottom[3], 1),
       CreateColor(top[1], top[2], top[3], 1))
   end
@@ -382,7 +391,7 @@ end
 
 local function BarText(top, size)
   local text = top:CreateFontString(nil, "OVERLAY")
-  BodyFont(text, size, BAR_FONT, "OUTLINE")
+  BodyFont(text, size, BAR_FONT, "OUTLINE", "units.bars")
   text:SetPoint("CENTER", top, "CENTER", 0, 0)
   TextColor(text, { 1, 1, 1 })
   return text
@@ -791,7 +800,7 @@ end
 local NAME_MIN = 11
 local function FitName(f, text)
   local name, size, width = f.name, f.nameSize or f.spec.nameSize, f.nameWidth
-  BodyFont(name, size)
+  BodyFont(name, size, nil, nil, "units.name")
   if not width or not name.GetStringWidth or not CanRead(text) or type(text) ~= "string" then
     return
   end
@@ -801,7 +810,7 @@ local function FitName(f, text)
       return
     end
     size = size - 1
-    BodyFont(name, size)
+    BodyFont(name, size, nil, nil, "units.name")
   end
 end
 
@@ -1754,7 +1763,7 @@ local function PlaceBarText(text, top, size, inBar, right)
     return
   end
   if size then
-    BodyFont(text, size, BAR_FONT, "OUTLINE")
+    BodyFont(text, size, BAR_FONT, "OUTLINE", "units.bars")
   end
   text:ClearAllPoints()
   if inBar then
@@ -1769,6 +1778,19 @@ end
 local function Layout(f)
   local button = f.button
   local spec = SizedSpec(f)
+  -- portrait on the right half: the frame is mirrored, and so is a side gradient on its bars (Paint)
+  local portrait = spec.portrait
+  local mirrored = portrait and portrait[2] + portrait[1] / 2 >= spec.w / 2 or false
+  for _, key in ipairs({ "health", "power" }) do
+    local bar = f[key]
+    if bar and bar.codexMirrored ~= mirrored then
+      bar.codexMirrored = mirrored
+      local colors = f[key .. "Colors"]
+      if colors then
+        Paint(bar, colors)
+      end
+    end
+  end
   if f.origin then
     f.origin:ClearAllPoints()
     f.origin:SetPoint("TOPLEFT", button, "TOPLEFT", f.originX or 0, 0)
@@ -1807,7 +1829,7 @@ local function Layout(f)
     f.name:SetPoint("TOPLEFT", button, "TOPLEFT", x, -y)
     f.name:SetPoint("TOPRIGHT", button, "TOPLEFT", x + width, -y)
   end
-  BodyFont(f.name, nameSize)
+  BodyFont(f.name, nameSize, nil, nil, "units.name")
   if f.heading then
     f.heading:ClearAllPoints()
     if inBar then
@@ -1967,7 +1989,7 @@ local function BuildFrame(spec)
   -- the column's pieces (Layout places them for the style in use)
   local width = bw - spec.pad[1] - spec.pad[2]
   local name = button:CreateFontString(nil, "OVERLAY")
-  BodyFont(name, spec.nameSize) -- as the game writes it (a head font may have only capitals)
+  BodyFont(name, spec.nameSize, nil, nil, "units.name") -- as the game writes it (a head font may have only capitals)
   name:SetHeight(spec.nameSize + 2)
   name:SetJustifyH("LEFT")
   if name.SetWordWrap then
@@ -2209,7 +2231,7 @@ function CastBar.Text(bar)
   if not S.IsRegion(text) then
     return
   end
-  BodyFont(text, 10, BAR_FONT, "OUTLINE")
+  BodyFont(text, 10, BAR_FONT, "OUTLINE", "units.bars")
   text:ClearAllPoints()
   text:SetWidth(0)
   text:SetPoint("LEFT", bar, "LEFT", 4, 0)
@@ -2801,6 +2823,14 @@ end
 
 S.Part("unitframes", function()
   S.Defer("unitframes", Build)
+  -- Unit frames > Fonts changed a style: every frame laid out again (names and bar texts take it)
+  if type(TylesserCodex.OnFontStyle) == "function" then
+    TylesserCodex.OnFontStyle(function(key)
+      if type(key) == "string" and key:find("^units%.") then
+        TylesserCodex.RefreshFrameStyle()
+      end
+    end)
+  end
 end)
 
 -- Settings changed the text format (CodexDB.skins.unitText): every bar's text again, now.

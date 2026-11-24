@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.7.0
+
+- New theme, **Bronze**: the calm one. Warm dark brown close to the game's own frames, one thin bronze line, panels you can see the world through and the game's own font; gold only for titles and what is selected. Its quest window book page is a dull parchment with every text colour made to read on it. Pick it in Look > Theme.
+- The Codex window has an info panel on the right: hover a section or an option and it tells you what it changes. For the parts of the game Codex restyles it shows the "Game default" and "Codex" pictures, larger, one above the other.
+- Fonts per kind of text: a **Fonts** tab on the Quests, Unit frames, Chat and Info bars pages. Each text (the tracker's header, quest names and objectives, quest window titles and text, unit frame names and bar texts, nameplate names and health, personal bars, chat lines and tabs, info bar texts) gets its own font, size, outline and shadow, with Reset. Anything left on "Own" stays as before; the info panel shows samples drawn with your choices.
+- Quest windows, book page: the ornament's line no longer runs through the text, and the text has no drop shadow on the light paper (it looked blurry).
+- Unit frames: with the bar gradient set to "Left to right", frames with the portrait on the right (target, focus) get it mirrored too, dark next to the portrait.
+- Restyled Options window: the Game and AddOns tabs have their labels centred and show which one is selected.
+- Proc glow, Your own procs: the Buff and Spell labels no longer run into each other, and the boxes no longer touch the Pick buttons.
+
 ## 1.6.1
 
 - Bags: "Combine identical items" no longer stays off after you leave a vendor, bank, mailbox or auction house without its close being noticed: the game is asked whether that window is still open.

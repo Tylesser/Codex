@@ -290,6 +290,16 @@ PREVIEW.onyx = { head = DUSK_MEDIA .. "Inter-SemiBold.ttf", body = DUSK_MEDIA ..
   inset = { { 0.059, 0.067, 0.075, 0.94 }, { 0.097, 0.101, 0.104 } },
   side = { 1, 1, 1, 0.02 }, divider = { 0.097, 0.101, 0.104 },
   button = { { 0.078, 0.086, 0.098 }, { 0.078, 0.086, 0.098 }, { 0.152, 0.159, 0.170 }, { 0.827, 0.843, 0.863 } } }
+-- Bronze (2026-11-24): the calm theme, square, the game's font, one bronze line
+PREVIEW.bronze = { head = "Fonts\\FRIZQT__.TTF",
+  text = { 0.910, 0.875, 0.800 }, muted = { 0.659, 0.612, 0.533 },
+  panel = { { 0.098, 0.082, 0.067 }, { 0.098, 0.082, 0.067 } }, rings = { { 0.416, 0.329, 0.204 } },
+  title = { { 0.071, 0.059, 0.047 }, { 0.071, 0.059, 0.047 } }, titleLine = { 0.290, 0.235, 0.161 },
+  titleText = { 0.886, 0.714, 0.333 },
+  accent = { 0.886, 0.714, 0.333 }, bright = { 0.961, 0.933, 0.863 }, good = { 0.471, 0.800, 0.443 },
+  inset = { { 0.071, 0.059, 0.047, 0.7 }, { 0.290, 0.235, 0.161 } },
+  side = { 0, 0, 0, 0.18 }, divider = { 0.290, 0.235, 0.161 },
+  button = { { 0.157, 0.129, 0.098 }, { 0.157, 0.129, 0.098 }, { 0.416, 0.329, 0.204 }, { 0.886, 0.714, 0.333 } } }
 -- Frame style cards: a small drawn player frame in the theme for each style (Codex's own textures, not pictures)
 local function StyleDisc(frame, size, color, x, y, layer, sublevel)
   local disc = frame:CreateTexture(nil, layer or "ARTWORK", nil, sublevel or 0)
@@ -780,7 +790,7 @@ ns.MINIMAP_SHAPES = {
 }
 -- each theme's own shape (board miniDefault; Skins/Minimap.lua uses the same)
 ns.MINIMAP_THEME_SHAPE = { runestone = "round", classic = "header", hearthwood = "round", slate = "square",
-  dusk = "round", obsidian = "round", onyx = "round" }
+  dusk = "round", obsidian = "round", onyx = "round", bronze = "round" }
 
 function ns.MinimapShapeName(key)
   for _, shape in ipairs(ns.MINIMAP_SHAPES) do
@@ -921,6 +931,7 @@ local function LabelRow(parent, stack, labelText, width, widget, labelWidth, gap
   widget:ClearAllPoints()
   widget:SetPoint("TOPLEFT", row, "TOPLEFT", labelWidth + 6, 0)
   row.label, row.widget = label, widget
+  widget.codexLabel = labelText -- the info panel names the option by its row
   stack.Add(row, function()
     return math.max(widget:GetHeight() or 24, TextHeight(label, 12, labelWidth) + 5)
   end, 0, gap)
@@ -1088,11 +1099,15 @@ local function BuildEffects(body, width, section)
 end
 
 ns.AddSection("look", { id = "theme", title = "Theme", order = 10, build = BuildThemes,
+  desc = "The look of every Codex window and of the parts of the game Codex restyles: colours, lines and fonts. A new theme shows after a reload.",
   keywords = { "runestone hearthwood classic slate dusk dawn" } })
-ns.AddSection("look", { id = "fonts", title = "Fonts", order = 20, build = BuildFonts })
+ns.AddSection("look", { id = "fonts", title = "Fonts", order = 20, build = BuildFonts,
+  desc = "The fonts Codex uses for headings and text, and how large they are." })
 ns.AddSection("look", { id = "accent", title = "Accent colour", order = 30, build = BuildAccent,
+  desc = "The one colour that marks what is selected, focused or important: the theme's own, or your class colour.",
   keywords = { "class colour" } })
 ns.AddSection("look", { id = "effects", title = "Effects", order = 40, build = BuildEffects,
+  desc = "Small touches on the windows: a soft shadow behind them and a thin line along their top.",
   keywords = { "shadows strips dark panels" } })
 
 -- General: the Codex window itself ---------------------------------------------------------------------------------
@@ -1266,9 +1281,11 @@ local function BuildUIScale(body, width, section)
 end
 
 ns.AddSection("general", { id = "uiscale", title = "Interface scale", order = 85, build = BuildUIScale,
+  desc = "How large the whole game interface is drawn. Leave it on the game's own to keep the game's setting.",
   keywords = { "ui scale size pixel perfect" } })
 
 ns.AddSection("general", { id = "codexwindow", title = "Codex window", order = 80, build = BuildCodexWindow,
+  desc = "This window itself: its size, the minimap button that opens it and the What's new list.",
   keywords = { "minimap button scale size" } })
 
 -- Tooltips: what the other features add to item tooltips (the same settings as on their own sections) ---------------
@@ -1345,6 +1362,7 @@ local function BuildTooltipExtras(body, width, section)
 end
 
 ns.AddSection("tooltips", { id = "tooltipextras", title = "Prices and stats in tooltips", order = 40,
+  desc = "The lines Codex adds to item tooltips: auction and vendor prices, crafting cost and profit, and stat changes.",
   build = BuildTooltipExtras, keywords = { "auction price vendor sell craft cost profit stat delta score" } })
 
 -- Profiles ---------------------------------------------------------------------------------------------------------
@@ -1377,6 +1395,8 @@ local function BuildSetupSection(body, width)
 end
 
 ns.AddSection("profiles", { id = "profiles", title = "Profiles", order = 10, build = BuildProfilesSection,
+  desc = "Save your settings under a name, use them on another character, or share them as a text string.",
   aliases = { "profile" }, keywords = { "export import share copy" } })
 ns.AddSection("profiles", { id = "setup", title = "First-run setup", order = 20, build = BuildSetupSection,
+  desc = "The short setup from your first login: the theme, the parts of the game Codex restyles, and the features you use.",
   keywords = { "setup wizard run again" } })

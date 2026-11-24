@@ -244,6 +244,11 @@ function QT.Start()
       QT.Refresh()
     end
   end)
+  ns.OnFontStyle(function(key)
+    if type(key) == "string" and key:find("^tracker%.") and QT.Restyle then
+      QT.Restyle()
+    end
+  end)
   QT.Update()
 end
 

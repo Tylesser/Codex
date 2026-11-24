@@ -200,6 +200,7 @@ local function SetFont(text, size, flags)
   if not text:SetFont(BAR_FONT, size, flags or "") then
     text:SetFont("Fonts\\FRIZQT__.TTF", size, flags or "")
   end
+  ns.RestyleFont(text, "personal.text") -- Unit frames > Fonts (FontStyles.lua)
 end
 
 local function Text(parent, size, justify)
@@ -1439,6 +1440,11 @@ function R.Enable()
   end
   R.DB()
   Build()
+  ns.OnFontStyle(function(key)
+    if key == "personal.text" and not InCombatLockdown() then
+      R.Refresh()
+    end
+  end)
   holder:SetScript("OnEvent", OnEvent)
   for event in pairs(HANDLERS) do
     if UNIT_EVENTS[event] then

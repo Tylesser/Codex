@@ -166,8 +166,8 @@ local function DrawPreview(frame, key, w, h)
     local inkColor = { ink[1], ink[2], ink[3], 0.85 }
     Box(frame, px + 10, 26, math.floor(pw * 0.55), 3, inkColor, "OVERLAY")
     Lines(frame, px + 8, 35, { pw - 16, pw - 20, pw - 28 }, { ink[1], ink[2], ink[3], 0.45 })
-    Choice(frame, px + 8, 56, pw - 22, keyLook, D.MARK_INK.gold, inkColor)
-    Choice(frame, px + 8, 66, pw - 28, keyLook, D.MARK_INK.blue, inkColor)
+    Choice(frame, px + 8, 56, pw - 22, keyLook, D.InkTable("inkMark", D.MARK_INK).gold, inkColor)
+    Choice(frame, px + 8, 66, pw - 28, keyLook, D.InkTable("inkMark", D.MARK_INK).blue, inkColor)
   end
 end
 

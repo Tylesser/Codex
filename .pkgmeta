@@ -12,6 +12,7 @@ move-folders:
   Codex/Themes/Dusk: Codex_Dusk
   Codex/Themes/Obsidian: Codex_Obsidian
   Codex/Themes/Onyx: Codex_Onyx
+  Codex/Themes/Bronze: Codex_Bronze
   Codex/Skins: Codex_Skins
 
 ignore:

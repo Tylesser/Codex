@@ -25,6 +25,50 @@ local function OnInk(frame)
   return false
 end
 
+-- Marks a light paper of ours (the quest windows' book page): texts on it get no shadow. A dark drop shadow under
+-- dark text on light ground blurs it (the user's "texts are blurry", 2026-11-24).
+local function OnPaper(frame)
+  for _ = 1, 40 do
+    if type(frame) ~= "table" then
+      return false
+    end
+    if frame.codexOnPaper == true then
+      return true
+    end
+    frame = type(frame.GetParent) == "function" and frame:GetParent() or nil
+  end
+  return false
+end
+
+-- Marks a frame of ours whose texts follow a font style (FontStyles.lua): UI.Font on any text inside it lays the
+-- style over the font, `head` texts with headKey, the rest with bodyKey (the quest windows).
+local function FontRole(frame)
+  for _ = 1, 40 do
+    if type(frame) ~= "table" then
+      return nil
+    end
+    if frame.codexFontRole then
+      return frame.codexFontRole
+    end
+    frame = type(frame.GetParent) == "function" and frame:GetParent() or nil
+  end
+  return nil
+end
+
+function UI.FontRole(frame, headKey, bodyKey)
+  if type(frame) == "table" then
+    frame.codexFontRole = { head = headKey, body = bodyKey }
+  end
+  return frame
+end
+
+function UI.Paper(frame)
+  if type(frame) == "table" then
+    frame.codexOnPaper = true
+  end
+  return frame
+end
+
 local function Theme(frame)
   local theme = ns.Theme()
   if frame ~= nil and type(ns.InkTheme) == "function" then
@@ -733,12 +777,22 @@ function UI.Font(fontString, kind, size, color)
     fontString:SetFont(GAME_FONT, size or 12, "")
   end
   local x, y, r, g, b, a = UI.TextShadow(theme)
+  if OnPaper(fontString) then
+    x, y, a = 0, 0, 0
+  end
   fontString:SetShadowOffset(x, y)
   fontString:SetShadowColor(r, g, b, a)
   if color then
     fontString:SetTextColor(UI.Unpack(type(color) == "string" and theme[color] or color))
   end
   KeepReadable(fontString, theme)
+  local role = type(ns.RestyleFont) == "function" and FontRole(fontString)
+  if role then
+    local key = kind == "head" and role.head or role.body
+    if key then
+      ns.RestyleFont(fontString, key)
+    end
+  end
   return fontString
 end
 

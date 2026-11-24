@@ -84,6 +84,27 @@ The user asked to be told whenever another part should get its own load-on-deman
   (search, `/codex debug ui`, tests). `ns.RefreshSections()` after any change (RELOAD_STATE too). A
   `UI.ScrollArea` with nothing to scroll hands the wheel to the scroll area round it (`UI.ForwardWheel`; Buffs'
   `ScrollBody` too).
+- `Info.lua` (2026-11-24, the user's request after FlareUI's settings window): the info panel, a column right of the
+  page (`ns.INFO_WIDTH` 262, set in Window.lua, which adds it and a 14 px gap to the window: 1196 wide; the pages
+  keep `ns.AREA_WIDTH`). `ns.InfoHover(section, widget)` (section headers and switches, and every Button /
+  CheckButton / EditBox / Slider / picker in a body, hooked once by `ns.InfoWatch` after the body is built),
+  `ns.InfoForPage(page)` (ShowPage, SelectTab: the tab's first section), `ns.ShowInfo(subject)`, `ns.RefreshInfo()`.
+  A section's words: `def.desc` (text or function), else its module's desc, its skins part's `ns.UI_PART_TEXT`, its
+  small switch's desc; its preview: `def.preview(holder, width)`, else a part card's picture: inside the window
+  `card.pictureInPanel` (SettingsUI.lua), the card is one column and the panel takes `card.picture` (sides one above
+  the other, scaled to the panel). An option's name: `UI.Describe(widget, text | { title, text })`, `codexLabel`
+  (Settings' LabelRow / PickerRow), a check's label, its row's one text, a button's text.
+- `FontStyles.lua` / `FontStylesUI.lua` (2026-11-24, the user's "do both": FlareUI's per-text font rows for the
+  tracker, then the same for every part): elements `ns.AddFontElement({ key, group, label, base, absolute })`
+  (`ns.FONT_ELEMENTS`; groups `ns.FONT_GROUPS` quests / units / chat / info, each a "Fonts" section `fonts-<group>`,
+  its own tab), style `CodexDB.fontStyles[key] = { font = ns.FONTS key, size, outline = none/thin/thick, shadow =
+  none/soft/strong }` (left out = "Own"). Drawing code calls `ns.RestyleFont(fs, key)` (`TylesserCodex.RestyleFont`,
+  Skins' `S.RestyleFont`) right after it set its font: the size scales by size / base (`absolute` = the chat: the
+  size itself), never under 9; it keeps the drawing code's font in `fs.codexStyleBase` (no compounding, back on
+  Reset) and guards against a SetFont hook on the same text (`codexRestyling`). `UI.FontRole(frame, headKey,
+  bodyKey)`: UI.Font on any text inside restyles it (the quest windows). Changes fire "FONT_STYLE" (`ns.OnFontStyle`):
+  the tracker (`QT.Restyle`), quest windows (`D.Refresh`), unit frames (`RefreshFrameStyle`), nameplates, personal
+  bars (`R.Refresh`), chat windows / tabs and info bar slots draw again. Test `codex_fonts_test.lua`.
 - `Search.lua`: the sidebar's search box. Index (built once, on the first search) from the widgets of every built
   section: page names, section names (+ `keywords`), shown font strings and button texts that are names (3-64
   characters, a letter, not ending in a full stop); skips `codexPicker` (picker / stepper values), `codexList` (list
@@ -127,6 +148,11 @@ The user asked to be told whenever another part should get its own load-on-deman
   `ns.SetupDB`. The light-theme machinery below (`light`, `inkPanel`, `ns.InkTheme`, `ns.GameColor`, `ns.Readable`,
   `UI.GameText` / `S.GameText`, the "Game interface on dark panels" option) is still in the code but idle: no theme
   has `light` or a non-empty `inkPanel`. Don't bring a light theme back unasked. The notes on Dawn below are history.
+- **Bronze** (2026-11-24, `Themes/Bronze`, `Codex_Bronze`, the user's "a new calm theme" after comparing Codex
+  with FlareUI): warm dark brown and bronze like the game's own frames, one thin line per box (no studs, double
+  rings, bevels, strip caps), square, see-through panels (window 92 %, HUD 72 %), the game's Friz Quadrata never in
+  capitals, gold only for titles / selected / focus. No media of its own. Contrast checked in `codex_look_test`.
+  The user creates its junction for the game (`Codex_Bronze` -> `Codex/Themes/Bronze`).
 - **Dusk** (2026-11-19, the user's friend liked the "Dusk" canvas `calm/project`):
   flat, see-through panels (94 / 95 %), one hairline, no studs / double rings / bevels, Inter (`Themes/Dusk/Media`,
   SIL OFL 1.1, `Inter-OFL.txt` = the v4.1 release's LICENSE.txt, unmodified, must ship; Dawn reads the fonts from
@@ -870,7 +896,7 @@ actions / windows / rings, `R.Choices(kind, ring)`, search, a click = `R.SetSlic
 
 `E:/Games/Wow/tools/harness`: `codex_mock.lua` (WoW mock + `LoadCodex(opts)` that reads Codex.toc and the xml
 includes, loads theme/skins folders through a mocked `C_AddOns.LoadAddOn`; any missing method whose name starts
-upper-case is a function there, so test for a widget's own method with `rawget`), `codex_test.lua` (core),
+upper-case is a function there, so test for a widget's own method with `rawget`); its `SetParent` moves a frame from the old parent's children to the new one's, as the game does (2026-11-24), `codex_test.lua` (core),
 `codex_areas_test.lua` (every module / part / toggle in its section, search into folded sections and unopened
 pages, ShowPage landing, folded state saved, headers, and no text past its column at the smallest window size in
 all five themes: rects resolved from the anchors, natural text width = half the font size per character),

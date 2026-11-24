@@ -403,6 +403,12 @@ function D.Enable()
     events:RegisterEvent(event)
   end
   D.events = events
+  -- a font style of the quest windows changed (Quests > Fonts): the open page drawn again
+  ns.OnFontStyle(function(key)
+    if type(key) == "string" and key:find("^dialogue%.") then
+      D.Refresh()
+    end
+  end)
   D.InstallGameHooks()
   if D.Keys then
     D.Keys.Create()

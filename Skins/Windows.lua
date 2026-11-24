@@ -132,7 +132,18 @@ local function IsTab(button)
   return S.IsPanelButton(button) and (S.Region(button, "LeftActive") or S.Region(button, "LeftDisabled")) ~= nil
 end
 
+-- MinimalTabTemplate (the Options window's Game / AddOns tabs; SharedXML Tabs/MinimalTab): Left / Middle / Right
+-- set by atlas, its Text anchored to the bottom edge (MinimalTabMixin:OnSelected) and IsSelected from
+-- SelectableButtonMixin.
+local function IsMinimalTab(button)
+  return S.IsPanelButton(button) and type(button.selectedLeftTexture) == "string"
+    and type(button.OnSelected) == "function" and S.IsRegion(S.Region(button, "Text"))
+end
+
 local function Selected(tab)
+  if tab.selectedLeftTexture and type(tab.IsSelected) == "function" then
+    return tab:IsSelected() and true or false
+  end
   local active = S.Region(tab, "LeftActive")
   if active then
     return active:IsShown() and true or false
@@ -151,21 +162,31 @@ local function PaintTab(tab, selected)
   parts.shade:SetShown(selected)
   parts.line:SetShown(selected)
   local text = tab.GetFontString and tab:GetFontString()
+  if not S.IsRegion(text) then
+    text = S.Region(tab, "Text")
+  end
   if S.IsRegion(text) then
+    if parts.plate then -- MinimalTab: its label centred in our box, not on Blizzard's bottom edge
+      text:ClearAllPoints()
+      text:SetPoint("CENTER", parts.plate, "CENTER", 0, 0)
+    end
     local c = selected and S.Theme().accent or S.Theme().muted
     text:SetTextColor(c[1], c[2], c[3], 1)
   end
 end
 
 local function Tab(tab)
-  if not IsTab(tab) or tabs[tab] then
+  local minimal = IsMinimalTab(tab)
+  if not (minimal or IsTab(tab)) or tabs[tab] then
     return
   end
   S.Once(tab, "button") -- not a plain panel button
   S.KillKeys(tab, "Left", "Middle", "Right", "LeftActive", "MiddleActive", "RightActive", "LeftDisabled",
     "MiddleDisabled", "RightDisabled", "LeftHighlight", "MiddleHighlight", "RightHighlight")
   local theme = S.Theme()
-  local plate = S.Plate(tab, ButtonLook(), { left = -4, right = -4, top = -2, bottom = -2 })
+  -- a MinimalTab is 37 px tall with its art in the lower part: our box keeps to that part
+  local plate = S.Plate(tab, ButtonLook(), minimal and { left = -2, right = -2, top = -9, bottom = 0 }
+    or { left = -4, right = -4, top = -2, bottom = -2 })
   local shade = tab:CreateTexture(nil, "BACKGROUND", nil, -6)
   shade:SetAllPoints(plate.fill)
   S.UI.Gradient(shade, theme.select.from, theme.select.to)
@@ -174,11 +195,19 @@ local function Tab(tab)
   line:SetPoint("BOTTOMRIGHT", plate.fill, "BOTTOMRIGHT", -1, 1)
   line:SetHeight(2)
   S.SetColor(line, theme.accent)
-  tabs[tab] = { shade = shade, line = line }
+  tabs[tab] = { shade = shade, line = line, plate = minimal and plate.fill or nil }
   -- tab systems (spellbook / talents, professions) mark their tab themselves
   S.HookMethod(tab, "SetTabSelected", function(self, selected)
     PaintTab(self, selected and true or false)
   end)
+  if minimal then
+    -- MinimalTabMixin moves its Text and sets its font (and so its colour) on select and on hover
+    S.HookMethod(tab, "OnSelected", function(self, selected)
+      PaintTab(self, selected and true or false)
+    end)
+    S.HookScript(tab, "OnEnter", function(self) PaintTab(self) end)
+    S.HookScript(tab, "OnLeave", function(self) PaintTab(self) end)
+  end
   PaintTab(tab)
 end
 

@@ -484,6 +484,7 @@ local function CreateSlot(parent, info)
   slot.icon:SetVertexColor(UI.Unpack(Theme().accent))
   slot.text = UI.Text(slot, "body", 12, "bright")
   slot.text:SetWordWrap(false)
+  ns.RestyleFont(slot.text, "infobar.text") -- Info bars > Fonts (FontStyles.lua)
   local divider = slot:CreateTexture(nil, "BORDER")
   divider:SetWidth(1)
   UI.SetColor(divider, Theme().divider, 0.7)
@@ -1532,6 +1533,14 @@ end
 function I.Enable()
   I.DB()
   I.running = true
+  ns.OnFontStyle(function(key)
+    if key == "infobar.text" then
+      for _, slot in pairs(I.slots) do
+        ns.RestyleFont(slot.text, "infobar.text")
+        pcall(I.UpdateSlot, slot) -- (a top-bar slot is as wide as its text)
+      end
+    end
+  end)
   -- a gear set for each talent group (Data.lua I.WearTalentSet), shown on a bar or not
   if not I.talentWatch then
     I.talentWatch = CreateFrame("Frame")

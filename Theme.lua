@@ -1,7 +1,7 @@
 local addonName, ns = ...
 
 -- Themes. Each look lives in its own load-on-demand folder (Codex_Runestone, Codex_Hearthwood,
--- Codex_Classic, Codex_Slate, Codex_Dusk, Codex_Obsidian, Codex_Onyx) that is loaded only when the player picks it. The folder
+-- Codex_Classic, Codex_Slate, Codex_Dusk, Codex_Obsidian, Codex_Onyx, Codex_Bronze) that is loaded only when the player picks it. The folder
 -- calls TylesserCodex.RegisterTheme(def) while it loads. Changing the theme takes effect after a reload.
 --
 -- A theme definition (colors are { r, g, b } or { r, g, b, a }, 0-1):
@@ -64,6 +64,9 @@ local addonName, ns = ...
 --     ink, inkMuted, inkHead = c,               -- text on the paper
 --     pageRule, pageIcon, pageHover = c,        -- lines, the ornament and row hover on the paper
 --     pageButton = { from, to, line, text },    -- buttons on the paper
+--     inkDiff, inkMark, inkQuality = { ... },   -- optional: the paper's own quest difficulty, mark and item quality
+--                                                -- colours (Dialogue Window.lua D.DIFF_INK / MARK_INK / QUALITY_INK
+--                                                -- key by key) for a paper darker than the cream (Bronze)
 --   },
 -- }
 --
@@ -95,6 +98,8 @@ ns.THEMES = {
   -- darker than Dusk, mostly black (players' request, 2026-11-22): they borrow Dusk's Inter (Codex_Dusk/Media)
   { id = "obsidian", name = "Obsidian", folder = "Codex_Obsidian", desc = "Near-black with a warm gold accent." },
   { id = "onyx", name = "Onyx", folder = "Codex_Onyx", desc = "Cool black with a soft teal." },
+  -- the calm theme (2026-11-24): the game's own materials, one thin line, see-through, the game's font
+  { id = "bronze", name = "Bronze", folder = "Codex_Bronze", desc = "Calm warm brown, thin bronze lines, the game's font." },
 }
 
 local registered = {}

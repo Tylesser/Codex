@@ -21,6 +21,7 @@ local QUEST_COLORS = {
   dusk = { 0.498, 0.722, 0.690 }, -- #7fb8b0 the teal accent (the tracked quest colour of the Dusk boards)
   obsidian = { 0.784, 0.635, 0.353 }, -- #C8A25A its gold accent
   onyx = { 0.435, 0.698, 0.659 }, -- #6FB2A8 its teal accent
+  bronze = { 0.886, 0.714, 0.333 }, -- #E2B655 its gold accent
 }
 
 local marks = setmetatable({}, { __mode = "k" }) -- [item button] = our corner

@@ -21,6 +21,13 @@ spell ranks, the future spells tab in the spellbook and the cooldown manager's l
 The search box at the top of the sidebar finds any option by its name, or by the name of its section or page:
 click a result and Codex opens that page, unfolds the section and points at the option.
 
+The panel on the right of the window tells you what the section or option under your mouse changes. For the parts
+of the game Codex restyles it shows the game's own look above Codex's.
+
+The Quests, Unit frames, Chat and Info bars pages have a **Fonts** tab: each kind of text there (quest names,
+objectives, unit frame names, chat lines, ...) can get its own font, size, outline and shadow. Anything left on
+"Own" stays as Codex draws it.
+
 Home shows a card for each feature with what it is doing right now; click a card to go to its section.
 
 ## Modules
@@ -191,6 +198,9 @@ Pick a look on the Look page; only the theme you pick is loaded:
 - **Slate**: flat, quiet and minimal.
 - **Dusk**: calm blue-grey windows you can see the world through, rounded corners, one soft teal accent and the
   Inter font. Easy on the eyes.
+- **Obsidian** and **Onyx**: Dusk's look in near-black, with a warm gold or a soft teal accent.
+- **Bronze**: the calm one. Warm dark brown close to the game's own frames, one thin bronze line, panels you can
+  see the world through, and the game's own font; gold only for titles and what is selected.
 
 Dusk also tones down class and reaction colours on health bars (your frames, nameplates, raid frames and
 the damage meter), so they are calmer while each class keeps its colour.
@@ -221,7 +231,7 @@ No GitHub account? Join the [Tylesser Discord](https://discord.gg/n2rEB6mRxF) an
 
 Tag `vX.Y.Z` after moving the changes into a `## X.Y.Z` section of CHANGELOG.md. The packager builds one zip
 with `Codex` and its load-on-demand folders (`Codex_Runestone`, `Codex_Hearthwood`, `Codex_Classic`,
-`Codex_Slate`, `Codex_Dusk`, `Codex_Obsidian`, `Codex_Onyx`, `Codex_Skins`).
+`Codex_Slate`, `Codex_Dusk`, `Codex_Obsidian`, `Codex_Onyx`, `Codex_Bronze`, `Codex_Skins`).
 
 ## License
 

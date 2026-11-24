@@ -186,6 +186,7 @@ local function ModuleSections()
         estimate = module.pageEstimate,
         folded = module.folded,
         keywords = { module.name, module.desc },
+        desc = module.desc,
         switch = {
           get = function()
             return ModuleWanted(id)
@@ -540,6 +541,9 @@ function EnsureBody(section)
       geterrorhandler()(result)
     end
   end
+  if type(ns.InfoWatch) == "function" then
+    ns.InfoWatch(section, holder)
+  end
 end
 ns.EnsureSectionBody = EnsureBody
 
@@ -649,6 +653,16 @@ local function BuildSectionFrame(page, def, width)
   section.body:SetPoint("TOPLEFT", section, "TOPLEFT", INDENT, -(HEADER + PAD_TOP))
   section.body:SetSize(section.inner, 10)
   section.body:Hide()
+  -- the info panel (Info.lua) follows the mouse: the header and the switch name the section
+  local function Hover()
+    if type(ns.InfoHover) == "function" then
+      ns.InfoHover(section)
+    end
+  end
+  header:HookScript("OnEnter", Hover)
+  if section.switch then
+    section.switch:HookScript("OnEnter", Hover)
+  end
   RefreshHeader(section)
   return section
 end
@@ -791,6 +805,9 @@ local function BuildAreaPage(area, page)
     end
     page.Layout()
     C_Timer.After(0, page.Layout)
+    if not keepScroll and type(ns.InfoForPage) == "function" then
+      ns.InfoForPage(page)
+    end
   end
   local saved = type(ns.db.areaTabs) == "table" and ns.db.areaTabs[area.id]
   local first = page.tabs[1]

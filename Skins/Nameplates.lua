@@ -943,6 +943,7 @@ local function BuildHealthText(state, bar)
   text:SetShadowOffset(1, -1)
   text:SetShadowColor(0, 0, 0, 1)
   text:SetTextColor(1, 1, 1, 1)
+  S.RestyleFont(text, "plates.health")
   state.text = text
 end
 
@@ -1098,6 +1099,7 @@ local function Restyle(unitFrame)
     end
     BuildHealthText(state, bar)
     Text(S.Region(unitFrame, "name"), size)
+    S.RestyleFont(S.Region(unitFrame, "name"), "plates.name")
     BarColor(unitFrame)
   end
   local cast = CastBar(unitFrame)
@@ -1359,6 +1361,21 @@ S.Part("nameplates", function()
   round = TylesserCodex.SkinPartOn("roundicons") and true or false
   TylesserCodex.NameplateMarkAnchor = S.NameplateMarkAnchor
   TylesserCodex.RefreshNameplateText = RefreshText
+  -- Unit frames > Fonts changed a nameplate style: every plate's name and health text again
+  if type(TylesserCodex.OnFontStyle) == "function" then
+    TylesserCodex.OnFontStyle(function(key)
+      if type(key) == "string" and key:find("^plates%.") then
+        S.Run(part, AllPlates, function(plate)
+          local unitFrame = S.Child(plate, "UnitFrame")
+          local state = unitFrame and plates[unitFrame]
+          if state then
+            S.RestyleFont(S.Region(unitFrame, "name"), "plates.name")
+            S.RestyleFont(state.text, "plates.health")
+          end
+        end)
+      end
+    end)
+  end
   if CreateUnitHealPredictionCalculator then
     local ok, calc = pcall(CreateUnitHealPredictionCalculator)
     healCalc = ok and calc or nil

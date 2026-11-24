@@ -727,6 +727,14 @@ function S.GameFonts()
 end
 
 -- The same for a shared font object (GameTooltipHeaderText, ...): every string using it follows.
+-- A font style of Codex's Fonts tabs (Codex FontStyles.lua) laid over a text's font; nothing without Codex's API.
+function S.RestyleFont(fontString, key)
+  if S.IsRegion(fontString) and type(TylesserCodex) == "table" and type(TylesserCodex.RestyleFont) == "function" then
+    return TylesserCodex.RestyleFont(fontString, key)
+  end
+  return false
+end
+
 function S.FontObject(object, kind)
   object = S.Get(object)
   if not object or not object.SetFont or not object.GetFont then
