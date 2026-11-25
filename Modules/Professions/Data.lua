@@ -12,7 +12,7 @@ local addonName, ns = ...
 --   vendor = { [itemID] = unit price a merchant sells it for (copper) },
 --   queue = { [recipe name] = { count, reagents = { { name, itemID, count } } } },
 --   block, panel, tooltip, tooltipValue, craftReagents, ahCut (percent), sortKey, ascending, craftableOnly,
---   hideUnpriced, ownedFree,
+--   hideUnpriced, minProfitOn, minProfit (copper), ownedFree,
 -- }
 
 local P = {}
@@ -29,6 +29,8 @@ P.DEFAULTS = {
   ascending = false,
   craftableOnly = false,
   hideUnpriced = false,
+  minProfitOn = false,  -- hide recipes that earn less than minProfit per craft (and every loss)
+  minProfit = 0,        -- copper
   ownedFree = false,
   characters = {},
   vendor = {},
@@ -369,6 +371,44 @@ function P.SortEntries(entries, key, ascending)
 end
 
 -- Money with a sign: "-1g 20s" in red for a loss; "--" for nil.
+-- "1g 50s", "75s", "2.5g", "30c" -> copper. A number without g, s or c is silver. nil when the text isn't money.
+function P.ParseMoney(text)
+  text = tostring(text or ""):lower():gsub(",", ".")
+  if not text:find("%d") then
+    return text:match("^%s*$") and 0 or nil
+  end
+  local total, bare = 0, 0
+  local rest = text:gsub("(%d*%.?%d+)%s*([gsc]?)", function(number, unit)
+    local factor = unit == "g" and 10000 or unit == "c" and 1 or 100
+    if unit == "" then
+      bare = bare + 1
+    end
+    total = total + tonumber(number) * factor
+    return ""
+  end)
+  if bare > 1 or rest:find("%S") then
+    return nil
+  end
+  return math.floor(total + 0.5)
+end
+
+-- Exact money text for an input box: "1g 5s 20c", "75s", "0".
+function P.PlainMoney(copper)
+  copper = math.max(0, math.floor(copper or 0))
+  local parts = {}
+  local gold, silver = math.floor(copper / 10000), math.floor(copper / 100) % 100
+  if gold > 0 then
+    parts[#parts + 1] = gold .. "g"
+  end
+  if silver > 0 then
+    parts[#parts + 1] = silver .. "s"
+  end
+  if copper % 100 > 0 then
+    parts[#parts + 1] = (copper % 100) .. "c"
+  end
+  return #parts > 0 and table.concat(parts, " ") or "0"
+end
+
 function P.Money(amount, plus)
   if amount == nil then
     return "|cff808080--|r"

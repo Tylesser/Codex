@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.8.0
+
+- Professions: a **Min profit** filter under the profit list hides every recipe that loses money or earns less than the amount you type per craft (like `1s`, `50s` or `1g 50s`). Typing an amount turns it on.
+
 ## 1.7.1
 
 - Proc glow: Heating Up now shows in a fight at 3 stacks with "Show stacking procs as they build up" off too. Its stacks are read from Pyroblast's cast time, which can change a moment after the buff; one early reading could switch that reading off until the fight ended.
