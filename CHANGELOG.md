@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9.1
+
+- Trade Crier: no more Lua error every frame while a post is due (the button's glow).
+
 ## 1.9.0
 
 - New module, **Trade Crier** (Chat page, off until you switch it on): write a message with your profession links once (`<Tailoring>` becomes your Tailoring link, `<professions>` all of them), and while you are in a city with Trade chat a button lights up every few minutes. One click, a key you pick or `/codex crier post` posts it; the game doesn't let addons post on their own. Also out as its own addon, Tylesser - Trade Crier.
