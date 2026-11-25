@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.8.1
+
+- World map: the Map extras (funnel) button sits inside the breadcrumb bar at its right end, as tall as the zone buttons and on their middle. It used to hang 2 pixels low over the bar's edge, squeezed against the filter button.
+
 ## 1.8.0
 
 - Professions: a **Min profit** filter under the profit list hides every recipe that loses money or earns less than the amount you type per craft (like `1s`, `50s` or `1g 50s`). Typing an amount turns it on.

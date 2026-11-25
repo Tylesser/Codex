@@ -896,7 +896,10 @@ local function NewProvider()
   end
   provider.codexMapExtras = true
   provider.RefreshAllData = Safe(M.Draw)
-  provider.OnMapChanged = Safe(M.Draw)
+  provider.OnMapChanged = function()
+    Safe(M.Draw)()
+    M.PlaceSoon()
+  end
   provider.RemoveAllData = Safe(M.HideAll)
   provider.OnCanvasScaleChanged = Safe(M.Rescale)
   provider.OnCanvasSizeChanged = Safe(M.Rescale)
@@ -904,6 +907,7 @@ local function NewProvider()
     if M.events then
       M.events:RegisterEvent("PLAYER_REGEN_ENABLED")
     end
+    M.PlaceSoon()
   end
   provider.OnHide = function()
     if M.events then
@@ -947,10 +951,54 @@ function M.MenuItems()
   return items
 end
 
+-- Inside the breadcrumb bar, at its right end, as tall as the crumbs (the bar less BAR_INSET at the top and the
+-- bottom, the skin's crumb boxes too). Forever leaves 10 px between the bar and its tracking button
+-- (LEFT, NavBar, RIGHT, 10, -2), so beside that button the funnel hung over the bar's edge and 2 px low
+-- (2026-11-25). Anchored to the bar, it is on the bar's middle without reading a rect; the size needs the
+-- bar's height, read once the map is shown (24 until then).
+local BAR_INSET = 3
+function M.PlaceButton(map)
+  local button = M.button
+  local bar = type(map) == "table" and map.NavBar
+  if not button or type(bar) ~= "table" or InCombat() then
+    return -- no bar: it keeps its place beside the tracking button
+  end
+  local top, bottom = Num(Ask(bar.GetTop, bar)), Num(Ask(bar.GetBottom, bar))
+  local size = top and bottom and math.floor(top - bottom - 2 * BAR_INSET + 0.5) or 24
+  size = math.max(18, math.min(32, size))
+  if button.placedOn == bar and button.placedSize == size then
+    return
+  end
+  button.placedOn, button.placedSize = bar, size
+  button:ClearAllPoints()
+  button:SetPoint("RIGHT", bar, "RIGHT", -BAR_INSET, 0)
+  button:SetSize(size, size)
+  -- above the crumbs (the bar's children) when a long path reaches this far
+  local barLevel = Num(Ask(bar.GetFrameLevel, bar))
+  if barLevel and barLevel + 5 > (Num(Ask(button.GetFrameLevel, button)) or 0) then
+    button:SetFrameLevel(barLevel + 5)
+  end
+end
+
+-- Now and on the next frame (the map's frames have their rects once it is shown and laid out). The button
+-- is first made at login with the map hidden, so it is placed again each time the map opens.
+function M.PlaceSoon()
+  if not M.button then
+    return
+  end
+  M.PlaceButton(Map())
+  if C_Timer and C_Timer.After then
+    C_Timer.After(0, function()
+      M.PlaceButton(Map())
+    end)
+  end
+end
+
 function M.UpdateButton()
   local button = M.button
   if button then
     button:SetShown(Q.On(KEY) and M.host.provider ~= nil)
+    M.PlaceButton(Map())
   end
 end
 
@@ -964,7 +1012,7 @@ function M.MakeButton(map)
   button:SetFrameStrata("HIGH")
   local anchor = map.WorldMapTrackingOptionsButton
   if type(anchor) == "table" then
-    button:SetPoint("RIGHT", anchor, "LEFT", -2, 0)
+    button:SetPoint("RIGHT", anchor, "LEFT", -2, 0) -- M.PlaceButton moves it into the breadcrumb bar
     button:SetFrameLevel((Num(Ask(anchor.GetFrameLevel, anchor)) or 1) + 1)
   else
     local container = Ask(map.GetCanvasContainer, map) or map
