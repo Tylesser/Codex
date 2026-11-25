@@ -50,4 +50,5 @@ Modules\Highlight\Highlight.xml
 Modules\InfoBar\InfoBar.xml
 Modules\Resource\Resource.xml
 Modules\Rings\Rings.xml
+Modules\Crier\Crier.xml
 Events.lua

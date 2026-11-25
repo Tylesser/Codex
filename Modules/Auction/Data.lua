@@ -8,13 +8,17 @@ local addonName, ns = ...
 --   realms = { ["<realm>-<faction>"] = {
 --     items = { [itemID or "p<speciesID>"] = {
 --       m = lowest unit buyout (copper), t = when seen (time()), n = how many were up,
---       h = { [day] = lowest unit buyout that day },  -- day = floor(time() / 86400), last `days` days only
+--       h = { [day] = lowest unit buyout that day },  -- day = floor(time() / 86400), the last 90 days at most
+--       x = { [day] = the day's highest low },        -- only for days where it differs from h[day]
+--       q = { [day] = the most seen up at once that day },
+--       w / wx / wq = { [week] = ... },               -- the same per week (week = floor(day / 7)) for days older
+--                                                     -- than 90 while `days` is more than 90 (2026-11-25)
 --       v = { ["<itemLevel>:<suffix>"] = { price, time, count } },  -- gear variants only
 --     } },
 --     lastScan = time() of the last full scan request, scanned = items in it, scanDone = when it finished,
 --   } },
 --   lists = { { name = "...", terms = { { text = "...", exact = true/nil, maxPrice = copper/nil } } } },
---   tooltip = true, vendor = true, panel = true, days = 30,
+--   tooltip = true, vendor = true, panel = true, days = 30, tooltipHistory = true,
 -- }
 
 local A = {}
@@ -26,8 +30,14 @@ A.DEFAULTS = {
   tooltip = true, -- "Auction" line in item tooltips
   vendor = true, -- "Vendor" line when the game doesn't show a sell price
   panel = true, -- Codex panel beside the auction house
-  days = 30, -- days of price history to keep
+  days = 30, -- days of price history to keep (A.DAY_CHOICES)
+  tooltipHistory = true, -- the week's average and trend under the "Auction" line (the last days with Shift)
 }
+
+-- How long the price history goes back (the options' - / +). Past DAILY days, a week is one entry.
+A.DAY_CHOICES = { 7, 14, 30, 60, 90, 180, 365 }
+A.DAILY = 90
+A.MAX_DAYS = 365
 
 local DAY = 86400
 local FRESH = 6 * 3600 -- variants seen this recently count for the item's own (lowest) price
@@ -159,6 +169,9 @@ function A.KeyOf(item)
     if plain then
       return plain, nil
     end
+    if item:match("^p%d+$") then
+      return item, nil -- already a battle pet's database key
+    end
     local itemID, suffix, species = A.ParseLink(item)
     if species then
       return "p" .. species, nil
@@ -182,12 +195,72 @@ local function Today(when)
 end
 A.Today = Today
 
+local function Week(day)
+  return math.floor(day / 7)
+end
+A.Week = Week
+
+-- A day that leaves the daily history goes into its week: the lowest low, the highest high, the most up.
+local function Fold(rec, day, low, high, count)
+  local week = Week(day)
+  rec.w = rec.w or {}
+  local oldLow = rec.w[week]
+  local oldHigh = oldLow and (rec.wx and rec.wx[week] or oldLow)
+  local newLow = oldLow and math.min(oldLow, low) or low
+  local newHigh = math.max(oldHigh or 0, high or low, low)
+  rec.w[week] = newLow
+  if newHigh > newLow then
+    rec.wx = rec.wx or {}
+    rec.wx[week] = newHigh
+  elseif rec.wx then
+    rec.wx[week] = nil
+  end
+  if count and count > 0 then
+    rec.wq = rec.wq or {}
+    rec.wq[week] = math.max(rec.wq[week] or 0, count)
+  end
+end
+
+local EXTRAS = { "x", "q", "w", "wx", "wq" }
+
+-- Keeps `days` of history: the last DAILY days one entry per day, older ones (when `days` is longer) per week.
 local function Trim(rec, today, days)
+  days = math.max(1, math.min(A.MAX_DAYS, days or 30))
+  local daily = math.min(days, A.DAILY)
   if rec.h then
-    for day in pairs(rec.h) do
-      if day <= today - days then
+    for day, low in pairs(rec.h) do
+      if day <= today - daily then
+        if day > today - days then
+          Fold(rec, day, low, rec.x and rec.x[day], rec.q and rec.q[day])
+        end
         rec.h[day] = nil
       end
+    end
+  end
+  for _, field in ipairs({ "x", "q" }) do -- a day's extras go with its low
+    for day in pairs(rec[field] or {}) do
+      if not (rec.h and rec.h[day]) then
+        rec[field][day] = nil
+      end
+    end
+  end
+  if rec.w then
+    for week in pairs(rec.w) do
+      if week * 7 + 6 <= today - days then -- every day of that week is too old
+        rec.w[week] = nil
+      end
+    end
+    for _, field in ipairs({ "wx", "wq" }) do
+      for week in pairs(rec[field] or {}) do
+        if not rec.w[week] then
+          rec[field][week] = nil
+        end
+      end
+    end
+  end
+  for _, field in ipairs(EXTRAS) do
+    if rec[field] and next(rec[field]) == nil then
+      rec[field] = nil
     end
   end
   if rec.v then
@@ -213,11 +286,24 @@ end
 
 local function SetBase(rec, price, count, when, days)
   price = math.floor(price + 0.5)
-  rec.m, rec.t, rec.n = price, when, math.floor(count or 0)
+  count = math.floor(count or 0)
+  rec.m, rec.t, rec.n = price, when, count
   local today = Today(when)
   rec.h = rec.h or {}
-  if not rec.h[today] or price < rec.h[today] then
-    rec.h[today] = price
+  local oldLow = rec.h[today]
+  local oldHigh = oldLow and (rec.x and rec.x[today] or oldLow)
+  local low = oldLow and math.min(oldLow, price) or price
+  local high = math.max(oldHigh or price, price)
+  rec.h[today] = low
+  if high > low then
+    rec.x = rec.x or {}
+    rec.x[today] = high
+  elseif rec.x then
+    rec.x[today] = nil
+  end
+  if count > 0 then
+    rec.q = rec.q or {}
+    rec.q[today] = math.max(rec.q[today] or 0, count)
   end
   Trim(rec, today, days)
 end
@@ -301,14 +387,20 @@ function A.GetPrice(item)
   return rec.m, rec.t, rec.n
 end
 
--- Daily lowest prices, oldest first: { { time = <start of day>, price = copper }, ... }.
+-- The saved history, oldest first: { { time = <start of the day or week>, price = the lowest, high = the highest
+-- low, count = the most up at once or nil, week = true for a week's entry }, ... }.
 function A.GetHistory(item)
   local realm = A.Realm(false)
   local key = realm and item ~= nil and A.KeyOf(item)
   local rec = key and realm.items[key]
   local history = {}
   for day, price in pairs(rec and rec.h or {}) do
-    history[#history + 1] = { time = day * DAY, price = price }
+    history[#history + 1] = { time = day * DAY, price = price, high = rec.x and rec.x[day] or price,
+      count = rec.q and rec.q[day] }
+  end
+  for week, price in pairs(rec and rec.w or {}) do
+    history[#history + 1] = { time = week * 7 * DAY, price = price, high = rec.wx and rec.wx[week] or price,
+      count = rec.wq and rec.wq[week], week = true }
   end
   table.sort(history, function(a, b)
     return a.time < b.time
@@ -316,9 +408,42 @@ function A.GetHistory(item)
   return history
 end
 
--- Current price against the average daily low of the past week (today left out): 0.12 = 12% dearer.
-function A.Trend(rec)
-  if not rec or not rec.m or not rec.h then
+-- The entries of a history from `since` (a time()) on; all of them when since is nil.
+function A.HistorySince(history, since)
+  if not since then
+    return history
+  end
+  local out = {}
+  for _, point in ipairs(history) do
+    -- a week counts when any of its days is in range
+    if point.time + (point.week and 6 * DAY or 0) >= since then
+      out[#out + 1] = point
+    end
+  end
+  return out
+end
+
+-- Lowest low, highest high, average low (a week weighs as seven days) and the change from the first entry to
+-- the last (0.12 = 12% dearer; nil with one entry) of a list of entries; nil when it's empty.
+function A.HistoryStats(history)
+  if #history == 0 then
+    return nil
+  end
+  local low, high, sum, weight = math.huge, 0, 0, 0
+  for _, point in ipairs(history) do
+    low = math.min(low, point.price)
+    high = math.max(high, point.high or point.price)
+    local days = point.week and 7 or 1
+    sum, weight = sum + point.price * days, weight + days
+  end
+  local first, last = history[1].price, history[#history].price
+  local change = (#history > 1 and first > 0) and (last / first - 1) or nil
+  return low, high, sum / weight, change
+end
+
+-- The average daily low of the past week (today left out), or nil.
+function A.WeekAverage(rec)
+  if not rec or not rec.h then
     return nil
   end
   local today = Today()
@@ -331,7 +456,23 @@ function A.Trend(rec)
   if days == 0 or sum == 0 then
     return nil
   end
-  return rec.m / (sum / days) - 1
+  return sum / days
+end
+
+-- Current price against the average daily low of the past week (today left out): 0.12 = 12% dearer.
+function A.Trend(rec)
+  local average = rec and rec.m and A.WeekAverage(rec)
+  if not average then
+    return nil
+  end
+  return rec.m / average - 1
+end
+
+-- The saved record of an item on this realm (nil when it has no price here).
+function A.Record(item)
+  local realm = A.Realm(false)
+  local key = realm and item ~= nil and A.KeyOf(item)
+  return key and realm.items[key] or nil
 end
 
 -- Items --------------------------------------------------------------------------------------------------

@@ -245,6 +245,14 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   `A.ImportAuctionator`): reads only the data global `AUCTIONATOR_SHOPPING_LISTS` (`{ name, items, isTemporary }`,
   an item = search string, first field before ";" is the term, quoted = exact); temporary lists skipped, same-name
   lists get only missing terms; the button beside "Lists" shows only while there is something to import.
+  Price history (2026-11-25, the user's request; data format at the top of Data.lua): per day `h` low, `x` highest
+  low (only when higher), `q` most up; `days` from `A.DAY_CHOICES` (7-365), days past `A.DAILY` (90) fold into weeks
+  (`w` / `wx` / `wq`, week = floor(day / 7)) in `Trim`. `A.GetHistory` (entries with `high`, `count`, `week`; also
+  `TylesserCodex.GetAuctionHistory`), `A.HistorySince`, `A.HistoryStats`, `A.WeekAverage`. History.lua: the window
+  `CodexPriceHistory` (`A.ShowHistory(item)`: prices-page row click, Shift-click on a panel result,
+  `/codex history <link|ID|name>`), chart from pooled Lines (guarded: `CreateLine`), dots, low-high spans, supply
+  bars, hover frames per entry. Tooltip.lua `A.AddHistoryLines` (option `tooltipHistory`, also in Tooltips' list).
+  Bench scenario `codex_history` draws it (the renderer leaves out Line objects).
 - `Modules/Bags`: Codex's bag window (standalone = `Baganator`; never read or copy Baganator/Syndicator, they are
   All Rights Reserved). Data per character in `CodexDB.bags.characters["Realm-Name"]` (slots as
   `{ link, count, quality }`, bank from the last visit, equipped, money). Own bags are
@@ -599,6 +607,11 @@ actions / windows / rings, `R.Choices(kind, ring)`, search, a click = `R.SetSlic
 `ring` (attribute `subring`, the trigger snippet opens it at the cursor; a ring can't hold itself); preview;
   sizes; editing refused in combat). `/codex rings`, `/codex ring <name>` (out of combat). Test `codex_rings_test.lua`
   (runs the snippets in a stand-in restricted environment).
+- `Modules/Crier` (`crier`, "Trade Crier", area chat, default off; standalone = `TradeCrier`, 2026-11-26, the user's
+  request): `Crier.lua` is TradeCrier's file byte for byte (`tc_test.lua` checks; see TradeCrier/CLAUDE.md for the
+  design: a post only from the button's click, its override-binding key or a typed command, since channel chat needs
+  a hardware event). Host.lua: `CodexDB.crier`, `CodexCharDB.crier`, button `CodexCrierButton`; Page.lua its section
+  (own tab on Chat). Test `codex_crier_test.lua`; bench scenario `codex_crier`.
 - `Modules/Professions`: Profit Sort ported in (standalone = `ProfitSort`). Prices only from Codex: auction
   `ns.auction.GetPrice`, vendor prices recorded at merchants (`CodexDB.professions.vendor`). Forever opens the
   modern `ProfessionsFrame`; the classic TradeSkill/Craft providers are kept. The block sits in

@@ -31,9 +31,10 @@ local function ShowItemTooltip(owner, key)
     GameTooltip:AddLine("Lowest price per day", UI.Unpack(Color("accent")))
     for index = #history, math.max(1, #history - 6), -1 do
       local day = history[index]
-      GameTooltip:AddDoubleLine(date("%d %b", day.time), ns.Money(day.price), 0.8, 0.8, 0.8, 1, 1, 1)
+      GameTooltip:AddDoubleLine(A.HistoryDayText(day), ns.Money(day.price), 0.8, 0.8, 0.8, 1, 1, 1)
     end
   end
+  GameTooltip:AddLine("Click for its price history.", 0.6, 0.6, 0.6)
   GameTooltip:Show()
 end
 A.ShowItemTooltip = ShowItemTooltip
@@ -73,14 +74,7 @@ function A.PriceRows(search, sortKey, reverse)
 end
 
 local function TrendText(trend)
-  if not trend then
-    return "", Color("muted")
-  end
-  local percent = math.floor(trend * 100 + (trend >= 0 and 0.5 or -0.5))
-  if percent == 0 then
-    return "0%", Color("muted")
-  end
-  return (percent > 0 and "+" or "") .. percent .. "%", percent > 0 and Color("bad") or Color("good")
+  return A.TrendText(trend, ns.Theme())
 end
 
 -- While the Prices tab is open, item names we don't know yet are learnt a few at a time (25 every 0.2s), so
@@ -197,6 +191,11 @@ local function BuildPrices(body)
         end
       end)
       row:SetScript("OnLeave", GameTooltip_Hide)
+      row:SetScript("OnClick", function(self)
+        if self.item then
+          A.ShowHistory(self.item.key)
+        end
+      end)
     end,
     UpdateRow = function(row, item)
       if item.needTrend then
@@ -516,7 +515,34 @@ local function RefreshOptions()
   for _, check in ipairs(options.checks) do
     check:SetChecked(db[check.key])
   end
-  options.daysText:SetText(("Keep %d days of price history"):format(db.days))
+  options.daysText:SetText(A.DaysText(db.days))
+end
+
+-- "Keep 30 days of price history"; past 90 days the older ones are kept per week.
+function A.DaysText(days)
+  if days > A.DAILY then
+    return ("Keep %d days of price history (after %d days, one entry per week)"):format(days, A.DAILY)
+  end
+  return ("Keep %d days of price history"):format(days)
+end
+
+-- The next or previous length in A.DAY_CHOICES from any saved number of days.
+function A.StepDays(days, direction)
+  local choices = A.DAY_CHOICES
+  if direction > 0 then
+    for _, choice in ipairs(choices) do
+      if choice > days then
+        return choice
+      end
+    end
+    return choices[#choices]
+  end
+  for index = #choices, 1, -1 do
+    if choices[index] < days then
+      return choices[index]
+    end
+  end
+  return choices[1]
 end
 
 -- One of the options (also from the Tooltips page's "Prices and stats in tooltips").
@@ -534,6 +560,7 @@ local function BuildOptions(body)
   local anchor
   for _, option in ipairs({
     { "tooltip", "Auction price in item tooltips", "Hold Shift over a stack to see what the whole stack is worth." },
+    { "tooltipHistory", "Price history in item tooltips", "The past week's average and how today's price compares; hold Shift for the last days." },
     { "vendor", "Vendor sell price in item tooltips", "The game's sell price shows one item's price; hold Shift for the whole stack. A Vendor line where the game shows none." },
     { "panel", "Codex panel beside the auction house", "Shopping lists and the scan button at the auction house." },
   }) do
@@ -562,12 +589,15 @@ local function BuildOptions(body)
   fewer:SetPoint("LEFT", options.daysText, "RIGHT", 10, 0)
   local more = UI.Button(body, 24, 20, "+")
   more:SetPoint("LEFT", fewer, "RIGHT", 4, 0)
-  local function SetDays(days)
-    A.DB().days = math.max(7, math.min(90, days))
+  local function SetDays(direction)
+    local db = A.DB()
+    db.days = A.StepDays(db.days or 30, direction)
     RefreshOptions()
+    A.Changed("options")
   end
-  fewer:SetScript("OnClick", function() SetDays(A.DB().days - 7) end)
-  more:SetScript("OnClick", function() SetDays(A.DB().days + 7) end)
+  fewer:SetScript("OnClick", function() SetDays(-1) end)
+  more:SetScript("OnClick", function() SetDays(1) end)
+  options.fewer, options.more = fewer, more
   options.Refresh = RefreshOptions
 end
 

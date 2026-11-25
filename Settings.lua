@@ -1293,6 +1293,7 @@ ns.AddSection("general", { id = "codexwindow", title = "Codex window", order = 8
 local TOOLTIP_OPTIONS = {
   { module = "auction", title = "Auction house", options = {
     { key = "tooltip", name = "Auction price of the item (hold Shift for the whole stack)" },
+    { key = "tooltipHistory", name = "Price history: the week's average and trend (hold Shift for the last days)" },
     { key = "vendor", name = "Vendor sell price (one item; hold Shift for the whole stack)" } } },
   { module = "professions", title = "Professions", options = {
     { key = "tooltip", name = "Craft cost and profit, for items your characters can make" },

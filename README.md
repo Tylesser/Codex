@@ -37,8 +37,9 @@ Home shows a card for each feature with what it is doing right now; click a card
   for the whole row or per buff; optionally a warning, with a click to remove it, when a buff is on where its rules
   say no), click-to-buff, weapon enchants, and click-to-buff and dispel buttons by your party frames (a camp buff
   that doesn't stack with a class buff counts as having it). Formerly the Buff Tracker addon.
-- **Auction House**: scans the auction house and keeps a price history, shows prices in item tooltips, and
-  shops from your own lists. No other auction addon needed. "From Auctionator" copies Auctionator's saved
+- **Auction House**: scans the auction house and keeps a price history (up to a year: each day's lowest and highest
+  price and how many were up), shows prices, the week's average and the trend in item tooltips, and shops from your
+  own lists. Click an item on the Auction prices page, or type `/codex history <item>`, for its price chart. No other auction addon needed. "From Auctionator" copies Auctionator's saved
   shopping lists into Codex while Auctionator is installed.
 - **Bags**: one bag window for all your bags, grouped into categories (small ones side by side; or in bag order) with a search box,
   identical items stacked into one button with the total (shown one by one at the bank, trade, mailbox,
@@ -162,6 +163,10 @@ Home shows a card for each feature with what it is doing right now; click a card
   the game's tracker, Codex leaves it alone.
 - **Quest keys**: Space presses Complete Quest, Continue or Accept and picks quests from an NPC's list, in the
   game's quest windows and in Codex's.
+
+- **Trade Crier** (off until you switch it on): your message with your profession links in Trade chat. Write it once
+  (`<Tailoring>` becomes your Tailoring link), and while you are in a city a button lights up every few minutes; one
+  click or a key posts it. Also its own addon, Tylesser - Trade Crier.
 
 - **Rings** (off until you switch it on): hold a key and a ring of spells, items, macros, mounts or raid markers opens
   around your mouse; point at one and let go to use it, or click it. Works in combat. Ready-made rings for mounts,

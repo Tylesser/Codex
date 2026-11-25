@@ -132,6 +132,31 @@ local function WatchShift()
 end
 A.WatchShift = WatchShift
 
+-- Under the "Auction" line (2026-11-25): the past week's average daily low with today's price against it, and
+-- with Shift the lowest price of the last few days (newest first).
+local SHIFT_DAYS = 5
+function A.AddHistoryLines(tooltip, item, price, shift, r, g, b, theme)
+  local average = A.WeekAverage(A.Record(item))
+  if average then
+    local text, color = A.TrendText(price / average - 1, theme)
+    local trend = text ~= "" and (" |cff" .. ns.Hex(color) .. text .. "|r") or ""
+    tooltip:AddDoubleLine("Week average", ns.Money(average) .. trend, r, g, b, 1, 1, 1)
+  end
+  if not shift then
+    return
+  end
+  local history = A.GetHistory(item)
+  local shown = 0
+  for index = #history, 1, -1 do
+    local point = history[index]
+    if point.week or shown >= SHIFT_DAYS then
+      break
+    end
+    shown = shown + 1
+    tooltip:AddDoubleLine("  " .. date("%a %d %b", point.time), ns.Money(point.price), 0.7, 0.7, 0.7, 1, 1, 1)
+  end
+end
+
 function A.AddTooltipLines(tooltip, data)
   local db = A.db
   if not db or not (db.tooltip or db.vendor) then
@@ -172,6 +197,9 @@ function A.AddTooltipLines(tooltip, data)
       tooltip:AddDoubleLine("Auction", ns.Money(price) .. " |cff999999(" .. ns.Age(seen) .. ")|r", r, g, b, 1, 1, 1)
       if count > 1 and shift then
         tooltip:AddDoubleLine("Auction x" .. count, ns.Money(price * count), r, g, b, 1, 1, 1)
+      end
+      if db.tooltipHistory then
+        A.AddHistoryLines(tooltip, item, price, shift, r, g, b, theme)
       end
     end
   end

@@ -53,16 +53,22 @@ ns.RegisterModule({
   Status = function()
     return A.StatusText()
   end,
-  -- /codex auction scan
+  -- /codex auction scan, /codex auction history <item>
   Slash = function(_, rest)
     if rest:lower() == "scan" then
       A.ScanCommand()
+    elseif rest:lower():match("^history") then
+      A.HistoryCommand(rest:sub(8))
     end
   end,
   commands = {
     -- /codex scan
     scan = function()
       A.ScanCommand()
+    end,
+    -- /codex history <item link, ID or name>: the price history window
+    history = function(_, rest)
+      A.HistoryCommand(rest)
     end,
   },
 })

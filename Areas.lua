@@ -92,7 +92,7 @@ ns.AREA_TABS = {
     { "World map", { "qol-revealMap", "qol-zoneLevels", "qol-mapExtras", "part-questpins" } },
     { "Highlights", { "highlight" } },
   },
-  chat = { { "Chat", { "part-chat" } }, { "Damage meter", { "part-damagemeter" } } },
+  chat = { { "Chat", { "part-chat" } }, { "Damage meter", { "part-damagemeter" } }, { "Trade Crier", { "crier" } } },
   tooltips = {
     { "Look", { "part-tooltips" } },
     { "Extra lines", { "qol-questTooltips", "qol-gatherTooltips", "tooltipextras" } },

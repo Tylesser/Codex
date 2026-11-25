@@ -114,6 +114,13 @@ local function CreatePanel()
       row.deal:SetAllPoints()
       UI.SetColor(row.deal, ns.Theme().good, 0.12)
       row:SetScript("OnClick", function(self)
+        if self.item and IsShiftKeyDown() then
+          local key = A.KeyOf(self.item.result.itemKey)
+          if key then
+            A.ShowHistory(key)
+          end
+          return
+        end
         if self.item and not A.OpenResult(self.item) then
           ns.Say("The auction house window couldn't open this item; search for it by name.")
         end
@@ -136,7 +143,8 @@ local function CreatePanel()
         if entry.term.maxPrice then
           GameTooltip:AddDoubleLine("Your max price", ns.Money(entry.term.maxPrice), 0.8, 0.8, 0.8, 1, 1, 1)
         end
-        GameTooltip:AddLine("Click to open it in the auction house.", 0.6, 0.6, 0.6)
+        GameTooltip:AddLine("Click to open it in the auction house, Shift-click for its price history.", 0.6, 0.6,
+          0.6, true)
         GameTooltip:Show()
       end)
       row:SetScript("OnLeave", GameTooltip_Hide)

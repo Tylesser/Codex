@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.9.0
+
+- New module, **Trade Crier** (Chat page, off until you switch it on): write a message with your profession links once (`<Tailoring>` becomes your Tailoring link, `<professions>` all of them), and while you are in a city with Trade chat a button lights up every few minutes. One click, a key you pick or `/codex crier post` posts it; the game doesn't let addons post on their own. Also out as its own addon, Tylesser - Trade Crier.
+- Auction house: a **price history window** for each item. Click an item on the Auction prices page, Shift-click a result in the panel beside the auction house, or type `/codex history` and an item link or name. It charts the item's lowest price per day with how many were up, shows the lowest, highest and average price and the change, and lists every saved day. Pick 7 days, 30 days, 90 days or All.
+- Each day now also keeps its highest price and how many were up, not only the lowest price.
+- Price history can be kept up to a year (7, 14, 30, 60, 90, 180 or 365 days). Days older than 90 are kept as one entry per week, so the saved file stays small.
+- Item tooltips show the past week's average price and how today's price compares (+12%, -5%). Hold Shift to see the last five days. Switch it off with "Price history in item tooltips".
+
 ## 1.8.1
 
 - World map: the Map extras (funnel) button sits inside the breadcrumb bar at its right end, as tall as the zone buttons and on their middle. It used to hang 2 pixels low over the bar's edge, squeezed against the filter button.
