@@ -43,7 +43,7 @@ Home shows a card for each feature with what it is doing right now; click a card
   shopping lists into Codex while Auctionator is installed.
 - **Bags**: one bag window for all your bags, grouped into categories (small ones side by side; or in bag order) with a search box,
   identical items stacked into one button with the total (shown one by one at the bank, trade, mailbox,
-  vendors and auction house);
+  vendors and auction house); keys shown or hidden with one click (the key button above the bags);
   a bank window and a guild bank window in the same look (bank sort, a Deposit reagents button, guild bank
   tabs, money and log);
   look at your other characters' bags and bank, see everyone's money, and item counts from all characters in

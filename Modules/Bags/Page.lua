@@ -14,6 +14,7 @@ local OPTIONS = {
   { key = "categories", text = "Group items into categories", note = "Off: every slot in bag order." },
   { key = "pack", text = "Pack categories side by side", note = "Small categories share a row. Off: one category per row." },
   { key = "combine", text = "Combine identical items", note = "One button with the total; one by one at the bank, trade, mail, vendors and auction house." },
+  { key = "showKeys", text = "Show keys", note = "The keyring and other keys. The key button above the bags switches it too." },
   { key = "tooltip", text = "Item counts in tooltips", note = "How many of an item each of your characters has." },
 }
 

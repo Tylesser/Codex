@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9.2
+
+- Bags: a key button above the bags (beside the view and combine buttons) hides or shows your keyring and other keys, in categories and in bag order, also when you look at another character's bags. The same switch is "Show keys" in the bag options.
+
 ## 1.9.1
 
 - Trade Crier: no more Lua error every frame while a post is due (the button's glow).

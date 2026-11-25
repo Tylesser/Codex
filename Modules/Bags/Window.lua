@@ -412,6 +412,21 @@ function B.CategorySections(entries, free)
   return sections
 end
 
+-- "Show keys" off: the keyring and the Keys category are left out of the window (the items stay where they are).
+local function DropKeys(sections)
+  if B.db.showKeys ~= false then
+    return sections
+  end
+  local out = {}
+  for _, section in ipairs(sections) do
+    if section.id ~= "key" and section.id ~= "keys" then
+      out[#out + 1] = section
+    end
+  end
+  return out
+end
+B.DropKeys = DropKeys
+
 -- The live view's sections: grouped, or every slot in bag order.
 local function LiveSections(entries, slots, free)
   local sections
@@ -438,7 +453,7 @@ local function LiveSections(entries, slots, free)
       sections[#sections + 1] = { id = "keys", name = "Keyring", entries = keys }
     end
   end
-  return sections
+  return DropKeys(sections)
 end
 
 local function SavedSections(entries)
@@ -446,7 +461,16 @@ local function SavedSections(entries)
     if B.db.combine then
       entries = B.Combine(entries)
     end
-    return B.Group(entries)
+    return DropKeys(B.Group(entries))
+  end
+  if B.db.showKeys == false then
+    local keyring, kept = B.KeyringID(), {}
+    for _, entry in ipairs(entries) do
+      if entry.bagID ~= keyring then
+        kept[#kept + 1] = entry
+      end
+    end
+    entries = kept
   end
   return { { id = "all", entries = entries } }
 end
@@ -742,6 +766,7 @@ local ICONS = {
   bank = "Interface\\Icons\\INV_Box_02",
   class = "Interface\\TargetingFrame\\UI-Classes-Circles",
   unknown = "Interface\\Icons\\INV_Misc_QuestionMark",
+  keys = "Interface\\Icons\\INV_Misc_Key_03",
 }
 
 local function IconButton(parent, texture, onClick, lines)
@@ -805,6 +830,7 @@ local function UpdateHeader()
   frame.title:SetText(Theme().titlebar.upper and title:upper() or title)
   SetIconState(frame.mode, B.db.categories, true)
   SetIconState(frame.combine, B.ShouldCombine(), true)
+  SetIconState(frame.keys, B.db.showKeys ~= false, true)
   SetClassIcon(frame.character, char and char.class)
   SetIconState(frame.character, false, true)
   local hasBank = view.bank or (char and char.bank ~= nil) or false
@@ -1050,8 +1076,19 @@ local function HeaderRow(bar)
     return { "View: Bag order", "Click for categories." }
   end)
   frame.mode:SetPoint("RIGHT", frame.combine, "LEFT", -6, 0)
+  frame.keys = IconButton(frame, ICONS.keys, function()
+    B.db.showKeys = not (B.db.showKeys ~= false)
+    B.Refresh()
+    ns.Fire("BAGS_CHANGED", "options")
+  end, function()
+    if B.db.showKeys ~= false then
+      return { "Keys: shown", "Your keyring and other keys. Click to hide them." }
+    end
+    return { "Keys: hidden", "Click to show your keyring and other keys." }
+  end)
+  frame.keys:SetPoint("RIGHT", frame.mode, "LEFT", -6, 0)
 
-  local search = B.SearchBox(frame, frame.mode, function(text)
+  local search = B.SearchBox(frame, frame.keys, function(text)
     view.search = text
     ApplySearch()
   end)

@@ -13,6 +13,7 @@ local DEFAULTS = {
   categories = true,  -- grouped sections; false = bag order
   combine = true,     -- identical items as one button with the total (in categories)
   pack = true,        -- categories side by side while they fit; false = one category per row
+  showKeys = true,    -- the keyring and the Keys category in the bag window (2026-11-26, the user's request)
   tooltip = true,     -- "Codex: N on your characters" in item tooltips
   bankWindow = true,  -- Codex's bank window at the banker (false = the game's bank window)
   guildBankWindow = true, -- Codex's guild bank window at the guild vault (false = the game's)
