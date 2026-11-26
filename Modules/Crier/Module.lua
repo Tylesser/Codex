@@ -8,10 +8,10 @@ ns.RegisterModule({
   id = "crier",
   name = "Trade Crier",
   -- its section in the Codex window (Areas.lua)
-  area = "chat", sectionOrder = 40, pageEstimate = 560,
+  area = "chat", sectionOrder = 40, pageEstimate = 680,
   icon = "Interface\\Icons\\INV_Misc_Note_01",
-  desc = "Your message with your profession links in Trade chat, again every few minutes while you are in a city: a "
-    .. "button lights up when it's time and one click (or a key) posts it.",
+  desc = "Your messages with your profession links in Trade chat, each again after its own time while you are in a "
+    .. "city: a button lights up when it's time and one click (or a key) posts it.",
   standalone = "TradeCrier",
   standaloneName = "Trade Crier",
   default = false,

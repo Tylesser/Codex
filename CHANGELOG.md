@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.11.0
+
+- Trade Crier: **several messages** (up to 8 per character), **each with its own time in seconds** (30 at least): a message goes out again only once its time has passed, and the button posts the one that has waited longest. Untick a message to keep it without posting it. Your message and your time from before become the first message.
+- Trade Crier: **an icon per message**. Click a message's icon to pick another; until you do, it shows the profession the message links. The button shows the icon of the message that goes next.
+
 ## 1.10.0
 
 - New, optional: **Skull mark** (Unit frames > Skull mark, or `/codex skull`). Pick a key: pressing it puts the skull on your target, and so does clicking the small skull button. It works only while your group role is the one you gave the skull to (Tank by default; Healer, Damage or any role too, and optionally when you have no role set), and by default only in a party or raid. The game doesn't let addons put markers on by themselves, so it marks when you press the key: press it as you pull. It never takes a skull off. Off until you switch it on.

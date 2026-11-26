@@ -1,13 +1,40 @@
 local addonName, ns = ...
 
--- Trade Crier's section on the Chat page: the message with its link buttons and preview, the timing, the channel,
--- the checks, the post key. The same choices as the standalone's options page (TradeCrier/Options.lua).
+-- Trade Crier's section on the Chat page: the messages (each with its own time in seconds), the link buttons and the
+-- preview of the message being edited, the channel, the checks, the post key. The same choices as the standalone's
+-- options page (TradeCrier/Options.lua).
 
 local C = ns.crier
 local UI = ns.UI
 
 local view
 local INSERT_INDENT = 96 -- the insert buttons start right of "Put in a link:"
+local ROW = 30 -- one message row
+
+local function Wrapped(parent, size, color, width)
+  local text = UI.Text(parent, "body", size, color)
+  text:SetWidth(width)
+  text:SetJustifyH("LEFT")
+  text:SetWordWrap(true)
+  return text
+end
+
+-- A row's state on its right: when it goes next, or why it doesn't.
+local function RowState(message)
+  local state = C.MessageState(message)
+  if state == "empty" then
+    return "", "muted"
+  elseif state == "off" then
+    return "off", "muted"
+  elseif state == "long" then
+    return "too long", "bad"
+  end
+  local wait = C.WaitFor(message)
+  if wait > 0 then
+    return "in " .. C.Clock(wait), "muted"
+  end
+  return "ready", "accent"
+end
 
 local function Refresh()
   if not view then
@@ -15,16 +42,41 @@ local function Refresh()
   end
   local settings, char = C.Settings(), C.Char()
   local theme = ns.Theme()
-  if not view.message:HasFocus() and view.message:GetText() ~= char.message then
-    view.message:SetText(char.message)
+  local messages = C.Messages()
+  if not messages[view.active] then
+    view.active = 1
   end
-  local text, unknown = C.Expand(char.message)
+  local relayout = view.shownRows ~= #messages
+  view.shownRows = #messages
+  for index, row in ipairs(view.rows) do
+    local message = messages[index]
+    row:SetShown(message ~= nil)
+    if message then
+      if not row.box:HasFocus() and row.box:GetText() ~= message.text then
+        row.box:SetText(message.text)
+      end
+      if not row.every:HasFocus() then
+        row.every:SetText(tostring(message.every))
+      end
+      row.on:SetChecked(not message.off)
+      row.pick.icon:SetTexture(C.MessageIcon(message))
+      row.pick.icon:SetDesaturated(message.off and true or false)
+      local text, color = RowState(message)
+      row.state:SetText(text)
+      row.state:SetTextColor(UI.Unpack(theme[color] or theme.muted))
+      row.number:SetTextColor(UI.Unpack(index == view.active and theme.accent or theme.muted))
+    end
+  end
+  view.rowHolder:SetHeight(#messages * ROW)
+  view.add:SetShown(#messages < C.MAX_MESSAGES)
+
+  local _, text, unknown = C.MessageState(messages[view.active])
+  view.previewLabel:SetText(#messages > 1 and ("Message %d in chat reads"):format(view.active) or "In chat it reads")
   view.preview:SetText(text ~= "" and text or "(nothing yet)")
   view.count:SetText(("%d / %d"):format(#text, C.MAX_LENGTH))
   view.count:SetTextColor(UI.Unpack(#text > C.MAX_LENGTH and theme.bad or theme.muted))
   view.unknown:SetText(#unknown > 0 and (table.concat(unknown, ", ") .. " matched none of your professions.") or "")
   view.status:SetText(C.started and C.StatusText() or "Switch Trade Crier on to see the button.")
-  view.interval.value:SetText(settings.interval .. " min")
   view.channel:SetText(C.ChannelDef(settings.channel).name)
   for _, check in ipairs(view.checks) do
     check:SetChecked((check.char and char or settings)[check.key] and true or false)
@@ -48,19 +100,119 @@ local function Refresh()
   end
   buttons[#buttons + 1] = view.insertAll
   C.FlowButtons(view.insertRow, buttons, view.width, INSERT_INDENT, 6, 22)
+  -- a row more or less: the section's height changes
+  if relayout and view.built and not view.relayingOut and type(ns.RefreshSections) == "function" then
+    view.relayingOut = true
+    pcall(ns.RefreshSections)
+    view.relayingOut = false
+  end
 end
 C.RefreshPage = Refresh
 
-local function Wrapped(parent, size, color, width)
-  local text = UI.Text(parent, "body", size, color)
-  text:SetWidth(width)
-  text:SetJustifyH("LEFT")
-  text:SetWordWrap(true)
-  return text
+local function Changed()
+  Refresh()
+  C.Refresh()
+end
+
+-- One message row: on/off, the text, its seconds, when it goes next, remove.
+local function MessageRow(parent, index, width)
+  local row = CreateFrame("Frame", nil, parent)
+  row:SetSize(width, ROW)
+  row:SetPoint("TOPLEFT", 0, -(index - 1) * ROW)
+  row.index = index
+  row.number = UI.Text(row, "body", 12, "muted")
+  row.number:SetPoint("LEFT", 0, 0)
+  row.number:SetWidth(14)
+  row.number:SetText(tostring(index))
+  row.on = UI.Check(row)
+  row.on:SetPoint("LEFT", 16, 0)
+  row.on:SetHitRectInsets(0, 0, 0, 0)
+  row.on:SetScript("OnClick", function(self)
+    local message = C.Messages()[index]
+    if message then
+      message.off = not self:GetChecked() or nil
+      Changed()
+    end
+  end)
+  row.remove = UI.Button(row, 22, 22, "x")
+  row.remove:SetPoint("RIGHT", 0, 0)
+  row.remove:SetScript("OnClick", function()
+    row.box:ClearFocus()
+    C.RemoveMessage(index)
+    Changed()
+  end)
+  row.state = UI.Text(row, "body", 11, "muted")
+  row.state:SetPoint("RIGHT", row.remove, "LEFT", -6, 0)
+  row.state:SetWidth(62)
+  row.state:SetJustifyH("LEFT")
+  local unit = UI.Text(row, "body", 12, "muted")
+  unit:SetPoint("RIGHT", row.state, "LEFT", -8, 0)
+  unit:SetText("s")
+  row.every = UI.EditBox(row, 56, 24)
+  row.every:SetPoint("RIGHT", unit, "LEFT", -4, 0)
+  row.every:SetNumeric(true)
+  row.every:SetMaxLetters(5)
+  row.every:SetJustifyH("CENTER")
+  row.every:SetScript("OnTextChanged", function(self, userInput)
+    local message = C.Messages()[index]
+    local seconds = tonumber(self:GetText())
+    -- while typing ("3" on the way to "300") only a number that is already allowed is kept
+    if userInput and message and seconds and seconds >= C.MIN_EVERY then
+      message.every = C.ClampEvery(seconds)
+      Refresh()
+      C.Refresh()
+    end
+  end)
+  row.every:SetScript("OnEditFocusLost", function(self)
+    local message = C.Messages()[index]
+    if message then
+      message.every = C.ClampEvery(tonumber(self:GetText()) or message.every)
+      self:SetText(tostring(message.every))
+      Changed()
+    end
+  end)
+  local every = UI.Text(row, "body", 12, "muted")
+  every:SetPoint("RIGHT", row.every, "LEFT", -6, 0)
+  every:SetText("every")
+  row.box = UI.EditBox(row, 100, 24)
+  -- its icon (the button shows the icon of the message that goes next): picked, or its profession's
+  row.pick = CreateFrame("Button", nil, row)
+  row.pick:SetSize(22, 22)
+  row.pick:SetPoint("LEFT", row.on, "RIGHT", 4, 0)
+  row.pick.icon = row.pick:CreateTexture(nil, "ARTWORK")
+  row.pick.icon:SetAllPoints()
+  row.pick.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+  local pickHover = row.pick:CreateTexture(nil, "HIGHLIGHT")
+  pickHover:SetAllPoints()
+  pickHover:SetColorTexture(1, 1, 1, 0.2)
+  row.pick:SetScript("OnClick", function(self)
+    C.ShowIconPicker(self, index, Refresh)
+  end)
+  row.box:SetPoint("LEFT", row.pick, "RIGHT", 8, 0)
+  row.box:SetPoint("RIGHT", every, "LEFT", -8, 0)
+  row.box:SetMaxLetters(C.MAX_LENGTH)
+  row.box:SetScript("OnTextChanged", function(self, userInput)
+    local message = C.Messages()[index]
+    if userInput and message then
+      message.text = self:GetText()
+      view.active = index
+      Changed()
+    end
+  end)
+  row.box:SetScript("OnEditFocusGained", function()
+    if view.active ~= index then
+      view.active = index
+      Refresh()
+    end
+  end)
+  C.WatchLinks(function()
+    return row:IsShown() and row.box or nil
+  end)
+  return row
 end
 
 function C.BuildPage(page)
-  view = {}
+  view = { active = 1 }
   C.view = view
   local width = ns.PAGE_WIDTH or 620
   view.width = width
@@ -69,24 +221,39 @@ function C.BuildPage(page)
 
   local messageLabel = UI.Text(page, "body", 13, "bright")
   messageLabel:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -10)
-  messageLabel:SetText("Your message")
-  local box = UI.EditBox(page, width, 24)
-  box:SetPoint("TOPLEFT", messageLabel, "BOTTOMLEFT", 0, -6)
-  box:SetMaxLetters(C.MAX_LENGTH)
-  box:SetScript("OnTextChanged", function(self, userInput)
-    if userInput then
-      C.Char().message = self:GetText()
-      Refresh()
-      C.Refresh()
+  messageLabel:SetText("Your messages")
+  local messageHint = Wrapped(page, 11, "muted", width)
+  messageHint:SetPoint("TOPLEFT", messageLabel, "BOTTOMLEFT", 0, -4)
+  messageHint:SetText(("Each message goes out again only after its own time, in seconds (%d at least). The button "
+    .. "lights up when one is ready, with its icon, and posts the one that has waited longest. Click an icon to pick "
+    .. "another; until you do, a message shows the profession it links. Untick a message to keep it without posting "
+    .. "it."):format(C.MIN_EVERY))
+  view.rowHolder = CreateFrame("Frame", nil, page)
+  view.rowHolder:SetPoint("TOPLEFT", messageHint, "BOTTOMLEFT", 0, -6)
+  view.rowHolder:SetSize(width, ROW)
+  view.rows = {}
+  for index = 1, C.MAX_MESSAGES do
+    view.rows[index] = MessageRow(view.rowHolder, index, width)
+  end
+  -- the first box is the one the pages and the tests know as the message box
+  view.message = view.rows[1].box
+  view.add = UI.Button(page, 140, 22, "Add a message")
+  view.add:SetPoint("TOPLEFT", view.rowHolder, "BOTTOMLEFT", 0, -4)
+  view.add:SetScript("OnClick", function()
+    local index = C.AddMessage()
+    if index then
+      view.active = index
+      Changed()
+      view.rows[index].box:SetFocus()
     end
   end)
-  view.message = box
-  C.WatchLinks(function()
-    return view and view.message
-  end)
 
+  local function ActiveBox()
+    local row = view.rows[view.active] or view.rows[1]
+    return row.box
+  end
   view.insertRow = CreateFrame("Frame", nil, page)
-  view.insertRow:SetPoint("TOPLEFT", box, "BOTTOMLEFT", 0, -12)
+  view.insertRow:SetPoint("TOPLEFT", view.add, "BOTTOMLEFT", 0, -12)
   view.insertRow:SetSize(width, 22)
   view.insertLabel = UI.Text(view.insertRow, "body", 12, "muted")
   view.insertLabel:SetPoint("TOPLEFT", 0, -4)
@@ -98,6 +265,7 @@ function C.BuildPage(page)
   for index = 1, 6 do
     local button = UI.Button(page, 96, 22, "")
     button:SetScript("OnClick", function(self)
+      local box = ActiveBox()
       box:SetFocus()
       box:Insert(self.word)
     end)
@@ -105,22 +273,23 @@ function C.BuildPage(page)
   end
   view.insertAll = UI.Button(page, 116, 22, "All professions")
   view.insertAll:SetScript("OnClick", function()
+    local box = ActiveBox()
     box:SetFocus()
     box:Insert("<professions>")
   end)
   local hint = Wrapped(page, 11, "muted", width)
   hint:SetPoint("TOPLEFT", view.insertRow, "BOTTOMLEFT", 0, -12)
   hint:SetText("<Tailoring> becomes your Tailoring link when it is posted, <professions> all of them. Professions you "
-    .. "gather with (and Fishing) have no link. Shift-click an item or a recipe while the box has the cursor to put its "
-    .. "link in.")
+    .. "gather with (and Fishing) have no link. The buttons put the link into the message you last clicked; "
+    .. "shift-click an item or a recipe while a box has the cursor to put its link in.")
 
-  local previewLabel = UI.Text(page, "body", 13, "bright")
-  previewLabel:SetPoint("TOPLEFT", hint, "BOTTOMLEFT", 0, -14)
-  previewLabel:SetText("In chat it reads")
+  view.previewLabel = UI.Text(page, "body", 13, "bright")
+  view.previewLabel:SetPoint("TOPLEFT", hint, "BOTTOMLEFT", 0, -14)
+  view.previewLabel:SetText("In chat it reads")
   view.count = UI.Text(page, "body", 11, "muted")
-  view.count:SetPoint("LEFT", previewLabel, "RIGHT", 10, 0)
+  view.count:SetPoint("LEFT", view.previewLabel, "RIGHT", 10, 0)
   view.preview = Wrapped(page, 12, "text", width)
-  view.preview:SetPoint("TOPLEFT", previewLabel, "BOTTOMLEFT", 0, -6)
+  view.preview:SetPoint("TOPLEFT", view.previewLabel, "BOTTOMLEFT", 0, -6)
   view.unknown = Wrapped(page, 11, "warn", width)
   view.unknown:SetPoint("TOPLEFT", view.preview, "BOTTOMLEFT", 0, -4)
 
@@ -141,27 +310,8 @@ function C.BuildPage(page)
   postNote:SetText("The game sends a Trade chat message only when you click or press a key, so the button by your "
     .. "character lights up when it's time and you post with one click.")
 
-  local every = UI.Text(page, "body", 13, "text")
-  every:SetPoint("TOPLEFT", post, "BOTTOMLEFT", 0, -22)
-  every:SetText("Post every")
-  view.interval = UI.Stepper(page, 60)
-  view.interval:SetPoint("LEFT", every, "RIGHT", 10, 0)
-  local function Step(direction)
-    local settings = C.Settings()
-    local at = 1
-    for index, minutes in ipairs(C.INTERVALS) do
-      if minutes <= settings.interval then
-        at = index
-      end
-    end
-    settings.interval = C.INTERVALS[math.max(1, math.min(#C.INTERVALS, at + direction))]
-    Refresh()
-    C.Refresh()
-  end
-  view.interval.less:SetScript("OnClick", function() Step(-1) end)
-  view.interval.more:SetScript("OnClick", function() Step(1) end)
   local channelLabel = UI.Text(page, "body", 13, "text")
-  channelLabel:SetPoint("LEFT", view.interval, "RIGHT", 30, 0)
+  channelLabel:SetPoint("TOPLEFT", post, "BOTTOMLEFT", 0, -22)
   channelLabel:SetText("Channel")
   view.channel = UI.Picker(page, 150, 24)
   view.channel:SetPoint("LEFT", channelLabel, "RIGHT", 10, 0)
@@ -170,15 +320,14 @@ function C.BuildPage(page)
     for _, def in ipairs(C.CHANNELS) do
       items[#items + 1] = { text = def.name, checked = C.Settings().channel == def.key, func = function()
         C.Settings().channel = def.key
-        Refresh()
-        C.Refresh()
+        Changed()
       end }
     end
     UI.ShowMenu(self, items)
   end)
 
   view.checks = {}
-  local anchor = every
+  local anchor = channelLabel
   for index, option in ipairs({
     { "paused", "Pause on this character", true },
     { "sound", "Play a sound when it's time to post" },
@@ -196,8 +345,7 @@ function C.BuildPage(page)
       else
         C.Settings()[self.key] = on
       end
-      Refresh()
-      C.Refresh()
+      Changed()
     end)
     view.checks[#view.checks + 1] = check
     anchor = check
@@ -205,7 +353,7 @@ function C.BuildPage(page)
 
   local column = 330
   local keyLabel = UI.Text(page, "body", 13, "text")
-  keyLabel:SetPoint("TOPLEFT", every, "BOTTOMLEFT", column, -16)
+  keyLabel:SetPoint("TOPLEFT", channelLabel, "BOTTOMLEFT", column, -16)
   keyLabel:SetText("Post key")
   view.key = UI.Button(page, 110, 24, "")
   view.key:SetPoint("LEFT", keyLabel, "RIGHT", 10, 0)
@@ -250,4 +398,5 @@ function C.BuildPage(page)
     end
   end
   Refresh()
+  view.built = true
 end

@@ -625,7 +625,12 @@ actions / windows / rings, `R.Choices(kind, ring)`, search, a click = `R.SetSlic
   request): `Crier.lua` is TradeCrier's file byte for byte (`tc_test.lua` checks; see TradeCrier/CLAUDE.md for the
   design: a post only from the button's click, its override-binding key or a typed command, since channel chat needs
   a hardware event). Host.lua: `CodexDB.crier`, `CodexCharDB.crier`, button `CodexCrierButton`; Page.lua its section
-  (own tab on Chat). Test `codex_crier_test.lua`; bench scenario `codex_crier`.
+  (own tab on Chat). Test `codex_crier_test.lua`; bench scenario `codex_crier`. Messages (2026-11-26, the user's
+  wish): `CharDB.messages = { { text, every (seconds, C.MIN_EVERY 30 .. 1 day), off, icon, last } }`, at most
+  `C.MAX_MESSAGES` 8; `C.NextMessage()` = the ready one whose time comes first (longest wait on a tie); a press
+  before its time posts nothing. 1.0's `message` + account `interval` (minutes) move into the list in
+  `C.Messages()` (`interval` stays for other characters). Icon: `message.icon` or `C.AutoIcon` (first linked
+  profession code); `C.ShowIconPicker` is a plain grid in Crier.lua so both hosts share it.
 - `Modules/Professions`: Profit Sort ported in (standalone = `ProfitSort`). Prices only from Codex: auction
   `ns.auction.GetPrice`, vendor prices recorded at merchants (`CodexDB.professions.vendor`). Forever opens the
   modern `ProfessionsFrame`; the classic TradeSkill/Craft providers are kept. The block sits in

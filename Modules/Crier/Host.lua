@@ -1,8 +1,8 @@
 local addonName, ns = ...
 
 -- Trade Crier in Codex (2026-11-26, the user's request; standalone = TradeCrier): what Crier.lua (the same file as
--- TradeCrier/Crier.lua) needs from its host. Settings in CodexDB.crier (timing, channel, button, key) and
--- CodexCharDB.crier (this character: the message, paused, the last post).
+-- TradeCrier/Crier.lua) needs from its host. Settings in CodexDB.crier (channel, button, key) and
+-- CodexCharDB.crier (this character: the messages with their times, paused, the last post).
 
 local C = {}
 ns.crier = C
