@@ -2,7 +2,8 @@ local addonName, ns = ...
 
 -- Auction house module, part 5: a themed Codex panel docked to the right of the game's auction house
 -- window. It lists the shopping lists (click one to search all its terms), shows the results (click one to
--- open it in the game's own buy view) and has the full scan button. It never buys, bids or posts.
+-- open it in the game's own buy view) and has the full scan button. "Below vendor" shows the items on sale for
+-- less than a vendor pays (Below.lua) in the same result list. It never buys, bids or posts.
 
 local A = ns.auction
 local UI = ns.UI
@@ -17,6 +18,15 @@ local function RefreshPanel()
   panel.scanText:SetText(A.ScanText())
   panel.scan:SetEnabled(A.scan.state == "idle" and A.NextScanIn() == 0)
   panel.lists:SetItems(A.Lists())
+  if panel.mode == "vendor" then
+    panel.searchText:SetText(A.BelowText())
+    panel.stop:Hide()
+    panel.sort:SetText(A.BelowSort() == "each" and "Each" or "Total")
+    panel.sort:Show()
+    panel.results:SetItems(A.BelowRows())
+    return
+  end
+  panel.sort:Hide()
   panel.searchText:SetText(A.SearchText())
   local busy = A.shop.state == "searching" or A.shop.state == "throttled"
   panel.stop:SetShown(busy)
@@ -50,6 +60,21 @@ local function CreatePanel()
   panel.scan:SetScript("OnClick", function()
     A.ScanCommand()
   end)
+  panel.vendor = UI.Button(panel, 120, 24, "Below vendor")
+  panel.vendor:SetPoint("LEFT", panel.scan, "RIGHT", 8, 0)
+  panel.vendor:SetScript("OnClick", function()
+    panel.mode = "vendor"
+    RefreshPanel()
+  end)
+  panel.vendor:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine("Below vendor price")
+    GameTooltip:AddLine("Items on sale for less than a vendor pays for them: the last full scan and every price "
+      .. "Codex saved since (browsing, searching). Most profit first: in total, or per item with the button "
+      .. "beside the list.", 0.8, 0.8, 0.8, true)
+    GameTooltip:Show()
+  end)
+  panel.vendor:SetScript("OnLeave", GameTooltip_Hide)
   panel.scanText = UI.Text(panel, "body", 11, "muted")
   panel.scanText:SetPoint("TOPLEFT", panel.scan, "BOTTOMLEFT", 0, -4)
   panel.scanText:SetPoint("RIGHT", -12, 0)
@@ -65,6 +90,7 @@ local function CreatePanel()
       row.text:SetPoint("RIGHT", -6, 0)
       row.text:SetWordWrap(false)
       row:SetScript("OnClick", function(self)
+        panel.mode = "shop"
         local ok, why = A.SearchList(self.item)
         if not ok then
           ns.Say(why)
@@ -73,7 +99,7 @@ local function CreatePanel()
     end,
     UpdateRow = function(row, list)
       row.text:SetText(("%s |cff999999(%d)|r"):format(list.name, #list.terms))
-      row.selected:SetShown(list == A.shop.list and A.shop.state ~= "idle")
+      row.selected:SetShown(panel.mode ~= "vendor" and list == A.shop.list and A.shop.state ~= "idle")
     end,
   })
   panel.lists:SetPoint("TOPLEFT", listsLabel, "BOTTOMLEFT", 0, -4)
@@ -94,6 +120,24 @@ local function CreatePanel()
   panel.stop:SetScript("OnClick", function()
     A.StopSearch()
   end)
+  -- (vendor mode, in the Stop button's place: what "Below vendor" is sorted by)
+  panel.sort = UI.Button(panel, 48, 20, "Total")
+  panel.sort:SetPoint("TOPRIGHT", panel.lists, "BOTTOMRIGHT", 0, -28)
+  panel.sort:Hide()
+  panel.sort:SetScript("OnClick", function()
+    A.DB().belowSort = A.BelowSort() == "each" and "total" or "each"
+    RefreshPanel()
+  end)
+  panel.sort:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine("Sort by profit")
+    GameTooltip:AddLine(A.BelowSort() == "each"
+      and "Each: what one item makes (vendor price minus the lowest price). Click for the total."
+      or "Total: what buying every cheap one and selling it to a vendor makes. Click for the profit on one item.",
+      0.8, 0.8, 0.8, true)
+    GameTooltip:Show()
+  end)
+  panel.sort:SetScript("OnLeave", GameTooltip_Hide)
 
   panel.results = UI.List(panel, {
     rowHeight = 22,
@@ -115,7 +159,7 @@ local function CreatePanel()
       UI.SetColor(row.deal, ns.Theme().good, 0.12)
       row:SetScript("OnClick", function(self)
         if self.item and IsShiftKeyDown() then
-          local key = A.KeyOf(self.item.result.itemKey)
+          local key = self.item.key or (self.item.result and A.KeyOf(self.item.result.itemKey))
           if key then
             A.ShowHistory(key)
           end
@@ -131,7 +175,7 @@ local function CreatePanel()
           return
         end
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        local key = A.KeyOf(entry.result.itemKey)
+        local key = entry.key or (entry.result and A.KeyOf(entry.result.itemKey))
         local link = key and A.Hyperlink(key)
         if link then
           GameTooltip:SetHyperlink(link)
@@ -139,8 +183,22 @@ local function CreatePanel()
           GameTooltip:AddLine(entry.name)
         end
         GameTooltip:AddLine(" ")
-        GameTooltip:AddDoubleLine("Search", entry.term.text, 0.8, 0.8, 0.8, 1, 1, 1)
-        if entry.term.maxPrice then
+        local below = entry.below
+        if below then
+          GameTooltip:AddDoubleLine("Lowest price", ns.Money(below.l), 0.8, 0.8, 0.8, 1, 1, 1)
+          GameTooltip:AddDoubleLine("Vendor pays", ns.Money(below.s), 0.8, 0.8, 0.8, 1, 1, 1)
+          GameTooltip:AddDoubleLine("Profit for one", ns.Money(math.max(0, below.s - below.l)), 0.8, 0.8, 0.8, 1, 1, 1)
+          if below.u then
+            GameTooltip:AddDoubleLine("Below the vendor price", below.u, 0.8, 0.8, 0.8, 1, 1, 1)
+            GameTooltip:AddDoubleLine("Profit for all of them", ns.Money(below.p), 0.8, 0.8, 0.8, 1, 1, 1)
+          end
+          if below.seen then
+            GameTooltip:AddDoubleLine("Price seen", ns.Age(below.seen) .. " ago", 0.8, 0.8, 0.8, 1, 1, 1)
+          end
+        else
+          GameTooltip:AddDoubleLine("Search", entry.term.text, 0.8, 0.8, 0.8, 1, 1, 1)
+        end
+        if entry.term and entry.term.maxPrice then
           GameTooltip:AddDoubleLine("Your max price", ns.Money(entry.term.maxPrice), 0.8, 0.8, 0.8, 1, 1, 1)
         end
         GameTooltip:AddLine("Click to open it in the auction house, Shift-click for its price history.", 0.6, 0.6,
@@ -154,7 +212,8 @@ local function CreatePanel()
       row.name:SetText(entry.name)
       row.name:SetTextColor(UI.Unpack(A.QualityColor(entry.quality)))
       row.count:SetText(entry.count > 0 and ("x" .. entry.count) or "")
-      row.price:SetText(ns.Money(entry.price))
+      -- (below-vendor rows show what they make, the order of that list; shopping rows their price)
+      row.price:SetText(entry.profit and ("+" .. ns.Money(entry.profit)) or ns.Money(entry.price))
       row.deal:SetShown(entry.deal)
     end,
   })
@@ -163,6 +222,11 @@ local function CreatePanel()
 
   panel:SetScript("OnShow", RefreshPanel)
   ns.On("AUCTION_STATE", RefreshPanel)
+  ns.On("PRICES_UPDATED", function()
+    if panel.mode == "vendor" then
+      RefreshPanel() -- (saved prices feed the below-vendor list too)
+    end
+  end)
   return panel
 end
 

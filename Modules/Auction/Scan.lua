@@ -52,8 +52,10 @@ local function FinishScan(reason)
     local when = time()
     local count = A.Commit(scan.entries or {}, when)
     realm.scanned, realm.scanDone = count, when
-    scan.lastResult = ("Scan done: %d items, %d auctions%s."):format(count, scan.total,
-      scan.skipped > 0 and (", " .. scan.skipped .. " skipped (no item data)") or "")
+    local below = A.SaveBelow(scan, when)
+    scan.lastResult = ("Scan done: %d items, %d auctions%s.%s"):format(count, scan.total,
+      scan.skipped > 0 and (", " .. scan.skipped .. " skipped (no item data)") or "",
+      below > 0 and (" " .. below .. (below == 1 and " item" or " items") .. " below the vendor price.") or "")
     ns.Say(scan.lastResult)
   elseif reason == "closed" then
     scan.lastResult = "Scan stopped: the auction house was closed."
@@ -63,7 +65,7 @@ local function FinishScan(reason)
     ns.Say(scan.lastResult)
   end
   scan.state = "idle"
-  scan.entries, scan.pending = nil, nil
+  scan.entries, scan.pending, scan.below, scan.sellWait = nil, nil, nil, nil
   A.Changed("scan")
   if reason == "done" then
     ns.Fire("PRICES_UPDATED")
@@ -120,7 +122,12 @@ local function ReadAuction(scan, index)
       key = key or itemID
     end
   end
-  Add(scan.entries, key, variant, buyout / count, count)
+  -- (buyout is the price of ONE item: Forever lists identical auctions as one row with a count, and its sell
+  -- frame charges count x price, Blizzard_AuctionHouseItemSellFrame GetTotalPrice. Dividing made stacks look
+  -- several times cheaper, 2026-11-26)
+  Add(scan.entries, key, variant, buyout, count)
+  A.NoteBelow(scan, key, itemID, buyout, count, variant and C_AuctionHouse.GetReplicateItemLink
+    and C_AuctionHouse.GetReplicateItemLink(index))
   if type(name) == "string" and not A.CachedName(key) then
     A.RememberName(key, name)
   end
@@ -193,7 +200,7 @@ local function OnReplicate()
   scan.state = "reading"
   scan.total = C_AuctionHouse.GetNumReplicateItems() or 0
   scan.index, scan.done, scan.rounds, scan.skipped = 0, 0, 0, 0
-  scan.entries, scan.pending, scan.requested = {}, {}, {}
+  scan.entries, scan.pending, scan.requested, scan.below, scan.sellWait = {}, {}, {}, {}, {}
   A.Changed("scan")
   local gen = scan.gen
   After(0, function()
@@ -274,6 +281,7 @@ local function FromBrowse(results)
       local key, variant = A.KeyOf(result.itemKey)
       if key then
         A.Observe(key, variant, result.minPrice, result.totalQuantity, now)
+        A.BrowseBelow(key, variant, result.minPrice)
         seen = seen + 1
       end
     end
@@ -287,13 +295,17 @@ A.FromBrowse = FromBrowse
 local function FromCommodity(itemID)
   local api = C_AuctionHouse
   local num = itemID and api.GetNumCommoditySearchResults and api.GetNumCommoditySearchResults(itemID) or 0
-  local low, total = nil, 0
+  local low, total, auctions = nil, 0, {}
   for index = 1, num do
     local info = api.GetCommoditySearchResultInfo(itemID, index)
     if info and info.unitPrice and info.unitPrice > 0 then
       low = math.min(low or info.unitPrice, info.unitPrice)
       total = total + (info.quantity or 0)
+      auctions[#auctions + 1] = { info.unitPrice, info.quantity or 0 }
     end
+  end
+  if itemID then
+    A.SearchBelow(itemID, auctions)
   end
   if api.GetCommoditySearchResultsQuantity then
     total = math.max(total, api.GetCommoditySearchResultsQuantity(itemID) or 0)
@@ -308,18 +320,23 @@ A.FromCommodity = FromCommodity
 local function FromItemSearch(itemKey)
   local api = C_AuctionHouse
   local num = itemKey and api.GetNumItemSearchResults and api.GetNumItemSearchResults(itemKey) or 0
-  local low, total = nil, 0
+  local low, total, auctions = nil, 0, {}
   for index = 1, num do
     local info = api.GetItemSearchResultInfo(itemKey, index)
     local quantity = info and info.quantity or 0
     if info and info.buyoutAmount and info.buyoutAmount > 0 and quantity > 0 then
-      local unit = info.buyoutAmount / quantity
+      local unit = info.buyoutAmount -- (one item's price, as above: the sell frame copies it as the price per item)
       low = math.min(low or unit, unit)
       total = total + quantity
+      auctions[#auctions + 1] = { unit, quantity }
     end
   end
+  local key, variant = A.KeyOf(itemKey)
+  if key and not variant and itemKey and itemKey.itemID then
+    -- (gear with an item level of its own: one variant's results don't say the item has no cheap auction left)
+    A.SearchBelow(key, auctions)
+  end
   if low then
-    local key, variant = A.KeyOf(itemKey)
     A.Observe(key, variant, low, total)
     ns.Fire("PRICES_UPDATED")
   end
@@ -490,7 +507,7 @@ function A.OpenResult(entry)
   if not frame or not entry then
     return false
   end
-  if frame.SelectBrowseResult then
+  if frame.SelectBrowseResult and entry.result then
     -- Blizzard's buy views search for their item when they are shown (the item list's refresh on show): with
     -- one already open, a second result only changed the name and the old item's prices stayed (the user's
     -- screenshot, 2026-11-19). Back to the browse view first, as Blizzard's own list click comes from there.

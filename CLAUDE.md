@@ -25,6 +25,10 @@ Frame style `CodexDB.skins.frameStyle`: "compact" (default since 2026-11-17, the
 off the portrait ring, party rows 70 apart) or "panel" (the board look); `ns.FrameStyle()`, `TylesserCodex.RefreshFrameStyle()`.
 Forever facts used (from FlareUI, MIT): never hide ObjectiveTrackerFrame; never write to GameTooltipStatusBar; each
 gryphon is its own Edit Mode system; chat: post-hooks only, never call FCF_Tab_OnClick; minimap is not protected.
+Chat tabs (2026-11-26, the user's wish): a post-hook on `FCFDock_UpdateTabs` (Skins/Chat.lua `FitTabs`) gives every
+docked tab one width when Blizzard shows the dock's overflow button (min 28; under that Blizzard's scrolling stays),
+sets only numbers (whisper tab names can be secret), hides the overflow button and sets `scrollFrame.dynTabSize` so
+Blizzard's scroll-to-tab stays at 0. Test in `codex_skins_test.lua`; bench `codex_chattabs` (real dock, 9 whispers).
 Tests per group: `codex_ui_bars_test`, `codex_ui_unitframes_test`, `codex_ui_hud_test`, `codex_ui_windows_test`,
 `codex_ui_damagemeter_test`, `codex_ui_cooldowns_test`, `codex_ui_loot_test` (loot roll part `lootroll`),
 `codex_ui_menus_test`, `codex_ui_nameplates_test`, `codex_ui_raid_test`. Minimap shape `CodexDB.skins.minimapShape`
@@ -253,6 +257,20 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   `/codex history <link|ID|name>`), chart from pooled Lines (guarded: `CreateLine`), dots, low-high spans, supply
   bars, hover frames per entry. Tooltip.lua `A.AddHistoryLines` (option `tooltipHistory`, also in Tooltips' list).
   Bench scenario `codex_history` draws it (the renderer leaves out Line objects).
+  **Prices are per item** (2026-11-26, the user saw 1g 99s 99c x5 counted as 40s each): `GetReplicateItemInfo`'s
+  `buyoutPrice` and `GetItemSearchResultInfo`'s `buyoutAmount` are ONE item's price, `count`/`quantity` how many
+  (Forever shows identical auctions as one row; its sell frame charges quantity x price, `GetTotalPrice` in
+  Blizzard_AuctionHouseItemSellFrame, and copies `buyoutAmount` into the per-item price box). Never divide them.
+  `A.RepairPerItem` (Enable, once per realm, `realm.perItem`) dropped the below list and the last scan's
+  divided prices; new realms start with `perItem = true`.
+  Below vendor (Below.lua, 2026-11-26, the user's request): the full scan's `A.NoteBelow` keeps auctions under
+  `A.SellPrice` (GetItemInfo's 11th value; gear by its link) per item in `realm.below = { t, items = { [itemID] = { l, s,
+  u, p } } }` (`u` nil = seen while browsing, not counted); items whose data loads late are settled at the end and
+  every 3 s (5 tries). Commodity / item searches replace an item's entry (`A.SearchBelow`), browse results add or drop
+  it (`A.BrowseBelow`; gear never dropped by one row). Panel mode "vendor" (`panel.mode`, button "Below vendor",
+  a list click goes back to "shop"): `A.AllBelow()` = the scan list plus every saved `realm.items[key].m` under the vendor price (`seen = rec.t`, no `u`; sell prices cached per session, unloaded items asked once + a redraw after 2 s; the panel also redraws on PRICES_UPDATED in vendor mode), `A.BelowRows()` (by `A.BelowSort()`, `db.belowSort` "total" = `p` or "each" = `s - l`, then the other one; button `panel.sort` in the Stop button's place; the row shows `+profit` instead of a price, `result.itemKey` from
+  `C_AuctionHouse.MakeItemKey`; gear has no result and opens through the search box), `A.BelowText()`. Tests at
+  `codex_auction_test` 9b.
 - `Modules/Bags`: Codex's bag window (standalone = `Baganator`; never read or copy Baganator/Syndicator, they are
   All Rights Reserved). Data per character in `CodexDB.bags.characters["Realm-Name"]` (slots as
   `{ link, count, quality }`, bank from the last visit, equipped, money). Own bags are

@@ -214,6 +214,66 @@ local function SkinTab(tab)
   end)
 end
 
+-- Every tab in view (the user's wish, 2026-11-26): when a new whisper or window would push tabs off the dock,
+-- Blizzard scrolls them behind its overflow button (FCFDock_UpdateTabs / FCFDock_CalculateTabSize, forever branch:
+-- extra tabs 60 to 90 wide). After its layout every docked tab gets the same smaller width instead, so all fit,
+-- and the overflow button goes. Only numbers are set: a whisper tab's name can be a secret value, so its text is
+-- never read (Blizzard's FCF_SetTabFixedWidth sizes those tabs the same way: tab and text width). The dock's
+-- scroll frame learns the new tab size (scrollFrame.dynTabSize) so Blizzard's own scroll-to-tab keeps it at 0.
+local TAB_MIN = 28 -- narrower than this a tab can't show a letter; then Blizzard's scrolling stays
+local TAB_SIDES = 20 -- CHAT_TAB_SIDES_PADDING in FloatingChatFrame.lua
+
+local function FitTabs(dock)
+  dock = type(dock) == "table" and dock or S.Get("GeneralDockManager")
+  local overflow = S.Child(dock, "overflowButton")
+  local scroll = S.Child(dock, "scrollFrame")
+  local frames = S.Child(dock, "DOCKED_CHAT_FRAMES")
+  if not (overflow and scroll and frames) or not overflow:IsShown() then
+    return -- everything fits at Blizzard's own sizes
+  end
+  local list, lastStatic, lastDynamic = {}, nil, nil
+  for _, frame in ipairs(frames) do
+    local tab = S.Child(frame, "tab") or (S.Name(frame) and S.Get(S.Name(frame) .. "Tab"))
+    if tab then
+      list[#list + 1] = tab
+      if frame.isStaticDocked then
+        lastStatic = tab
+      else
+        lastDynamic = tab
+      end
+    end
+  end
+  local count = #list
+  local width = Number(dock:GetWidth())
+  if count == 0 or not width or width <= 0 then
+    return
+  end
+  -- tabs touch with a 1-unit gap (Blizzard anchors each to the last, 1 to the right)
+  local size = math.floor((width - count) / count)
+  if size < TAB_MIN then
+    return
+  end
+  for _, tab in ipairs(list) do
+    local text = S.Region(tab, "Text") or (S.Name(tab) and S.Get(S.Name(tab) .. "Text"))
+    if text then
+      text:SetWidth(math.max(1, size - TAB_SIDES - (Number(tab.sizePadding) or 0)))
+    end
+    tab:SetWidth(size)
+  end
+  overflow:Hide()
+  scroll:SetPoint("BOTTOMRIGHT")
+  local hint = S.Child(dock, "RightTabHint")
+  if hint and (lastDynamic or lastStatic) then
+    hint:ClearAllPoints()
+    hint:SetPoint("BOTTOMLEFT", lastDynamic or lastStatic, "BOTTOMRIGHT", 1, 0)
+  end
+  scroll.dynTabSize = size
+  if scroll.SetHorizontalScroll then
+    scroll:SetHorizontalScroll(0)
+  end
+end
+TylesserCodex.FitChatTabs = FitTabs
+
 -- Edit box -------------------------------------------------------------------------------------------------
 
 local function HeaderColor(box)
@@ -567,6 +627,11 @@ S.Part("chat", function()
     "FCFDock_UpdateTabs", "FCFTab_UpdateAlpha" }) do
     S.HookGlobal(name, AllTabColors)
   end
+  -- every tab in view when they'd overflow (after Blizzard's own layout of the dock)
+  S.HookGlobal("FCFDock_UpdateTabs", FitTabs)
+  C_Timer.After(0, function()
+    S.Run("chat", FitTabs)
+  end)
   S.HookGlobal("FCF_StartAlertFlash", function(frame)
     local tab = S.Child(frame, "tab") or (S.Name(frame) and S.Get(S.Name(frame) .. "Tab"))
     if tab then

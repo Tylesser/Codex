@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.13.0
+
+- Chat (with the restyled chat on): **every chat tab stays in view**. When a new whisper tab (or any new window) would push tabs off the chat bar, all tabs get the same smaller width so they fit, instead of hiding behind the arrow button. Names that don't fit are cut short.
+- Auction House: **items on sale for less than a vendor pays**. A full scan notes every auction priced under the item's vendor sell price; click "Below vendor" in the Codex panel beside the auction house to list them, ordered by what buying every cheap one and selling it to a vendor makes, or with the Total / Each button by the profit on one item (each row shows that amount and how many there are). Click one to open it in the auction house. Browsing and searching keep the list current: an item bought up or no longer cheap leaves it. Without a recent full scan the list still fills from your saved auction prices: every item last seen under its vendor price shows, with the profit for one (the tooltip says when the price was seen).
+- Auction House: **fixed prices of items listed several at a time**. A full scan and the item buy view divided the price per item by how many were in the row, so such items were saved (and shown in tooltips and on the Prices page) several times too cheap. The wrong prices from your last full scan are removed once; scan again to fill them in.
+
 ## 1.12.0
 
 - Trade Crier: **a button per message** by your character, each with its own icon, countdown and glow. Click the one you want to post; the post key still posts the one that has waited longest. The buttons sit side by side (or in a column: "Stack the buttons in a column"), and dragging any of them moves them all.

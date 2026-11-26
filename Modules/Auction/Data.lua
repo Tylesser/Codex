@@ -32,6 +32,7 @@ A.DEFAULTS = {
   panel = true, -- Codex panel beside the auction house
   days = 30, -- days of price history to keep (A.DAY_CHOICES)
   tooltipHistory = true, -- the week's average and trend under the "Auction" line (the last days with Shift)
+  belowSort = "total", -- "Below vendor" order: "total" (all the cheap ones) or "each" (profit on one item)
 }
 
 -- How long the price history goes back (the options' - / +). Past DAILY days, a week is one entry.
@@ -84,7 +85,7 @@ function A.Realm(create)
   local key = A.RealmKey()
   local realm = db.realms[key]
   if not realm and create then
-    realm = { items = {} }
+    realm = { items = {}, perItem = true } -- (perItem: prices saved per item from the start, A.RepairPerItem)
     db.realms[key] = realm
   end
   return realm
@@ -360,6 +361,42 @@ function A.TrimAll()
   for _, realm in pairs(db.realms) do
     for _, rec in pairs(realm.items or {}) do
       Trim(rec, today, db.days or 30)
+    end
+  end
+end
+
+-- Until 2026-11-26 the full scan and the item buy view divided Forever's per-item price by the row's count,
+-- so items listed several at a time were saved several times too cheap. Once per realm: the below-vendor list
+-- goes, and items whose price came from the last full scan with more than one up lose that day's (too low)
+-- history and take their price from the day before (none: the item is dropped until it is seen again).
+-- Earlier days can't be told apart and stay.
+function A.RepairPerItem()
+  local db = A.DB()
+  for _, realm in pairs(db and db.realms or {}) do
+    if not realm.perItem then
+      realm.below = nil
+      local scanned = realm.scanDone
+      local day = scanned and Today(scanned)
+      for key, rec in pairs(scanned and realm.items or {}) do
+        if rec.t == scanned and (rec.n or 0) > 1 and not (type(key) == "number" and A.IsEquipment(key)) then
+          if rec.h then
+            rec.h[day] = nil
+          end
+          if rec.x then
+            rec.x[day] = nil
+          end
+          local latest
+          for other in pairs(rec.h or {}) do
+            latest = math.max(latest or other, other)
+          end
+          if latest then
+            rec.m, rec.t = rec.h[latest], (latest + 1) * DAY - 1
+          else
+            realm.items[key] = nil
+          end
+        end
+      end
+      realm.perItem = true
     end
   end
 end

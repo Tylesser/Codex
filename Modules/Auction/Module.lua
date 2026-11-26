@@ -24,6 +24,7 @@ end
 
 function A.Enable()
   A.DB()
+  A.RepairPerItem()
   -- old history goes a little after login, not during it (it walks every saved item)
   C_Timer.After(10, A.TrimAll)
   A.InstallTooltip()

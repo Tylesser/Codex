@@ -40,7 +40,7 @@ Home shows a card for each feature with what it is doing right now; click a card
   that doesn't stack with a class buff counts as having it). Formerly the Buff Tracker addon.
 - **Auction House**: scans the auction house and keeps a price history (up to a year: each day's lowest and highest
   price and how many were up), shows prices, the week's average and the trend in item tooltips, and shops from your
-  own lists. Click an item on the Auction prices page, or type `/codex history <item>`, for its price chart. No other auction addon needed. "From Auctionator" copies Auctionator's saved
+  own lists. Click an item on the Auction prices page, or type `/codex history <item>`, for its price chart. "Below vendor" in the panel beside the auction house lists items on sale for less than a vendor pays. No other auction addon needed. "From Auctionator" copies Auctionator's saved
   shopping lists into Codex while Auctionator is installed.
 - **Bags**: one bag window for all your bags, grouped into categories (small ones side by side; or in bag order) with a search box,
   identical items stacked into one button with the total (shown one by one at the bank, trade, mailbox,
@@ -218,7 +218,8 @@ the damage meter), so they are calmer while each class keeps its colour.
 Codex can also restyle the game's own interface in your theme: action bars, player and target frames,
 minimap, chat, quest tracker, quest log and world map, tooltips and game windows. Switch it on with "Restyle the
 game's interface" on the General page; each part then has its own switch on its page (the action bars' look on
-Action bars, the chat on Chat, and so on). Restyled nameplates can have their bar width and height set apart (in
+Action bars, the chat on Chat, and so on). The restyled chat keeps every tab in view: when a new whisper tab would
+not fit, all tabs get narrower. Restyled nameplates can have their bar width and height set apart (in
 Edit Mode: the mouse wheel over the Nameplates box), and the unit frame bars shade top to bottom or left to right.
 Codex's unit frames move in Edit Mode; over a frame's box the mouse wheel sizes it, Shift + wheel sets just its
 width and Ctrl + wheel just its height.

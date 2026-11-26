@@ -474,6 +474,11 @@ local function RefreshScan()
   if A.scan.lastResult then
     lines[#lines + 1] = A.scan.lastResult
   end
+  local below = A.BelowCount()
+  if below > 0 then
+    lines[#lines + 1] = ("%d %s on sale below the vendor price: \"Below vendor\" in the Codex panel at the auction house.")
+      :format(below, below == 1 and "item" or "items")
+  end
   scan.info:SetText(table.concat(lines, "\n"))
 end
 
