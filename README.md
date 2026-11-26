@@ -170,8 +170,8 @@ Home shows a card for each feature with what it is doing right now; click a card
 
 - **Trade Crier** (off until you switch it on): your messages with your profession links in Trade chat (up to 8,
   `<Tailoring>` becomes your Tailoring link), each with its own time in seconds and its own icon (the profession it
-  links until you pick one). While you are in a city a button lights up when one is ready; one click or a key posts
-  it. Also its own addon, Tylesser - Trade Crier.
+  links until you pick one). While you are in a city each message has its own button that lights up when it is
+  ready; one click posts it, and a key posts the one that has waited longest. Also its own addon, Tylesser - Trade Crier.
 
 - **Rings** (off until you switch it on): hold a key and a ring of spells, items, macros, mounts or raid markers opens
   around your mouse; point at one and let go to use it, or click it. Works in combat. Ready-made rings for mounts,

@@ -224,10 +224,10 @@ function C.BuildPage(page)
   messageLabel:SetText("Your messages")
   local messageHint = Wrapped(page, 11, "muted", width)
   messageHint:SetPoint("TOPLEFT", messageLabel, "BOTTOMLEFT", 0, -4)
-  messageHint:SetText(("Each message goes out again only after its own time, in seconds (%d at least). The button "
-    .. "lights up when one is ready, with its icon, and posts the one that has waited longest. Click an icon to pick "
-    .. "another; until you do, a message shows the profession it links. Untick a message to keep it without posting "
-    .. "it."):format(C.MIN_EVERY))
+  messageHint:SetText(("Each message has its own button by your character, with its icon, its own countdown and "
+    .. "its own time in seconds (%d at least): it lights up when that message is ready, and a click posts it. The "
+    .. "post key posts the one that has waited longest. Click an icon here to pick another; until you do, a message "
+    .. "shows the profession it links. Untick a message to keep it without posting it."):format(C.MIN_EVERY))
   view.rowHolder = CreateFrame("Frame", nil, page)
   view.rowHolder:SetPoint("TOPLEFT", messageHint, "BOTTOMLEFT", 0, -6)
   view.rowHolder:SetSize(width, ROW)
@@ -307,8 +307,9 @@ function C.BuildPage(page)
   end)
   local postNote = Wrapped(page, 11, "muted", width - 124)
   postNote:SetPoint("LEFT", post, "RIGHT", 12, 0)
-  postNote:SetText("The game sends a Trade chat message only when you click or press a key, so the button by your "
-    .. "character lights up when it's time and you post with one click.")
+  postNote:SetText("The game sends a Trade chat message only when you click or press a key, so a message's button "
+    .. "by your character lights up when it's ready and you post it with one click. Post now sends the one that has "
+    .. "waited longest.")
 
   local channelLabel = UI.Text(page, "body", 13, "text")
   channelLabel:SetPoint("TOPLEFT", post, "BOTTOMLEFT", 0, -22)
@@ -333,7 +334,8 @@ function C.BuildPage(page)
     { "sound", "Play a sound when it's time to post" },
     { "remind", "Say in chat when it's time to post" },
     { "onlyCities", "Only show the button in cities" },
-    { "locked", "Lock the button in place" },
+    { "locked", "Lock the buttons in place" },
+    { "column", "Stack the buttons in a column" },
   }) do
     local check = UI.Check(page, option[2])
     check.key, check.char = option[1], option[3]
@@ -388,7 +390,7 @@ function C.BuildPage(page)
   local keyHint = Wrapped(page, 11, "muted", width - column)
   keyHint:SetPoint("TOPLEFT", keyLabel, "BOTTOMLEFT", 0, -10)
   keyHint:SetText("Click, then press a key. Escape or right-click clears it.")
-  local reset = UI.Button(page, 160, 24, "Put the button back")
+  local reset = UI.Button(page, 160, 24, "Put the buttons back")
   reset:SetPoint("TOPLEFT", keyHint, "BOTTOMLEFT", 0, -12)
   reset:SetScript("OnClick", C.ResetPlace)
 

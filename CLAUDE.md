@@ -630,7 +630,11 @@ actions / windows / rings, `R.Choices(kind, ring)`, search, a click = `R.SetSlic
   `C.MAX_MESSAGES` 8; `C.NextMessage()` = the ready one whose time comes first (longest wait on a tie); a press
   before its time posts nothing. 1.0's `message` + account `interval` (minutes) move into the list in
   `C.Messages()` (`interval` stays for other characters). Icon: `message.icon` or `C.AutoIcon` (first linked
-  profession code); `C.ShowIconPicker` is a plain grid in Crier.lua so both hosts share it.
+  profession code); `C.ShowIconPicker` is a plain grid in Crier.lua so both hosts share it. Buttons (same day):
+  one per message with something to post (`C.BUTTON_NAME`, then `..2` ...; message 1's button stays as a placeholder
+  when nothing is written) in the bar `..Bar` (keeps `pos`, scale; any button drags it; `column` stacks them);
+  `C.Post(index)` posts that message; the key binds to the invisible `..Key` button (alpha 0, no mouse, shown so the
+  binding's click reaches it), which posts `C.NextMessage()`.
 - `Modules/Professions`: Profit Sort ported in (standalone = `ProfitSort`). Prices only from Codex: auction
   `ns.auction.GetPrice`, vendor prices recorded at merchants (`CodexDB.professions.vendor`). Forever opens the
   modern `ProfessionsFrame`; the classic TradeSkill/Craft providers are kept. The block sits in
