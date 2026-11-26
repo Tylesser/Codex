@@ -73,6 +73,7 @@ ns.AREA_TABS = {
   units = {
     { "Player and target", { "part-unitframes" } }, { "Party", { "part-partyframes" } },
     { "Raid", { "part-raidframes" } }, { "Nameplates", { "part-nameplates" } }, { "Personal bars", { "resource" } },
+    { "Skull mark", { "qol-skullMark" } },
   },
   auras = {
     { "Buff tracker", { "buffs" } }, { "Party buttons", { "buffs-party", "buffs-dispel" } },

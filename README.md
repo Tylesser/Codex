@@ -33,7 +33,8 @@ Home shows a card for each feature with what it is doing right now; click a card
 ## Modules
 
 - **Buffs**: a row of the buffs you choose (when missing, when active or always), shown only where and when you
-  want (places such as dungeons and raids, solo or in a group, primary or secondary talents, in or out of combat;
+  want (places such as dungeons and raids, solo or in a group, primary or secondary talents, your group role, in or
+  out of combat;
   for the whole row or per buff; optionally a warning, with a click to remove it, when a buff is on where its rules
   say no), click-to-buff, weapon enchants, and click-to-buff and dispel buttons by your party frames (a camp buff
   that doesn't stack with a class buff counts as having it). Formerly the Buff Tracker addon.
@@ -139,7 +140,10 @@ Home shows a card for each feature with what it is doing right now; click a card
   turning red. Hide empty slots (off until you switch it on): empty action bar slots are hidden, and show again
   while you drag a spell or item, in Edit Mode and while binding keys. Learn all at trainers (Trade > Trainers): a Learn all
   button on the class trainer's window learns every spell you can learn and afford, cheapest first; professions
-  are left to you. `/codex qol`.
+  are left to you. Skull mark (Unit frames > Skull mark, off until you switch it on, `/codex skull`): a key and a
+  small button that put the skull on your target, only while your group role is the one you gave the skull to
+  (by default the tank, in a party or raid); the game doesn't let addons mark by themselves, so press the key as
+  you pull. `/codex qol`.
 - **Highlights** (off until you switch it on): a pulsing ring and the name on the herb, ore, chest or fishing pool
   you are next to (green, orange, gold, blue), a "!" on quest objects and quest mobs, and glowing quest items in
   your bags. Sets the game's interact-target options while on and gives yours back when off. If NodeSight is

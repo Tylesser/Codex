@@ -607,6 +607,20 @@ actions / windows / rings, `R.Choices(kind, ring)`, search, a click = `R.SetSlic
 `ring` (attribute `subring`, the trigger snippet opens it at the cursor; a ring can't hold itself); preview;
   sizes; editing refused in combat). `/codex rings`, `/codex ring <name>` (out of combat). Test `codex_rings_test.lua`
   (runs the snippets in a stand-in restricted environment).
+- Skull mark (Modules/QoL/Skull.lua, `skullMark`, default off, Unit frames > Skull mark, `/codex skull`, `Q.skull`;
+  2026-11-26, the user's "mark the mob player attacks with skull if role assigned to skull"): **SetRaidTarget is
+  protected since 12.0** (forever RaidMarkersDocumentation HasRestrictions; wiki "#protected"), and
+  GetRaidTargetIndex is SecretReturns, so nothing marks by itself and markers are never read. `CodexSkullButton` =
+  SecureActionButtonTemplate, `type1` "raidtarget" (only while allowed), `marker` 8, `action` "set" (never toggles
+  off), `unit` "target", `useOnKeyDown` false, AnyDown+AnyUp; key `skullKey` = SetOverrideBindingClick(button, ...,
+  "LeftButton"), cleared while not allowed. Allowed (`S.Blocked()` = the reason, or nil): in a group unless
+  `skullGroupOnly` is off, and UnitGroupRolesAssigned("player") = `skullRole` (tank / healer / damage / any; NONE
+  only with `skullNoRole`; secret = allowed). `S.Apply()` out of combat only (pending to PLAYER_REGEN_ENABLED);
+  GROUP_ROSTER_UPDATE / PLAYER_ROLES_ASSIGNED / PLAYER_ENTERING_WORLD apply. Right-click = its section, right-drag
+  moves it (`skullPos`). Test `codex_skull_test.lua` (runs the secure action like SecureTemplates); bench
+  `codex_roles`.
+- `Modules/Buffs` role condition (2026-11-26): see BuffTracker/CLAUDE.md (Conditions.lua is the same file); the
+  Codex window's `ROLES_HEIGHT` is 90.
 - `Modules/Crier` (`crier`, "Trade Crier", area chat, default off; standalone = `TradeCrier`, 2026-11-26, the user's
   request): `Crier.lua` is TradeCrier's file byte for byte (`tc_test.lua` checks; see TradeCrier/CLAUDE.md for the
   design: a post only from the button's click, its override-binding key or a typed command, since channel chat needs

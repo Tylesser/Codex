@@ -23,7 +23,8 @@ end
 
 -- where and when the row shows (Conditions.lua): only a redraw, no rescan (group updates come often in a raid)
 local CONDITION_EVENTS = { ZONE_CHANGED_NEW_AREA = true, PLAYER_UPDATE_RESTING = true, GROUP_ROSTER_UPDATE = true,
-  ACTIVE_TALENT_GROUP_CHANGED = true, PLAYER_TALENT_UPDATE = true } -- (talents: also once known after a login)
+  ACTIVE_TALENT_GROUP_CHANGED = true, PLAYER_TALENT_UPDATE = true, -- (talents: also once known after a login)
+  PLAYER_ROLES_ASSIGNED = true }
 
 local function OnEvent(self, event, arg)
   if not ns.db then

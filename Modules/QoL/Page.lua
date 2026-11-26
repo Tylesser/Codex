@@ -317,6 +317,7 @@ Q.SECTIONS = {
   revealMap = { area = "map", order = 20, title = "Reveal unexplored areas", folded = true },
   zoneLevels = { area = "map", order = 30, title = "Zone levels on the world map", folded = true },
   mapExtras = { area = "map", order = 40, title = "Dungeons and town services on the map", folded = true },
+  skullMark = { area = "units", order = 70, title = "Skull mark" },
 }
 
 local function ModuleOff()

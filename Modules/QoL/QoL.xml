@@ -20,5 +20,6 @@
   <Script file="HideEmpty.lua"/>
   <Script file="HoverBind.lua"/>
   <Script file="Trainer.lua"/>
+  <Script file="Skull.lua"/>
   <Script file="Page.lua"/>
 </Ui>

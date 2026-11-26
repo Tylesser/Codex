@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.10.0
+
+- New, optional: **Skull mark** (Unit frames > Skull mark, or `/codex skull`). Pick a key: pressing it puts the skull on your target, and so does clicking the small skull button. It works only while your group role is the one you gave the skull to (Tank by default; Healer, Damage or any role too, and optionally when you have no role set), and by default only in a party or raid. The game doesn't let addons put markers on by themselves, so it marks when you press the key: press it as you pull. It never takes a skull off. Off until you switch it on.
+- Buffs: **your group role in "Where buffs show"**. Show a tracked buff only as tank, healer or damage, or with no role set. A role change updates the row.
+
 ## 1.9.2
 
 - Bags: a key button above the bags (beside the view and combine buttons) hides or shows your keyring and other keys, in categories and in bag order, also when you look at another character's bags. The same switch is "Show keys" in the bag options.
