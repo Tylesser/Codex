@@ -70,6 +70,8 @@ end
 S.CONVERTED = {
   health = true, mana = true, attackPower = true, rangedAttackPower = true, armor = true,
   crit = true, dodge = true, spellCrit = true,
+  -- WoW Forever's talents (Stats.lua TALENTS): stats raised by a percentage, spell damage and healing from a stat
+  strength = true, agility = true, stamina = true, intellect = true, spirit = true, spellDamage = true, healing = true,
 }
 
 -- Display order. fmt: "int" (default), "pct" or "dec".

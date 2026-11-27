@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.15.0
+
+- Bags: **items that start a quest get a "!"** in the top-right corner of their slot in Codex's bag window (the game's own "!" was hidden along with its quest border). Part of Highlights > Quest items in bags.
+- Stat Delta: **talents that turn one stat into another now count** under "Your character", at the rank you have. Mental Dexterity adds your Intellect to your Attack Power, so a +10 Intellect ring now shows +10 Attack Power for an Enhancement shaman. Also Careful Aim, Mental Quickness, Champion of the Light, Spiritual Guidance and Arcane Resilience, and the talents that raise a stat by a percentage (Ancestral Knowledge, Toughness, Lightning Reflexes and others). The upgrade score and arrows use these totals too.
+
 ## 1.14.0
 
 - Auction House: **a Buy button for "Below vendor"**. Each click buys the top item of the list while it is still under the vendor price: stackable goods every one under it, other items the cheapest one (gear is left to the auction house window). The price is checked again just before paying, and if it is no longer under what a vendor pays (or more than you have), nothing is bought. The line above the button says what the next click buys and the profit. "Stacks only" beside it limits it to stackable goods (cloth, herbs, ore...). The game needs a click for every purchase, so Codex never buys on its own.

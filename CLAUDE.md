@@ -347,6 +347,8 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   Tooltip block only while Shift is held, post call added one frame after Enable so it sits below the other
   modules' lines. Settings `CodexDB.statdelta`, score preset/weights per character `CodexCharDB.statdelta`.
   Arrows: Blizzard bags, quest rewards, Baganator; Codex's bag window can call `ns.statdelta.SetArrow(button, link)`.
+  Forever talents that turn one stat into another (Mental Dexterity...; 2026-11-27, StatDelta issue #2):
+  `TALENTS` in Stats.lua, the same block as StatDelta's Stats.lua (see its CLAUDE.md for the C_Traits walk).
   Test `codex_statdelta_test.lua`; tests that count hooks/events/post calls load with `statdelta = false`.
 - `Modules/Vendor`: sells junk (`C_Container.UseContainerItem`, 6 per 0.2 s, slot re-read before each use, one more
   pass for refused items, stops on close/combat) and repairs (guild funds first, rest own gold) at MERCHANT_SHOW;
@@ -530,7 +532,8 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   via RELOAD_STATE), pulsing markers (Circle glow with an alpha bounce, Buff Tracker's Ring, turning star4 sparkle, name; the user preferred them to the R2-Frames still ring + glyph, 2026-11-18),
   "!" on quest mobs (beside the name via `TylesserCodex.NameplateMarkAnchor(plate)` when the skin offers it), quest item
   corner mark in the theme's quest colour (`ns.highlight.QuestMark(button, bag, slot)`, called from Bags'
-  FillLive; Blizzard bags via UpdateItems). Test `codex_highlight_test.lua` (loads with `statdelta = false`).
+  FillLive; Blizzard bags via UpdateItems). On Codex's own buttons a quest starter also gets our "!" (ARIALN, 18 px on a 40 px slot, top right, `mark.bang`; 2026-11-27, the user's
+  wish): dimming IconQuestTexture there also hid the game's "!" (UpdateQuestItem puts TEXTURE_ITEM_QUEST_BANG on it). Blizzard's buttons keep theirs. Test `codex_highlight_test.lua` (loads with `statdelta = false`).
 - `Modules/MoveWindows`: drag strips over game windows' title bars (positions per session, optionally saved).
 - `Modules/InfoBar` (default on): full-width screen bar (top/bottom, BACKGROUND strata). "Make room" (default on, the
   user's choice 2026-11-17) shifts the Blizzard frames in its strip (minimap, buffs, ...) by SetPointBase, session only,

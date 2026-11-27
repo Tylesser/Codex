@@ -2,16 +2,22 @@ local addonName, ns = ...
 
 -- Quest items in the bags (round-2 design, board R2-Bags): a small triangle in the slot's top-left corner, 9px on a
 -- 40px slot, 3px in, in the theme's quest colour (C_Container.GetContainerItemQuestInfo; items that start a quest
--- get it too, Blizzard's own "!" stays on those). Blizzard's bag windows through a post-hook on each container
--- frame's UpdateItems; Codex's own bag window calls H.QuestMark(button, bag, slot) from its FillLive. On Codex's own
--- buttons the game's heavy quest border (IconQuestTexture) goes to alpha 0 while the corner shows; Blizzard's
--- buttons are left as they are. Only alpha and textures of ours (one per button, weak table): fine in combat.
+-- get it too). Blizzard's bag windows through a post-hook on each container frame's UpdateItems; Codex's own bag
+-- window calls H.QuestMark(button, bag, slot) from its FillLive. On Codex's own buttons the game's heavy quest
+-- border (IconQuestTexture) goes to alpha 0 while the corner shows; Blizzard's buttons are left as they are.
+-- That texture is also the game's "!" for an item that starts a quest (ContainerFrameItemButtonMixin:
+-- UpdateQuestItem sets TEXTURE_ITEM_QUEST_BANG on it, forever Mainline/ContainerFrame.lua), so on our buttons a
+-- starter gets our own "!" in the top-right corner instead (2026-11-27, the user's wish: it was gone with the
+-- border). Blizzard's buttons keep their own "!". Only alpha, textures and text of ours (one set per button, weak
+-- table): fine in combat.
 -- Art: branding/source/highlight-art.py (Corner.tga).
 
 local H = ns.highlight
 
 local CORNER = "Interface\\AddOns\\Codex\\Modules\\Highlight\\Media\\Corner"
 local SLOT, MARK, INSET = 40, 9, 3 -- the board's slot, mark and inset (px)
+local BANG_FONT = "Fonts\\ARIALN.TTF" -- the same heavy "!" as the quest mobs' (Plates.lua)
+local BANG_SIZE = 18 -- px on a 40px slot
 -- The board's questMark token per theme (not in the theme files yet): the accent, except Slate's blue accent.
 local QUEST_COLORS = {
   runestone = { 0.94, 0.76, 0.31 }, -- #f0c24e
@@ -39,14 +45,25 @@ end
 local function Build(button)
   local corner = button:CreateTexture(nil, "OVERLAY", nil, 6)
   corner:SetTexture(CORNER)
-  local mark = { corner = corner }
+  local bang = button:CreateFontString(nil, "OVERLAY", nil, 7)
+  bang:SetFont(BANG_FONT, BANG_SIZE, "OUTLINE")
+  bang:SetText("!")
+  bang:SetShadowOffset(0, -1)
+  bang:SetShadowColor(0, 0, 0, 1)
+  bang:Hide()
+  local mark = { corner = corner, bang = bang }
   marks[button] = mark
   return mark
 end
 
--- The game's quest border on Codex's own buttons (made by the Bags module, so ours to dim).
+-- Codex's own buttons (made by the Bags module): their count is ours.
+local function Own(button)
+  return button.codexCount ~= nil
+end
+
+-- The game's quest border on Codex's own buttons (ours to dim).
 local function OwnBorder(button, shown)
-  if button.codexCount == nil then
+  if not Own(button) then
     return
   end
   local border = button.IconQuestTexture
@@ -61,6 +78,7 @@ local function Hide(button, mark)
   end
   mark.state = nil
   mark.corner:Hide()
+  mark.bang:Hide()
   OwnBorder(button, true)
 end
 
@@ -86,7 +104,6 @@ function H.QuestState(bag, slot)
 end
 
 -- Marks (or clears) one item button. bag, slot: where its item is (nil for an empty or offline slot).
--- Marks (or clears) one item button. bag, slot: where its item is (nil for an empty or offline slot).
 function H.QuestMark(button, bag, slot)
   if type(button) ~= "table" then
     return
@@ -109,6 +126,18 @@ function H.QuestMark(button, bag, slot)
   local color = H.QuestColor()
   corner:SetVertexColor(color[1], color[2], color[3], 1)
   corner:Show()
+  local bang = mark.bang
+  if state == "starts" and Own(button) then
+    local size = math.max(9, math.floor(BANG_SIZE * scale + 0.5))
+    bang:SetFont(BANG_FONT, size, "OUTLINE")
+    bang:ClearAllPoints()
+    bang:SetPoint("TOPRIGHT", button, "TOPRIGHT", -INSET * scale, -1 * scale)
+    local quest = H.COLORS and H.COLORS.quest or { 1, 0.82, 0 }
+    bang:SetTextColor(quest[1], quest[2], quest[3], 1)
+    bang:Show()
+  else
+    bang:Hide()
+  end
   OwnBorder(button, false)
 end
 
