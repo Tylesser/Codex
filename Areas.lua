@@ -423,7 +423,7 @@ end
 
 -- Sections --------------------------------------------------------------------------------------------------------
 
-local HEADER, PAD_TOP, PAD_BOTTOM, GAP = 30, 8, 16, 6
+local HEADER, PAD_TOP, PAD_BOTTOM, GAP = 30, 8, 16, 12 -- (GAP 6 -> 12, 2026-11-28: the user found sections hard to tell apart)
 local INDENT = 16 -- the body starts under the title, past the fold arrow
 ns.SECTION_HEADER = HEADER
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.18.0
+
+- Commerce: **Beside the auction house**: the Commerce window opens docked to the auction house's right edge (right of the Codex auction panel) when you open it, and closes with it. When it's closed, a Commerce Authority button on that edge opens it. Drag it away to keep it open where you put it. Option **Open beside the auction house** (on by default).
+- Commerce: **Writs and Crates tabs**: the Commerce window has two tabs. **Writs** holds your reputation, the writs in your bags, your deliveries, the next standings and the cheapest reputation (by writ, NPC or zone). **Crates** holds your Merchant's Favor, the crates in your bags, the crates you have to fill and every crate on the auction house by what turning it in costs: the crate's price plus the cheapest way to fill it (a Sealed crate's price alone), cheapest first, with the cost per Merchant's Favor. Scroll that list with the mouse wheel. Click a crate at the auction house to search for it and everything that fills it (each result opens with one crate's worth), elsewhere to put it and its cheapest fill on the Codex buy list (also the Crates tab's own Buy list button). The window remembers the tab you used last.
+- Commerce: **Crate fills come with their amount**: when you click a crate at the auction house and open one of the items that fill it, the game's buy box already holds how many your crates still need (less what your bags hold). The crate buy list keeps that amount too. You still press Buy yourself.
+- Proc glow: **One preview for all its options**: instead of a glow preview beside the glow style and one beside each per-ability list, a single preview shows a proc as it will look: its button with its glow, its art on its side or sides, and its art, side and glow style written under it, with Play. Hover or pick an ability in any list to see it there. It shows in the info panel on the right, above the section's description.
+- **Clearer settings**: more room between sections; the proc glow options come in titled groups (Glow, Art, Sound); thin lines split up the Commerce, Trade Crier and Stat Delta pages.
+- **Open Codex from Options > AddOns**: the **Tylesser** entry there (shared with the other Tylesser addons) has an **Open Codex** button.
+
 ## 1.17.0
 
 - **In your language**: Codex is translated into German, French, Spanish, Russian and Brazilian Portuguese (other clients stay in English). Russian clients get the game's font where a theme's font has no Cyrillic letters (Runestone, Hearthwood), Korean and Chinese clients everywhere; the What's new window stays in English.

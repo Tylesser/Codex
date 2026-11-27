@@ -111,6 +111,16 @@ frame:SetScript("OnEvent", function(self, event, name)
     HookGameMenu()
     ns.T.AddCompartment({ text = ns.TITLE, onClick = function() ns.ToggleWindow() end,
       tooltip = { L["Click to open Codex."] } })
+    -- a button on the game's Tylesser page (Options > AddOns) and in Tylesser's settings window that opens the
+    -- Codex window (2026-11-28, the user's request: "for Codex keep a separate button that opens the Codex page")
+    pcall(ns.T.RegisterLauncher, L["Open Codex"], function()
+      if not (ns.window and ns.window:IsShown()) then
+        ns.ToggleWindow()
+      end
+      if ns.window then
+        ns.window:Raise() -- (over the game's settings window: same strata)
+      end
+    end)
     if ns.MaybeShowSetup then
       ns.MaybeShowSetup() -- the first-run setup, once (Setup.lua)
     end

@@ -9,6 +9,7 @@
   <Script file="Shopping.lua"/>
   <Script file="Window.lua"/>
   <Script file="NPCs.lua"/>
+  <Script file="Dock.lua"/>
   <Script file="Page.lua"/>
   <Script file="Module.lua"/>
 </Ui>

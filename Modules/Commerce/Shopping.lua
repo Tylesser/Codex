@@ -129,7 +129,7 @@ function C.CreateCrateBuyList(crate)
     ns.Say(L["no known fill for %s."]:format(crate and crate.info.name or L["that crate"]))
     return false
   end
-  local need = math.max(option.count * crate.count - option.owned, 0)
+  local need = C.CrateNeed(crate, option) or 0
   if need == 0 then
     ns.Say(L["your bags already hold enough %s to fill %s."]:format(option.name, crate.info.name))
     return false
@@ -148,11 +148,19 @@ function C.CreateCrateBuyList(crate)
   local term = A.AddTerm(list, option.name, true, nil)
   if term then
     term.noRecipes = true
+    term.quantity = need -- (the game's buy view opens with this amount: Auction/Scan.lua A.OpenResult)
   end
   A.Changed("lists")
   ns.Say(L["shopping list \"%s\": %s, %d to fill %d %s."]:format(C.SHOPPING_LIST, option.name, need, crate.count,
     crate.info.name))
   return true
+end
+
+-- How many of one fill item (an entry of crate.options) all the crates of that kind still need, less what your
+-- bags hold; nil when the bags hold enough.
+function C.CrateNeed(crate, option)
+  local need = (option.count or 0) * (crate.count or 1) - (option.owned or 0)
+  return need > 0 and need or nil
 end
 
 -- Searches the open auction house for everything that fills a crate (an entry of C.CratesToFill), cheapest first:
@@ -165,9 +173,10 @@ function C.SearchCrate(crate)
     ns.Say(L["auction searches wait until the fight is over."])
     return false
   end
-  local terms = {}
+  local terms, quantities = {}, {}
   for _, option in ipairs(crate.options) do
     terms[#terms + 1] = option.name
+    quantities[#terms] = C.CrateNeed(crate, option)
   end
   if #terms == 0 then
     ns.Say(L["no known fill for %s."]:format(crate.info.name))
@@ -176,8 +185,9 @@ function C.SearchCrate(crate)
   local A = ns.auction
   if A and A.running and A.open and A.SearchList then
     local list = { name = C.SHOPPING_LIST, terms = {} }
-    for _, name in ipairs(terms) do
-      list.terms[#list.terms + 1] = { text = name, exact = true, noRecipes = true }
+    for index, name in ipairs(terms) do
+      -- (opening a result fills the game's buy box with what the crates still need: Auction/Scan.lua A.OpenResult)
+      list.terms[#list.terms + 1] = { text = name, exact = true, noRecipes = true, quantity = quantities[index] }
     end
     local ok, started = pcall(A.SearchList, list)
     if ok and started then
@@ -205,6 +215,89 @@ end
 
 local function Where()
   return " " .. L["At the auction house, click it in the Codex panel to search it."]
+end
+
+-- A crate from the By crate ranking (an entry of C.CheapestCrates, 2026-11-28): searches the open auction house for
+-- the crate and every item that fills it (one crate's worth each, cheapest first; opening a result fills the game's
+-- buy box with that amount: Auction/Scan.lua A.OpenResult), in the Codex auction panel, else the game's search box
+-- with the crate. Returns true when a search started. (Commerce Authority's twin.)
+function C.SearchRankedCrate(entry)
+  if not (entry and C.AuctionHouseOpen()) then
+    return false
+  end
+  if InCombatLockdown and InCombatLockdown() then
+    ns.Say(L["auction searches wait until the fight is over."])
+    return false
+  end
+  local terms = { { text = entry.name, exact = true, noRecipes = true, quantity = 1 } }
+  if not entry.info.filled then
+    for _, option in ipairs(C.CrateFillOptions(entry.info)) do
+      terms[#terms + 1] = { text = option.name, exact = true, noRecipes = true, quantity = option.count }
+    end
+  end
+  local A = ns.auction
+  if A and A.running and A.open and A.SearchList then
+    local ok, started = pcall(A.SearchList, { name = C.SHOPPING_LIST, terms = terms })
+    if ok and started then
+      if A.ShowPanel then
+        pcall(A.ShowPanel)
+      end
+      ns.Say(L["searching the auction house: %s and what fills it."]:format(entry.name))
+      return true
+    end
+  end
+  local ok, started = pcall(C.BlizzardSearch, entry.name)
+  if ok and started then
+    if #terms > 1 then
+      ns.Say(L["searching for %s; switch Codex's Auction House module on to search for what fills it too."]:format(
+        entry.name))
+    end
+    return true
+  end
+  return false
+end
+
+-- The buy list for a crate from the By crate ranking: the crate and its cheapest fill (the Codex shopping list,
+-- replaced). Returns true when it was made.
+function C.CreateRankedCrateBuyList(entry)
+  local A = Auction()
+  if not A then
+    ns.Say(L["the buy list needs Codex's Auction House module; switch it on in the Codex window."])
+    return false
+  end
+  if not entry then
+    return false
+  end
+  local list
+  for _, existing in ipairs(A.Lists()) do
+    if existing.name == C.SHOPPING_LIST then
+      list = existing
+      break
+    end
+  end
+  list = list or A.NewList(C.SHOPPING_LIST)
+  for index = #list.terms, 1, -1 do
+    list.terms[index] = nil
+  end
+  local term = A.AddTerm(list, entry.name, true, nil)
+  if term then
+    term.noRecipes, term.quantity = true, 1
+  end
+  if entry.fill then
+    term = A.AddTerm(list, entry.fill.name, true, nil)
+    if term then
+      term.noRecipes, term.quantity = true, entry.fill.count
+    end
+  end
+  A.Changed("lists")
+  if entry.fill then
+    ns.Say(L["shopping list \"%s\": %s and %d %s to fill it, about %s."]:format(C.SHOPPING_LIST, entry.name,
+      entry.fill.count, entry.fill.name, C.Money(entry.total)) .. Where())
+  else
+    ns.Say(L["shopping list \"%s\": %s, about %s."]:format(C.SHOPPING_LIST, entry.name, C.Money(entry.total))
+      .. Where())
+  end
+  return true
 end
 
 -- The cheapest writs to your next standing.

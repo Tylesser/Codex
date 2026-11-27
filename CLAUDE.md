@@ -714,7 +714,16 @@ actions / windows / rings, `R.Choices(kind, ring)`, search, a click = `R.SetSlic
   title, close, Esc, place in `C.db.position` / `npcPosition`); `C.Tone` swaps the standalone's colour codes for
   the theme's muted/good/warn/accent/bright. Page.lua: options (no "all sources" option: one source). Module.lua:
   events, `/codex commerce [npcs|buy|options|debug]`, `/codex writs`, and `/aca` `/commerce` only while the
-  standalone isn't loaded. Test `codex_commerce_test.lua` (ported from `ca_test.lua`).
+  standalone isn't loaded. Test `codex_commerce_test.lua` (ported from `ca_test.lua`). 2026-11-28 (twins of the
+  standalone): Dock.lua (the window docked beside the AH, right of the Codex auction panel; `auctionDock`;
+  `C.DockWindow`, `C.EnsureWindow`, `C.RestoreWindowPosition`; events from Module.lua) and the crate ranking
+  (`C.CheapestCrates`, `C.SearchRankedCrate` with term quantities, `C.CreateRankedCrateBuyList`). The window has two
+  tabs (same day, the user's "writs and crates are not the same thing"): `window.panes.writs` / `.crates` (each
+  SetAllPoints the window; parts keep window coordinates), `window.tabs` (UI.Button + accent `mark`),
+  `C.SelectWindowTab(key)`, saved in `windowTab`. Writs: faction, bar, writ bags, deliveries (writs only), next
+  standings, cheapest reputation by writ / NPC / zone (`C.CheapestMode` maps anything else to writ). Crates:
+  Favor, `C.CrateBagsText`, `window.fills` (crates to fill), `window.rankRows` (the ranking, `rankList` rows scroll
+  with the wheel; `window.rankHint` "%d-%d of %d"), `window.rankBuy`.
 - **Read Blizzard's Forever code before naming a frame.** `forever` branch of Gethe/wow-ui-source (see the workspace
   CLAUDE.md). Guessed names failed twice in a row on the quest log's count box (real: `QuestScrollFrame.SearchBox`,
   `QuestLogCount` with `.Left/.Middle/.Right` border, `QuestLogQuestCount` text, `QuestScrollFrame.SettingsDropdown`)
@@ -865,11 +874,15 @@ actions / windows / rings, `R.Choices(kind, ring)`, search, a click = `R.SetSlic
   **Per-ability lists (2026-11-23, the user's request):** `EachList` (ProcGlow.lua) lists `P.ClassKeys()` (the
   player's class: `class` on P.REACTIVE entries and class auras, `listClass` = list only, Shadow Trance;
   `P.SoundKeys()` without a class is every proc), under a header button (`sub.header`, `UI.FoldArrow`, "<Class>
-  procs (n)") that folds it (`CodexDB.qol.procEachFolded[eachKey]`, `P.SetEachFolded`). The art list's sixth
-  argument (art and side lists) builds ProcArt's `A.PreviewPanel` right of the rows (160x176): the art round an
-  empty centre on the proc's side (`A.PREVIEW_COORDS` turn the side file), then name / art / side lines; no glow
-  there (the user, 2026-11-24: the glow's preview is the one beside the glow style, `P.BuildPreview`, showing
-  `P.ButtonIcon` of the class's first proc). The art list's seventh argument (`Swatch`) adds a colour square per
+  procs (n)") that folds it (`CodexDB.qol.procEachFolded[eachKey]`, `P.SetEachFolded`). Since 2026-11-28 (the user's request: one preview, not one per
+  setting; then "put preview to side panel") the page has **one preview**, in a side column: the toggle's
+  `sidePreview` -> `P.BuildPreview(parent)` (made once, moved to the new parent) = ProcArt's `A.PreviewPanel`
+  (160x218: art on the proc's side, `panel.button` in the middle = `P.preview`, lit with the proc's own glow style and
+  colour, lines name / art / side / glow, Play). Codex: Modules/QoL/Page.lua gives the section `preview` +
+  `previewFirst`, Info.lua then lays the preview under the title and the words after it. Proc Glow: Options.lua's
+  `panel.side` column right of the scroll. `P.PreviewProc(name)`: hovered row of any list, else `P.previewPicked`
+  (marked in every list), else the class's first. `codexNoSearch` on it (the search would take its proc name for an
+  option). EachList's sixth argument is unused. The art list's seventh argument (`Swatch`) adds a colour square per
   row: `A.ColorFor` / `A.SetColorFor` (`procArtColorFor[name]`, only while `procArtLookEach`), `A.PickColor(name)`,
   right-click or the row's reset button (`row.reset`, UI-RefreshButton, shown only with an own colour) clears;
   `A.TintFor` takes it first; dimmed when the art isn't tinted (Codex art pieces). Art colour row: `button2`

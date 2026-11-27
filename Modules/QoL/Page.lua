@@ -201,9 +201,38 @@ local function Hint(sub, holder, after)
   sub.hint:SetJustifyH("LEFT")
 end
 
+-- A group of options starts here (option.section; 2026-11-28, the user's request: the groups of a long section ran
+-- together): its title in the section style with the theme's divider running on to the right edge, or (section =
+-- true) the line alone, with room above it. Placed at the body's left edge whatever `last` was (a per-ability list
+-- sits indented); the next option goes under it.
+local function GroupHeading(body, last, title)
+  local frame = CreateFrame("Frame", nil, body)
+  frame:SetPoint("TOP", last, "BOTTOM", 0, -14)
+  frame:SetPoint("LEFT", body, "LEFT", 0, 0)
+  frame:SetPoint("RIGHT", body, "RIGHT", 0, 0)
+  local line = UI.Divider(frame)
+  if type(title) == "string" and title ~= "" then
+    frame:SetHeight(16)
+    frame.label = UI.Section(frame, title)
+    frame.label:SetPoint("LEFT", frame, "LEFT", 0, 0)
+    line:SetPoint("LEFT", frame.label, "RIGHT", 8, 0)
+  else
+    frame:SetHeight(1)
+    line:SetPoint("LEFT", frame, "LEFT", 0, 0)
+  end
+  line:SetPoint("RIGHT", frame, "RIGHT", 0, 0)
+  frame.line = line
+  return frame
+end
+Q.GroupHeading = GroupHeading
+
 -- One extra option under a toggle, below `last`. Returns its entry and the widget the next one goes under.
 local function BuildOption(body, option, last)
   local sub = { option = option }
+  if option.section then
+    sub.heading = GroupHeading(body, last, option.section)
+    last = sub.heading
+  end
   if option.kind == "custom" then
     local bottom = option.Build(body, last, sub)
     return sub, bottom or last
@@ -343,6 +372,9 @@ for _, toggle in ipairs(Q.toggles) do
     aliases = { key },
     keywords = { toggle.name, toggle.desc },
     desc = toggle.desc,
+    -- a toggle's own preview in the info panel, above its words (proc glow, 2026-11-28: "put preview to side panel")
+    preview = toggle.sidePreview,
+    previewFirst = toggle.sidePreview ~= nil,
     switch = {
       get = function()
         return Q.DB()[key] and not ModuleOff()

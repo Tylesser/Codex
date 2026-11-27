@@ -21,7 +21,9 @@ C.DEFAULTS = {
   vendorMarks = true,        -- at the Commerce Authority vendors: what you can afford
   onlyMyProfessions = false, -- the window's cheapest list: only writs your professions make
   cheapestBy = nil,          -- the window's cheapest list: "writ", "npc" or "zone" (nil: writ; C.CheapestMode)
+  windowTab = nil,           -- the window's tab: "writs" (nil) or "crates" (C.SelectWindowTab)
   position = nil,            -- the window's place
+  auctionDock = true,        -- the window opens beside the auction house and closes with it (Dock.lua)
   npcPosition = nil,         -- the Writ NPCs window's place
   npcTier = nil,             -- the Writ NPCs window: only this writ level ("Journeyman", "Expert", "Artisan")
   npcMine = false,           -- the Writ NPCs window: only writs your professions make
@@ -37,7 +39,7 @@ C.DEFAULTS = {
 
 -- The standalone addon's saved data, copied once (the first time Codex's copy runs while it is around: the
 -- player forced Codex's copy). What turn-ins taught is worth keeping; positions are not.
-local IMPORT = { "writTooltips", "crateTooltips", "vendorMarks", "onlyMyProfessions", "npcTier", "npcMine", "npcNotDone", "npcFolded", "cheapestBy", "learned", "factionIDs" }
+local IMPORT = { "writTooltips", "crateTooltips", "vendorMarks", "auctionDock", "onlyMyProfessions", "npcTier", "npcMine", "npcNotDone", "npcFolded", "cheapestBy", "windowTab", "learned", "factionIDs" }
 
 local function Copy(value)
   if type(value) ~= "table" then

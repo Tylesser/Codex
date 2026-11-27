@@ -14,6 +14,8 @@ local OPTIONS = {
   { "crateTooltips", L["Crate tooltips"], L["The Merchant's Favor and silver a crate gives, and the cheapest way to fill it."] },
   { "vendorMarks", L["Marks at the Commerce Authority vendors"],
     L["\"%s\" or how much Favor you still need, and how many crates that is."]:format(L["Can buy"]) },
+  { "auctionDock", L["Open beside the auction house"],
+    L["When the auction house opens, the window opens beside it and closes with it; a button on its edge opens it too."] },
 }
 
 -- "How it works": the factions by the names the game gives them (the client's language), so built with the page.
@@ -132,6 +134,10 @@ function C.BuildPage(page)
   Tip(buy, L["Buy list"], L["The cheapest writs to your next standing, and the items they ask for, in the Codex shopping list \"%s\" (%s)."]
     :format(C.SHOPPING_LIST, "/codex commerce buy"))
 
+  -- lines between the page's parts (2026-11-28, the user's request: the sections ran together)
+  local optionsLine = UI.Divider(page)
+  optionsLine:SetPoint("TOPLEFT", open, "BOTTOMLEFT", 0, -10)
+  optionsLine:SetPoint("RIGHT", page, "RIGHT", 0, 0)
   view.checks = {}
   local anchor
   for _, option in ipairs(OPTIONS) do
@@ -140,7 +146,7 @@ function C.BuildPage(page)
     if anchor then
       check:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -8)
     else
-      check:SetPoint("TOPLEFT", open, "BOTTOMLEFT", 0, -14)
+      check:SetPoint("TOPLEFT", optionsLine, "BOTTOMLEFT", 0, -10)
     end
     local note = UI.Text(page, "body", 11, "muted")
     note:SetPoint("LEFT", check.label, "RIGHT", 10, 0)
@@ -156,7 +162,10 @@ function C.BuildPage(page)
   end
 
   view.learned = UI.Text(page, "body", 12, "text")
-  view.learned:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -16)
+  local learnedLine = UI.Divider(page)
+  learnedLine:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -12)
+  learnedLine:SetPoint("RIGHT", page, "RIGHT", 0, 0)
+  view.learned:SetPoint("TOPLEFT", learnedLine, "BOTTOMLEFT", 0, -12)
   view.learned:SetPoint("RIGHT", -170, 0)
   view.learned:SetJustifyH("LEFT")
   view.learned:SetWordWrap(true)

@@ -33,6 +33,13 @@ local function OnEvent(_, event, ...)
     if C.Readable(message) then
       C.OnRepMessage(message)
     end
+  elseif event == "AUCTION_HOUSE_SHOW" or event == "AUCTION_HOUSE_CLOSED" then
+    if event == "AUCTION_HOUSE_SHOW" then
+      C.OnAuctionHouseShow()
+    else
+      C.OnAuctionHouseClosed()
+    end
+    C.RequestRefresh()
   else
     if event == "SKILL_LINES_CHANGED" or event == "SPELLS_CHANGED" or event == "TRAIT_CONFIG_UPDATED" then
       C.InvalidateCheapest() -- professions, or a legacy talent (Diplomat) changed

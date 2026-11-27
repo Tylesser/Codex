@@ -123,12 +123,25 @@ local function Layout()
       y = y + (y > 0 and gap or 0) + ns.UITextHeight(region, region.size or 12, INNER)
     end
   end
+  local preview = panel.preview
   Place(panel.kicker, 0)
   Place(panel.title, 2)
+  if current.previewFirst then
+    -- the preview right under the title, the words after it (a long text pushed it out of the panel)
+    preview:ClearAllPoints()
+    preview:SetPoint("TOPLEFT", panel.box, "TOPLEFT", PAD, -(PAD + y + 10))
+    preview:SetWidth(INNER)
+    local frame = panel.previewFrame
+    local height = frame and frame:IsShown() and frame:GetHeight() or 0
+    y = y + (height > 0 and height + 20 or 0)
+    Place(panel.text, 8)
+    Place(panel.option, 14)
+    Place(panel.optionText, 4)
+    return
+  end
   Place(panel.text, 8)
   Place(panel.option, 14)
   Place(panel.optionText, 4)
-  local preview = panel.preview
   preview:ClearAllPoints()
   preview:SetPoint("TOPLEFT", panel.box, "TOPLEFT", PAD, -(PAD + y + 16))
   preview:SetWidth(INNER)
@@ -219,6 +232,11 @@ function ns.ShowInfo(subject)
   end
   local sameKey = current.key ~= nil and current.key == subject.key
   current.key = subject.key
+  local first = subject.previewFirst and true or false
+  if current.previewFirst ~= first then
+    current.previewFirst = first
+    sameKey = false
+  end
   if not sameKey then
     panel.kicker:SetText(subject.kicker or "")
     panel.kicker:SetShown(Str(subject.kicker) ~= nil)
@@ -232,6 +250,9 @@ function ns.ShowInfo(subject)
     Layout()
   end
   ShowPreview(subject.previewKey or subject.key, subject.preview)
+  if first then
+    Layout() -- (the words go under the preview: its height is known now)
+  end
   panel.subject = subject
 end
 
@@ -252,6 +273,7 @@ function ns.InfoHover(section, widget)
     optionText = widget and WidgetText(widget) or nil,
     previewKey = def.id,
     preview = SectionPreview(section),
+    previewFirst = def.previewFirst,
   })
 end
 

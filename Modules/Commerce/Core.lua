@@ -759,11 +759,62 @@ function C.CheapestCustomers(max, counts)
   return result
 end
 
--- Which ranking the window's cheapest list shows: "writ", "npc" or "zone". (Before zones it was the
+-- Every crate on the auction house by what it costs to turn in (2026-11-28, the user's request: the crate's price
+-- and what filling it costs, sorted by both together): a Waylaid Crate's price plus its cheapest priced fill, a
+-- Sealed crate's price alone (already filled). Only crates with an auction price, and Waylaid Crates with a priced
+-- fill. { { itemID, name, info, favor, price, fill (CrateFillOptions entry or nil), fillCost, total, perFavor } },
+-- cheapest total first, at most `max`. (Commerce Authority's twin.)
+function C.CheapestCrates(max)
+  local list = {}
+  local function Add(itemID, fallback)
+    local price = C.Price(itemID)
+    if not price then
+      return
+    end
+    local name = C.ItemName(itemID) or fallback -- (English until the game has the item's name)
+    local favor, _, info = C.CrateFavor(itemID, name)
+    if not (favor and favor > 0 and info) then
+      return
+    end
+    local fill, fillCost = nil, 0
+    if not info.filled then
+      fill = C.CrateFillOptions(info)[1]
+      if not (fill and fill.cost) then
+        return
+      end
+      fillCost = fill.cost
+    end
+    local total = price + fillCost
+    list[#list + 1] = { itemID = itemID, name = name, info = info, favor = favor, price = price, fill = fill,
+      fillCost = fillCost, total = total, perFavor = total / favor }
+  end
+  for itemID, crate in pairs(C.CRATE_ITEMS) do
+    Add(itemID, ("Waylaid Crate: %s %s"):format(crate[1], crate[2]))
+  end
+  for itemID, level in pairs(C.SEALED_CRATE_ITEMS) do
+    Add(itemID, ("Sealed %s Crate"):format(level))
+  end
+  table.sort(list, function(a, b)
+    if a.total ~= b.total then
+      return a.total < b.total
+    end
+    if a.perFavor ~= b.perFavor then
+      return a.perFavor < b.perFavor
+    end
+    return a.itemID < b.itemID
+  end)
+  for index = #list, (max or #list) + 1, -1 do
+    list[index] = nil
+  end
+  return list
+end
+
+-- Which ranking the window's cheapest list shows: "writ", "npc", "zone" or "crate". (Before zones it was the
 -- cheapestByNPC check box.)
 function C.CheapestMode()
   local db = DB()
-  return db.cheapestBy or (db.cheapestByNPC and "npc") or "writ"
+  local mode = db.cheapestBy or (db.cheapestByNPC and "npc") or "writ"
+  return (mode == "npc" or mode == "zone") and mode or "writ" -- (crates have their own tab since 2026-11-28)
 end
 
 function C.SetCheapestMode(mode)
