@@ -680,6 +680,8 @@ actions / windows / rings, `R.Choices(kind, ring)`, search, a click = `R.SetSlic
   when nothing is written) in the bar `..Bar` (keeps `pos`, scale; any button drags it; `column` stacks them);
   `C.Post(index)` posts that message; the key binds to the invisible `..Key` button (alpha 0, no mouse, shown so the
   binding's click reaches it), which posts `C.NextMessage()`.
+  Cities (2026-11-27, TradeCrier issue #1): `message.city`, the city picker and the teleport icons; see
+  TradeCrier/CLAUDE.md. Page.lua's rows use `C.CityButton` like TradeCrier's Options.lua.
 - `Modules/Professions`: Profit Sort ported in (standalone = `ProfitSort`). Prices only from Codex: auction
   `ns.auction.GetPrice`, vendor prices recorded at merchants (`CodexDB.professions.vendor`). Forever opens the
   modern `ProfessionsFrame`; the classic TradeSkill/Craft providers are kept. The block sits in

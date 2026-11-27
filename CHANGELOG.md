@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.16.0
+
+- Trade Crier: **a message for one city only**: the new city button next to a message's icon picks the city it is for (or any city). Its button then shows only there, and the post key skips it elsewhere, so you can write a different message for each city you trade in.
+- Trade Crier: **city icons**: the icon picker has the six capitals' teleport icons, so a message's button can show which city it is for.
+
 ## 1.15.0
 
 - Bags: **items that start a quest get a "!"** in the top-right corner of their slot in Codex's bag window (the game's own "!" was hidden along with its quest border). Part of Highlights > Quest items in bags.
