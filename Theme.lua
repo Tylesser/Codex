@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Themes. Each look lives in its own load-on-demand folder (Codex_Runestone, Codex_Hearthwood,
 -- Codex_Classic, Codex_Slate, Codex_Dusk, Codex_Obsidian, Codex_Onyx, Codex_Bronze) that is loaded only when the player picks it. The folder
@@ -90,23 +91,23 @@ local addonName, ns = ...
 -- light panels go through ns.Readable (UI.Text / UI.Font).
 
 ns.THEMES = {
-  { id = "runestone", name = "Runestone", folder = "Codex_Runestone", desc = "Dark stone, gold borders and studs." },
-  { id = "hearthwood", name = "Hearthwood", folder = "Codex_Hearthwood", desc = "Warm wood with brass rivets." },
-  { id = "classic", name = "Classic", folder = "Codex_Classic", desc = "Close to the game's own colours." },
-  { id = "slate", name = "Slate", folder = "Codex_Slate", desc = "Flat, quiet and minimal." },
-  { id = "dusk", name = "Dusk", folder = "Codex_Dusk", desc = "Calm blue-grey, a soft teal, rounded corners." },
+  { id = "runestone", name = "Runestone", folder = "Codex_Runestone", desc = L["Dark stone, gold borders and studs."] },
+  { id = "hearthwood", name = "Hearthwood", folder = "Codex_Hearthwood", desc = L["Warm wood with brass rivets."] },
+  { id = "classic", name = "Classic", folder = "Codex_Classic", desc = L["Close to the game's own colours."] },
+  { id = "slate", name = "Slate", folder = "Codex_Slate", desc = L["Flat, quiet and minimal."] },
+  { id = "dusk", name = "Dusk", folder = "Codex_Dusk", desc = L["Calm blue-grey, a soft teal, rounded corners."] },
   -- darker than Dusk, mostly black (players' request, 2026-11-22): they borrow Dusk's Inter (Codex_Dusk/Media)
-  { id = "obsidian", name = "Obsidian", folder = "Codex_Obsidian", desc = "Near-black with a warm gold accent." },
-  { id = "onyx", name = "Onyx", folder = "Codex_Onyx", desc = "Cool black with a soft teal." },
+  { id = "obsidian", name = "Obsidian", folder = "Codex_Obsidian", desc = L["Near-black with a warm gold accent."] },
+  { id = "onyx", name = "Onyx", folder = "Codex_Onyx", desc = L["Cool black with a soft teal."] },
   -- the calm theme (2026-11-24): the game's own materials, one thin line, see-through, the game's font
-  { id = "bronze", name = "Bronze", folder = "Codex_Bronze", desc = "Calm warm brown, thin bronze lines, the game's font." },
+  { id = "bronze", name = "Bronze", folder = "Codex_Bronze", desc = L["Calm warm brown, thin bronze lines, the game's font."] },
 }
 
 local registered = {}
 
 -- Used when the chosen theme's folder is missing or disabled: plain and readable.
 local FALLBACK = {
-  id = "fallback", name = "Plain",
+  id = "fallback", name = L["Plain"],
   font = {},
   text = { 0.92, 0.92, 0.92 }, muted = { 0.65, 0.65, 0.65 }, accent = { 1, 0.82, 0 }, bright = { 1, 1, 1 },
   titleText = { 1, 0.82, 0 }, good = { 0.25, 1, 0.25 }, bad = { 1, 0.3, 0.3 }, warn = { 1, 0.82, 0 },
@@ -157,13 +158,13 @@ end
 -- Fonts the player can pick for headings and text (Settings > Fonts). "theme" keeps the theme's own choice.
 -- Cinzel and IM Fell English SC have capitals only (small caps): fine for headings, hard to read as text.
 ns.FONTS = {
-  { key = "theme", name = "Theme's own" },
-  { key = "friz", name = "Friz Quadrata (the game's)", path = "Fonts\\FRIZQT__.TTF" },
+  { key = "theme", name = L["Theme's own"] },
+  { key = "friz", name = L["Friz Quadrata (the game's)"], path = (STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF") },
   { key = "arialn", name = "Arial Narrow", path = "Fonts\\ARIALN.TTF" },
   { key = "morpheus", name = "Morpheus", path = "Fonts\\MORPHEUS.TTF" },
   { key = "skurri", name = "Skurri", path = "Fonts\\SKURRI.TTF" },
-  { key = "cinzel", name = "Cinzel (capitals)", path = "Interface\\AddOns\\Codex\\Media\\Cinzel-Bold.ttf" },
-  { key = "imfell", name = "IM Fell English SC (capitals)",
+  { key = "cinzel", name = L["Cinzel (capitals)"], path = "Interface\\AddOns\\Codex\\Media\\Cinzel-Bold.ttf" },
+  { key = "imfell", name = L["IM Fell English SC (capitals)"],
     path = "Interface\\AddOns\\Codex_Hearthwood\\Media\\IMFellEnglishSC.ttf" },
   { key = "inter", name = "Inter", path = "Interface\\AddOns\\Codex_Dusk\\Media\\Inter-Regular.ttf" },
   { key = "intersemi", name = "Inter Semibold", path = "Interface\\AddOns\\Codex_Dusk\\Media\\Inter-SemiBold.ttf" },
@@ -192,7 +193,27 @@ local function ApplyFontChoices(theme)
   if body.path then
     font.body, font.bodySize = body.path, 1
   end
+  for _, key in ipairs({ "head", "body", "damage" }) do
+    font[key] = ns.FontForLocale(font[key])
+  end
   theme.font = font
+end
+
+-- A font that can write the client's language (2026-11-27, translations): Cinzel and IM Fell English have no
+-- Cyrillic, and no theme font has Korean or Chinese, so those clients get the game's own (STANDARD_TEXT_FONT).
+-- Inter (Dusk, Obsidian, Onyx) and Arial Narrow have Cyrillic.
+local CYRILLIC_FONTS = { ["inter-semibold.ttf"] = true, ["inter-regular.ttf"] = true, ["arialn.ttf"] = true }
+local GAME_FONT_LOCALES = { ruRU = "cyrillic", koKR = "all", zhCN = "all", zhTW = "all" }
+function ns.FontForLocale(path)
+  local need = GAME_FONT_LOCALES[GetLocale and GetLocale() or "enUS"]
+  if not need or type(path) ~= "string" then
+    return path
+  end
+  local file = (path:match("([^\\/]+)$") or path):lower()
+  if need == "cyrillic" and (CYRILLIC_FONTS[file] or file:find("cyr")) then
+    return path
+  end
+  return STANDARD_TEXT_FONT or path
 end
 
 -- Look options (board R3-Polish): CodexDB.look = { accent = "theme" | "class", shadows = bool, strips = bool }.

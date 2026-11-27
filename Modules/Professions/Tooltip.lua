@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Professions module, part 4: item tooltips. For an item one of your characters can craft:
 --   Craft cost     1g 20s            (the reagents at today's prices; "(Name)" when only another character knows it)
@@ -27,7 +28,7 @@ function P.TooltipLines(itemID, link)
   if db.tooltip then
     local craft = P.CraftInfo(itemID)
     if craft then
-      local label = "Craft cost"
+      local label = L["Craft cost"]
       if not craft.mine then
         label = label .. " |cff999999(" .. craft.name .. ")|r"
       end
@@ -35,20 +36,20 @@ function P.TooltipLines(itemID, link)
       if craft.cost then
         right = ns.Money(craft.cost) .. (craft.missing and "|cffff8000*|r" or "")
         if craft.numMade ~= 1 then
-          right = right .. (" |cff999999(makes %g)|r"):format(craft.numMade)
+          right = right .. " |cff999999" .. L["(makes %g)"]:format(craft.numMade) .. "|r"
         end
       else
-        right = "|cff999999no price yet - scan at the AH|r"
+        right = "|cff999999" .. L["no price yet - scan at the AH"] .. "|r"
       end
       lines[#lines + 1] = { label, right }
       if unit and craft.cost and not craft.missing then
         local profit = math.floor(unit * craft.numMade * P.Keep()) - craft.cost
-        lines[#lines + 1] = { "Craft profit", P.Money(math.floor(profit + 0.5), true) }
+        lines[#lines + 1] = { L["Craft profit"], P.Money(math.floor(profit + 0.5), true) }
       end
     end
   end
   if db.tooltipValue and unit and not AuctionLineShown() then
-    lines[#lines + 1] = { "AH value", ns.Money(unit) .. " |cff999999(" .. ns.Age(seen) .. ")|r" }
+    lines[#lines + 1] = { L["AH value"], ns.Money(unit) .. " |cff999999(" .. ns.Age(seen) .. ")|r" }
   end
   return lines
 end

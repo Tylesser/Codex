@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Action bar visibility, part 1: fading the action bars (and the micro menu, bags bar and experience bar)
 -- by alpha only, per bar: Always, Mouse-over only, In combat only, Out of combat only, In combat or
@@ -28,12 +29,12 @@ local MAX_FADED = 0.5
 BF.FADE_TIME, BF.POLL, BF.LINGER = FADE_TIME, POLL, LINGER
 
 BF.MODES = {
-  { id = "always", name = "Always" },
-  { id = "mouseover", name = "Mouse-over only" },
-  { id = "combat", name = "In combat only" },
-  { id = "nocombat", name = "Out of combat only" },
-  { id = "combatmouse", name = "In combat or mouse-over" },
-  { id = "never", name = "Never (invisible, still clickable)" },
+  { id = "always", name = L["Always"] },
+  { id = "mouseover", name = L["Mouse-over only"] },
+  { id = "combat", name = L["In combat only"] },
+  { id = "nocombat", name = L["Out of combat only"] },
+  { id = "combatmouse", name = L["In combat or mouse-over"] },
+  { id = "never", name = L["Never (invisible, still clickable)"] },
 }
 local MODE_NAME = {}
 for _, mode in ipairs(BF.MODES) do
@@ -45,21 +46,21 @@ local MOUSE_MODES = { mouseover = true, combatmouse = true }
 -- something is dragged, the grid is up or the spell book is open); vehicle: shows in a vehicle, possess
 -- or override; caps: the gryphons follow it.
 BF.BARS = {
-  { key = "MainActionBar", name = "Main bar", frames = { "MainActionBar" }, buttons = { "ActionButton", 12 },
+  { key = "MainActionBar", name = L["Main bar"], frames = { "MainActionBar" }, buttons = { "ActionButton", 12 },
     caps = true, vehicle = true },
-  { key = "MultiBarBottomLeft", name = "Bar 2", frames = { "MultiBarBottomLeft" }, buttons = { "MultiBarBottomLeftButton", 12 } },
-  { key = "MultiBarBottomRight", name = "Bar 3", frames = { "MultiBarBottomRight" }, buttons = { "MultiBarBottomRightButton", 12 } },
-  { key = "MultiBarRight", name = "Bar 4", frames = { "MultiBarRight" }, buttons = { "MultiBarRightButton", 12 } },
-  { key = "MultiBarLeft", name = "Bar 5", frames = { "MultiBarLeft" }, buttons = { "MultiBarLeftButton", 12 } },
-  { key = "MultiBar5", name = "Bar 6", frames = { "MultiBar5" }, buttons = { "MultiBar5Button", 12 } },
-  { key = "MultiBar6", name = "Bar 7", frames = { "MultiBar6" }, buttons = { "MultiBar6Button", 12 } },
-  { key = "MultiBar7", name = "Bar 8", frames = { "MultiBar7" }, buttons = { "MultiBar7Button", 12 } },
-  { key = "PetActionBar", name = "Pet bar", frames = { "PetActionBar" }, buttons = { "PetActionButton", 10 }, vehicle = true },
-  { key = "StanceBar", name = "Stance bar", frames = { "StanceBar" }, buttons = { "StanceButton", 10 } },
+  { key = "MultiBarBottomLeft", name = L["Bar 2"], frames = { "MultiBarBottomLeft" }, buttons = { "MultiBarBottomLeftButton", 12 } },
+  { key = "MultiBarBottomRight", name = L["Bar 3"], frames = { "MultiBarBottomRight" }, buttons = { "MultiBarBottomRightButton", 12 } },
+  { key = "MultiBarRight", name = L["Bar 4"], frames = { "MultiBarRight" }, buttons = { "MultiBarRightButton", 12 } },
+  { key = "MultiBarLeft", name = L["Bar 5"], frames = { "MultiBarLeft" }, buttons = { "MultiBarLeftButton", 12 } },
+  { key = "MultiBar5", name = L["Bar 6"], frames = { "MultiBar5" }, buttons = { "MultiBar5Button", 12 } },
+  { key = "MultiBar6", name = L["Bar 7"], frames = { "MultiBar6" }, buttons = { "MultiBar6Button", 12 } },
+  { key = "MultiBar7", name = L["Bar 8"], frames = { "MultiBar7" }, buttons = { "MultiBar7Button", 12 } },
+  { key = "PetActionBar", name = L["Pet bar"], frames = { "PetActionBar" }, buttons = { "PetActionButton", 10 }, vehicle = true },
+  { key = "StanceBar", name = L["Stance bar"], frames = { "StanceBar" }, buttons = { "StanceButton", 10 } },
   -- the container, not the menu: in a vehicle Blizzard moves the menu onto the vehicle bar
-  { key = "MicroMenu", name = "Micro menu", frames = { "MicroMenuContainer" }, fallback = "MicroMenu" },
-  { key = "BagsBar", name = "Bags bar", frames = { "BagsBar" } },
-  { key = "StatusTracking", name = "Experience bar", frames = { "MainStatusTrackingBarContainer",
+  { key = "MicroMenu", name = L["Micro menu"], frames = { "MicroMenuContainer" }, fallback = "MicroMenu" },
+  { key = "BagsBar", name = L["Bags bar"], frames = { "BagsBar" } },
+  { key = "StatusTracking", name = L["Experience bar"], frames = { "MainStatusTrackingBarContainer",
     "SecondaryStatusTrackingBarContainer" } },
 }
 local BAR_BY_KEY = {}

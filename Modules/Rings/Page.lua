@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 local R = ns.rings
 local UI = ns.UI
 
@@ -21,7 +22,7 @@ function R.CanEdit()
   return not InCombatLockdown()
 end
 
-local COMBAT_NOTE = "Rings can only be changed out of combat."
+local COMBAT_NOTE = L["Rings can only be changed out of combat."]
 
 -- Runs a change to a ring (out of combat), then brings the secure frames and the page in step.
 function R.Edit(ring, change)
@@ -57,7 +58,7 @@ end
 -- The key as the game writes it ("Shift-F", "Mouse Button 4").
 function R.KeyText(key)
   if not key then
-    return "No key"
+    return L["No key"]
   end
   local text = GetBindingText and R.Call(GetBindingText, key)
   return (type(text) == "string" and text ~= "") and text or key
@@ -71,7 +72,7 @@ function R.KeyConflicts(ring)
   end
   for _, other in ipairs(R.Rings()) do
     if other ~= ring and other.key == ring.key then
-      notes[#notes + 1] = ("The ring %s has this key too: only one of them can use it."):format(other.name)
+      notes[#notes + 1] = L["The ring %s has this key too: only one of them can use it."]:format(R.RingName(other))
     end
   end
   local action = GetBindingAction and R.Call(GetBindingAction, ring.key)
@@ -80,7 +81,7 @@ function R.KeyConflicts(ring)
     if type(name) ~= "string" or name == "" or name == action then
       name = _G["BINDING_NAME_" .. action] or action
     end
-    notes[#notes + 1] = ("In the game's key bindings this key is %s; while this ring is on, it opens the ring instead.")
+    notes[#notes + 1] = L["In the game's key bindings this key is %s; while this ring is on, it opens the ring instead."]
       :format(name)
   end
   return notes
@@ -197,11 +198,10 @@ local function NewSlot(parent, index)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
     if self.info then
       GameTooltip:AddLine(self.info.name)
-      GameTooltip:AddLine("Click to change it, drag to another slot to swap, right-click to clear.", 0.7, 0.7, 0.7, true)
+      GameTooltip:AddLine(L["Click to change it, drag to another slot to swap, right-click to clear."], 0.7, 0.7, 0.7, true)
     else
-      GameTooltip:AddLine("Empty slot")
-      GameTooltip:AddLine("Click to choose what goes here (spells, items, mounts, toys, macros, markers, actions, "
-        .. "windows or another ring), or drag a spell, item, macro or mount onto it.", 0.7, 0.7, 0.7, true)
+      GameTooltip:AddLine(L["Empty slot"])
+      GameTooltip:AddLine(L["Click to choose what goes here (spells, items, mounts, toys, macros, markers, actions, windows or another ring), or drag a spell, item, macro or mount onto it."], 0.7, 0.7, 0.7, true)
     end
     GameTooltip:Show()
   end)
@@ -279,7 +279,7 @@ function R.BuildPage(page)
   local right = 206
   local rightWidth = width - right
 
-  local heading = UI.Heading(page, "Rings", 20)
+  local heading = UI.Heading(page, L["Rings"], 20)
   heading:SetPoint("TOPLEFT")
   view.status = UI.Text(page, "body", 12, "muted")
   view.status:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -4)
@@ -306,29 +306,29 @@ function R.BuildPage(page)
       end)
     end,
     UpdateRow = function(row, ring)
-      row.name:SetText(ring.name)
+      row.name:SetText(R.RingName(ring))
       row.name:SetTextColor(UI.Unpack(ring.enabled and ns.Theme().text or ns.Theme().muted))
-      row.key:SetText(ring.enabled and (ring.key and R.KeyText(ring.key) or "no key") or "off")
+      row.key:SetText(ring.enabled and (ring.key and R.KeyText(ring.key) or L["no key"]) or L["off"])
       row.selected:SetShown(ring.id == view.selected)
     end,
   })
   view.list:SetPoint("TOPLEFT", 0, -58)
   view.list:SetSize(right - 16, 268)
 
-  view.add = UI.Button(page, 92, 24, "New ring")
+  view.add = UI.Button(page, 92, 24, L["New ring"])
   view.add:SetPoint("TOPLEFT", view.list, "BOTTOMLEFT", 0, -8)
   view.add:SetScript("OnClick", function()
     R.Edit(nil, function()
       local ring = R.AddRing(nil)
       if not ring then
-        ns.Say(("Codex keeps up to %d rings."):format(R.MAX_RINGS))
+        ns.Say(L["Codex keeps up to %d rings."]:format(R.MAX_RINGS))
         return false
       end
       ring.enabled = true
       view.selected = ring.id
     end)
   end)
-  view.delete = UI.Button(page, 92, 24, "Delete")
+  view.delete = UI.Button(page, 92, 24, L["Delete"])
   view.delete:SetPoint("LEFT", view.add, "RIGHT", 6, 0)
   view.delete:SetScript("OnClick", function()
     local ring = Selected()
@@ -348,10 +348,10 @@ function R.BuildPage(page)
   end)
   view.slash = Wrapped(page, 11, "muted", right - 16)
   view.slash:SetPoint("TOPLEFT", view.add, "BOTTOMLEFT", 0, -12)
-  view.slash:SetText("/codex ring <name> opens a ring at the mouse, out of combat, to try it.")
+  view.slash:SetText(L["/codex ring <name> opens a ring at the mouse, out of combat, to try it."])
 
   -- the selected ring
-  local nameLabel = Label(page, "Name")
+  local nameLabel = Label(page, L["Name"])
   nameLabel:SetPoint("TOPLEFT", right, -62)
   view.name = UI.EditBox(page, 200, 24)
   view.name:SetPoint("TOPLEFT", right + 70, -58)
@@ -360,7 +360,7 @@ function R.BuildPage(page)
     self:ClearFocus()
     local ring = Selected()
     local text = strtrim(self:GetText() or "")
-    if ring and text ~= "" and text ~= ring.name then
+    if ring and text ~= "" and text ~= ring.name and text ~= R.RingName(ring) then
       R.Edit(ring, function()
         ring.name = text
       end)
@@ -368,7 +368,7 @@ function R.BuildPage(page)
       R.RefreshPage()
     end
   end)
-  view.enabled = UI.Check(page, "Use this ring")
+  view.enabled = UI.Check(page, L["Use this ring"])
   view.enabled:SetPoint("LEFT", view.name, "RIGHT", 16, 0)
   view.enabled:SetScript("OnClick", function(self)
     local ring = Selected()
@@ -377,7 +377,7 @@ function R.BuildPage(page)
     end
   end)
 
-  local keyLabel = Label(page, "Key")
+  local keyLabel = Label(page, L["Key"])
   keyLabel:SetPoint("TOPLEFT", right, -96)
   view.key = UI.Button(page, 200, 24, "")
   view.key:SetPoint("TOPLEFT", right + 70, -92)
@@ -409,11 +409,11 @@ function R.BuildPage(page)
   view.keyHint:SetPoint("RIGHT", page, "RIGHT", 0, 0) -- bound to the page: it wraps to two lines when narrow
   view.keyHint:SetJustifyH("LEFT")
   view.keyHint:SetWordWrap(true)
-  view.keyHint:SetText("Click, then press a key. Right-click to clear.")
+  view.keyHint:SetText(L["Click, then press a key. Right-click to clear."])
   view.conflict = Wrapped(page, 11, "warn", rightWidth)
   view.conflict:SetPoint("TOPLEFT", right, -122)
 
-  local slicesLabel = Label(page, "Slices")
+  local slicesLabel = Label(page, L["Slices"])
   slicesLabel:SetPoint("TOPLEFT", right, -158)
   view.slots = {}
   for index = 1, R.MAX_SLICES do
@@ -437,7 +437,7 @@ function R.BuildPage(page)
   local gridBottom = -176 - 2 * (SLOT + GAP)
   view.auto = Wrapped(page, 11, "muted", 6 * (SLOT + GAP) - GAP)
   view.auto:SetPoint("TOPLEFT", right, gridBottom - 4)
-  view.refill = UI.Button(page, 170, 22, "Fill from what you know")
+  view.refill = UI.Button(page, 170, 22, L["Fill from what you know"])
   view.refill:SetPoint("TOPLEFT", right, gridBottom - 46)
   view.refill:SetScript("OnClick", function()
     local ring = Selected()
@@ -445,7 +445,7 @@ function R.BuildPage(page)
       R.Edit(ring, function() return R.Refill(ring) end)
     end
   end)
-  view.try = UI.Button(page, 100, 22, "Try it")
+  view.try = UI.Button(page, 100, 22, L["Try it"])
   view.try:SetPoint("LEFT", view.refill, "RIGHT", 8, 0)
   view.try:SetScript("OnClick", function()
     local ring = Selected()
@@ -458,12 +458,8 @@ function R.BuildPage(page)
   end)
   view.hint = Wrapped(page, 11, "muted", rightWidth)
   view.hint:SetPoint("TOPLEFT", right, gridBottom - 80)
-  view.hint:SetText("Click a slot to choose what goes in it: spells, items, mounts, toys, macros, raid markers, "
-    .. "actions, windows or another ring (a ring inside a ring opens where you let go). Dragging a spell, item, "
-    .. "macro or mount onto a slot works too. Right-click a slot to clear it, drag a slot onto another to swap "
-    .. "them. In game: hold the key, point at a slice and let go to use it, or click a slice. Let go in the middle "
-    .. "or far outside the ring, or press Escape, to use nothing. Slice 1 is at the top, the rest go clockwise. "
-    .. "Works in combat; changes wait until the fight is over.")
+  view.hint:SetText(L["Click a slot to choose what goes in it: spells, items, mounts, toys, macros, raid markers, actions, windows or another ring (a ring inside a ring opens where you let go). Dragging a spell, item, macro or mount onto a slot works too. Right-click a slot to clear it, drag a slot onto another to swap them."]
+    .. " " .. L["In game: hold the key, point at a slice and let go to use it, or click a slice. Let go in the middle or far outside the ring, or press Escape, to use nothing. Slice 1 is at the top, the rest go clockwise. Works in combat; changes wait until the fight is over."])
 
   -- preview (right of the slots)
   local preview = UI.Ink(CreateFrame("Frame", nil, page)) -- a picture of the ring: on ink, as in game (Dawn)
@@ -498,7 +494,7 @@ function R.BuildPage(page)
   view.preview = preview
 
   -- sizes: under the hint, however many lines it wraps to
-  local radiusLabel = Label(page, "Ring size")
+  local radiusLabel = Label(page, L["Ring size"])
   radiusLabel:SetPoint("TOPLEFT", view.hint, "BOTTOMLEFT", 0, -16)
   view.radius = UI.Stepper(page, 48)
   view.radius:SetPoint("TOPLEFT", view.hint, "BOTTOMLEFT", 70, -12)
@@ -508,7 +504,7 @@ function R.BuildPage(page)
   view.radius.more:SetScript("OnClick", function()
     R.SetSize("radius", R.DB().radius + R.RADIUS.step)
   end)
-  local iconLabel = Label(page, "Icon size")
+  local iconLabel = Label(page, L["Icon size"])
   iconLabel:SetPoint("LEFT", view.radius, "RIGHT", 24, 0)
   view.iconSize = UI.Stepper(page, 48)
   view.iconSize:SetPoint("LEFT", iconLabel, "RIGHT", 10, 0)
@@ -519,7 +515,7 @@ function R.BuildPage(page)
     R.SetSize("iconSize", R.DB().iconSize + R.ICON.step)
   end)
   -- the look: Blizzard's ping wheel (default) or Codex's own disc
-  view.style = UI.Check(page, "Blizzard's ping wheel look")
+  view.style = UI.Check(page, L["Blizzard's ping wheel look"])
   view.style:SetPoint("TOPLEFT", view.hint, "BOTTOMLEFT", 0, -42)
   view.style:SetScript("OnClick", function(self)
     local ping = self:GetChecked() and true or false
@@ -530,10 +526,8 @@ function R.BuildPage(page)
   end)
   view.style:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-    GameTooltip:AddLine("Ping wheel look")
-    GameTooltip:AddLine("On: the rings look like the game's ping wheel (dark wheel, divider lines, a gold wedge on "
-      .. "the slice you point at, names beside the icons, the close mark in the middle). Off: Codex's own disc "
-      .. "with the name in the middle.", 1, 1, 1, true)
+    GameTooltip:AddLine(L["Ping wheel look"])
+    GameTooltip:AddLine(L["On: the rings look like the game's ping wheel (dark wheel, divider lines, a gold wedge on the slice you point at, names beside the icons, the close mark in the middle). Off: Codex's own disc with the name in the middle."], 1, 1, 1, true)
     GameTooltip:Show()
   end)
   view.style:SetScript("OnLeave", GameTooltip_Hide)
@@ -543,7 +537,7 @@ end
 
 function R.StatusText()
   if not R.running then
-    return "Off. Switch rings on at the top of this section to use them."
+    return L["Off. Switch rings on at the top of this section to use them."]
   end
   local used = 0
   for _, ring in ipairs(R.Rings()) do
@@ -552,9 +546,9 @@ function R.StatusText()
     end
   end
   if used == 0 then
-    return "On, but no ring has a key yet: pick a ring, tick \"Use this ring\" and set its key."
+    return L["On, but no ring has a key yet: pick a ring, tick \"Use this ring\" and set its key."]
   end
-  return ("On: %d %s with a key."):format(used, used == 1 and "ring" or "rings")
+  return used == 1 and L["On: 1 ring with a key."] or L["On: %d rings with a key."]:format(used)
 end
 
 function R.RefreshPage()
@@ -575,13 +569,13 @@ function R.RefreshPage()
     control:SetEnabled(not combat)
   end
   view.add:SetEnabled(not combat and #R.Rings() < R.MAX_RINGS)
-  view.delete:SetText(ring and view.confirmDelete == ring.id and "Click to delete" or "Delete")
+  view.delete:SetText(ring and view.confirmDelete == ring.id and L["Click to delete"] or L["Delete"])
   if not view.name:HasFocus() then
-    view.name:SetText(ring and ring.name or "")
+    view.name:SetText(ring and R.RingName(ring) or "")
   end
   view.enabled:SetChecked(ring and ring.enabled or false)
   if view.capturing then
-    view.key:SetText("Press a key (Escape cancels)")
+    view.key:SetText(L["Press a key (Escape cancels)"])
   else
     view.key:SetText(ring and R.KeyText(ring.key) or "")
   end
@@ -603,10 +597,9 @@ function R.RefreshPage()
     slot.ring:SetAlpha(info and 1 or 0.4)
   end
   if ring and ring.auto then
-    view.auto:SetText("Filled from what this character knows and carries. Change a slot to make the list "
-      .. "your own.")
+    view.auto:SetText(L["Filled from what this character knows and carries. Change a slot to make the list your own."])
   elseif ring and ring.preset and R.Preset(ring.preset) and R.Preset(ring.preset).auto then
-    view.auto:SetText("Your own list now. \"Fill from what you know\" goes back to the premade one.")
+    view.auto:SetText(L["Your own list now. \"Fill from what you know\" goes back to the premade one."])
   else
     view.auto:SetText("")
   end
@@ -614,7 +607,7 @@ function R.RefreshPage()
 
   -- preview
   local preview = view.preview
-  preview.name:SetText(ring and ring.name or "")
+  preview.name:SetText(ring and R.RingName(ring) or "")
   local count = 0
   for index = 1, R.MAX_SLICES do
     local info = slices[index] and R.Info(slices[index])

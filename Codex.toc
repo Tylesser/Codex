@@ -12,6 +12,14 @@
 ## X-Website: https://tylesser.com/codex/
 
 Tylesser.lua
+Locales\Skins.lua
+Locales\QoL.lua
+Locales\Trade.lua
+Locales\Commerce.lua
+Locales\Ports.lua
+Locales\ProcLocales.lua
+Locales\CrierLocales.lua
+Locales\Core.lua
 Core.lua
 Gathering.lua
 QuestOrder.lua

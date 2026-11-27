@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Quality of life: a list of small options, each one a toggle in CodexDB.qol. A toggle is added with
 -- Q.AddToggle({ key, name, desc, default, order, Enable, Elsewhere }) from its own file (listed in QoL.xml after
@@ -121,7 +122,7 @@ end
 
 function Q.StatusText()
   if not Q.running then
-    return "Off."
+    return L["Off."]
   end
   local on, total = 0, #Q.toggles
   for _, toggle in ipairs(Q.toggles) do
@@ -129,15 +130,14 @@ function Q.StatusText()
       on = on + 1
     end
   end
-  return ("%d of %d option%s on."):format(on, total, total == 1 and "" or "s")
+  return (total == 1 and L["%d of 1 option on."] or L["%d of %d options on."]):format(on, total)
 end
 
 ns.RegisterModule({
   id = "qol",
-  name = "Quality of life",
+  name = L["Quality of life"],
   icon = "Interface\\Icons\\INV_Misc_Gear_01",
-  desc = "Small conveniences, each with its own switch: faster loot, quest and gathering info in tooltips, "
-    .. "zone levels, unexplored areas, dungeons and town services on the map, glowing proc abilities, new spell ranks, numbers on cooldowns and key binding by hovering on your bars, a skull key for your role, a Whisper button for group leaders, and Learn all at trainers.",
+  desc = L["Small conveniences, each with its own switch: faster loot, quest and gathering info in tooltips, zone levels, unexplored areas, dungeons and town services on the map, glowing proc abilities, new spell ranks, numbers on cooldowns and key binding by hovering on your bars, a skull key for your role, a Whisper button for group leaders, and Learn all at trainers."],
   order = 97,
   area = "general",
   sectionOrder = 90,

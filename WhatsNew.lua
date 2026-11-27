@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 local UI = ns.UI
 
 -- What's new (2026-11-22, the user's request: "whats new page automatically opened when addon updated in game,
@@ -85,7 +86,7 @@ local function Fill(sections, current)
     local heading = UI.Text(body, "head", 15, "bright")
     heading:SetPoint("TOPLEFT", 0, -y)
     heading:SetWidth(width)
-    heading:SetText(section.version:lower() == "unreleased" and "Not released yet" or section.version)
+    heading:SetText(section.version:lower() == "unreleased" and L["Not released yet"] or section.version)
     window.lines[#window.lines + 1] = heading
     y = y + 24
     for _, item in ipairs(section.items) do
@@ -110,7 +111,7 @@ local function Fill(sections, current)
     end
   end
   body:SetSize(width, math.max(1, y))
-  window.title:SetText(current and ("What's new in Codex " .. current) or "What's new in Codex")
+  window.title:SetText(current and L["What's new in Codex %s"]:format(current) or L["What's new in Codex"])
 end
 
 local function Layout()
@@ -135,7 +136,7 @@ local function Build()
   if type(UISpecialFrames) == "table" then
     table.insert(UISpecialFrames, "CodexWhatsNew")
   end
-  window.title = UI.Heading(window, "What's new in Codex", 17)
+  window.title = UI.Heading(window, L["What's new in Codex"], 17)
   window.title:SetPoint("TOPLEFT", 20, -16)
   window.title:SetPoint("RIGHT", -44, 0)
   local close = UI.CloseButton(window)
@@ -145,9 +146,9 @@ local function Build()
   scroll:SetPoint("BOTTOMRIGHT", -16, 54)
   window.scroll, window.body = scroll, body
 
-  local again = UI.Check(window, "Show this after each update")
+  local again = UI.Check(window, L["Show this after each update"])
   again:SetPoint("BOTTOMLEFT", 16, 16)
-  again.label:SetText("Show this after each update")
+  again.label:SetText(L["Show this after each update"])
   again:SetScript("OnShow", function(self)
     self:SetChecked(ns.db.whatsNew ~= false)
   end)
@@ -155,12 +156,12 @@ local function Build()
     ns.db.whatsNew = self:GetChecked() and true or false
   end)
   window.again = again
-  local ok = UI.Button(window, 110, 26, "Close")
+  local ok = UI.Button(window, 110, 26, L["Close"])
   ok:SetPoint("BOTTOMRIGHT", -16, 14)
   ok:SetScript("OnClick", function()
     window:Hide()
   end)
-  local open = UI.Button(window, 120, 26, "Open Codex")
+  local open = UI.Button(window, 120, 26, L["Open Codex"])
   open:SetPoint("RIGHT", ok, "LEFT", -8, 0)
   open:SetScript("OnClick", function()
     window:Hide()
@@ -185,7 +186,7 @@ function ns.ShowWhatsNew(sections, current)
     sections = ns.WhatsNewFor(nil, nil)
   end
   if #sections == 0 then
-    ns.Say("no notes for this version.")
+    ns.Say(L["no notes for this version."])
     return
   end
   if not window then

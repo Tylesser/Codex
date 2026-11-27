@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- The search box on top of the sidebar: finds any option by its label, its section's or its page's name. The index
 -- is built from the widgets themselves the first time something is searched: every area page and every section's
@@ -22,12 +23,37 @@ local function Clean(text)
   return text
 end
 
+-- Lower case also for the accented Latin capitals (UTF-8 C3 80-9E) and Cyrillic ones (А-Я, Ё), which Lua's lower
+-- leaves alone: the translated pages (2026-11-27) are found whatever case the player types.
+local function Lower(text)
+  text = text:lower():gsub("\195([\128-\158])", function(c)
+    return c == "\151" and "\195\151" or "\195" .. string.char(c:byte() + 32)
+  end)
+  text = text:gsub("\208([\128-\175])", function(c)
+    local b = c:byte()
+    if b == 129 then
+      return "\209\145" -- Ё
+    elseif b >= 144 and b <= 159 then
+      return "\208" .. string.char(b + 32) -- А-П
+    elseif b >= 160 then
+      return "\209" .. string.char(b - 32) -- Р-Я
+    end
+    return "\208" .. c
+  end)
+  return text
+end
+
+-- Letters, not bytes (Cyrillic and accents take two bytes each).
+local function Length(text)
+  return select(2, text:gsub("[^\128-\191]", ""))
+end
+
 -- A text worth finding: a name, not a sentence of help, a value or a number.
 local function Indexable(text)
-  if not text or #text < 3 or #text > 64 then
+  if not text or Length(text) < 3 or Length(text) > 64 then
     return false
   end
-  if not text:find("%a") then
+  if not text:find("[%a\192-\255]") then
     return false
   end
   if text:find("%.$") or text:find("%. ") then
@@ -72,7 +98,7 @@ local function AreaName(id)
 end
 
 local function Add(entry)
-  entry.lower = entry.text:lower()
+  entry.lower = Lower(entry.text)
   index[#index + 1] = entry
 end
 
@@ -93,20 +119,20 @@ function ns.SearchIndex()
         local extra = {}
         for _, word in ipairs(def.keywords or {}) do
           if type(word) == "string" then
-            extra[#extra + 1] = word:lower()
+            extra[#extra + 1] = Lower(word)
           end
         end
         -- a page with one section of its own name (Rings, Info bars) lists once, as the page
-        if def.title:lower() ~= area.name:lower() then
+        if Lower(def.title) ~= Lower(area.name) then
           Add({ text = def.title, area = area.id, section = def.id, widget = section.header, kind = "section",
             order = order, extra = table.concat(extra, " ") })
         end
-        local seen = { [def.title:lower()] = true }
+        local seen = { [Lower(def.title)] = true }
         if section.holder then
           Walk(section.holder, function(fontString, own)
             local text = Clean(own or fontString:GetText())
-            if Indexable(text) and not seen[text:lower()] then
-              seen[text:lower()] = true
+            if Indexable(text) and not seen[Lower(text)] then
+              seen[Lower(text)] = true
               Add({ text = text, area = area.id, section = def.id, widget = fontString, kind = "option",
                 order = order + 1 })
             end
@@ -135,14 +161,14 @@ function ns.SearchOptions(query)
     return {}
   end
   local words = {}
-  for word in query:lower():gmatch("%S+") do
+  for word in Lower(query):gmatch("%S+") do
     words[#words + 1] = word
   end
-  local whole = query:lower()
+  local whole = Lower(query)
   local results = {}
   for _, entry in ipairs(ns.SearchIndex()) do
-    local where = entry.lower .. " " .. (SectionTitle(entry.section) or ""):lower() .. " "
-      .. AreaName(entry.area):lower() .. " " .. (entry.extra or "")
+    local where = entry.lower .. " " .. Lower(SectionTitle(entry.section) or "") .. " "
+      .. Lower(AreaName(entry.area)) .. " " .. (entry.extra or "")
     local all = true
     for _, word in ipairs(words) do
       if not where:find(word, 1, true) then
@@ -184,7 +210,7 @@ end
 function ns.SearchPath(entry)
   local area = AreaName(entry.area)
   if entry.kind == "page" then
-    return "Page"
+    return L["Page"]
   end
   if entry.kind == "section" then
     return area
@@ -294,7 +320,7 @@ function ns.BuildSearch(window, side, sideWidth)
   hint:SetPoint("RIGHT", -24, 0)
   hint:SetJustifyH("LEFT")
   hint:SetWordWrap(false)
-  hint:SetText("Search options...")
+  hint:SetText(L["Search options..."])
   search.hint = hint
   local clear = UI.Button(box, 18, 18, "x")
   clear:SetPoint("RIGHT", -3, 0)
@@ -342,7 +368,7 @@ function ns.BuildSearch(window, side, sideWidth)
   empty:SetPoint("TOPLEFT", 8, -6)
   empty:SetWidth(width - 8)
   empty:SetJustifyH("LEFT")
-  empty:SetText("No options match.")
+  empty:SetText(L["No options match."])
   empty:Hide()
   search.empty = empty
   window.search = search

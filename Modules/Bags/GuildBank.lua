@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Bags module, part 9: the guild bank window. At the guild vault (GUILDBANKFRAME_OPENED) the game's
 -- GuildBankFrame (Blizzard_GuildBankUI, loaded on demand) stays open but is parked like the bank window,
@@ -66,26 +67,26 @@ end
 -- "Full access, 5 stacks left today", "Deposit only", ... (the game's own rules).
 function G.RightsText(info)
   if not info.viewable then
-    return "You can't view this tab"
+    return L["You can't view this tab"]
   end
   local access
   if not info.canDeposit and info.withdrawals == 0 then
-    access = "View only"
+    access = L["View only"]
   elseif not info.canDeposit then
-    access = "Withdraw only"
+    access = L["Withdraw only"]
   elseif info.withdrawals == 0 then
-    access = "Deposit only"
+    access = L["Deposit only"]
   else
-    access = "Full access"
+    access = L["Full access"]
   end
   if info.withdrawals ~= 0 then
     local left
     if info.remaining > 0 then
-      left = ("%d stack%s left today"):format(info.remaining, info.remaining == 1 and "" or "s")
+      left = info.remaining == 1 and L["1 stack left today"] or L["%d stacks left today"]:format(info.remaining)
     elseif info.remaining == 0 then
-      left = "no withdrawals left today"
+      left = L["no withdrawals left today"]
     else
-      left = "unlimited withdrawals"
+      left = L["unlimited withdrawals"]
     end
     access = access .. ", " .. left
   end
@@ -181,7 +182,7 @@ local function TabButton(index)
     G.SelectTab(self.tab)
   end, function(self)
     local info = G.TabInfo(self.tab)
-    return { info.name or ("Tab " .. self.tab), G.RightsText(info) }
+    return { info.name or L["Tab %d"]:format(self.tab), G.RightsText(info) }
   end)
   button:SetSize(TAB, TAB)
   button.icon:SetSize(TAB - 8, TAB - 8)
@@ -220,11 +221,11 @@ local function UpdateMoney()
   local guild = Call("GetGuildBankMoney") or 0
   local limit = Call("GetGuildBankWithdrawMoney")
   local canWithdraw = Call("CanWithdrawGuildBankMoney") and true or false
-  local text = "Guild " .. ns.Money(guild)
+  local text = L["Guild %s"]:format(ns.Money(guild))
   if canWithdraw and limit and limit >= 0 then
-    text = text .. "   |cff999999You may take|r " .. ns.Money(math.min(limit, guild))
+    text = text .. "   |cff999999" .. L["You may take"] .. "|r " .. ns.Money(math.min(limit, guild))
   elseif canWithdraw then
-    text = text .. "   |cff999999No limit|r"
+    text = text .. "   |cff999999" .. L["No limit"] .. "|r"
   end
   frame.money.text:SetText(text)
   frame.withdraw:SetEnabled(canWithdraw and (not limit or limit ~= 0))
@@ -263,11 +264,11 @@ function G.Refresh()
   end
   local info = count > 0 and G.TabInfo(current) or nil
   if not info then
-    frame.info:SetText("The guild has no bank tabs yet.")
+    frame.info:SetText(L["The guild has no bank tabs yet."])
   elseif not info.viewable then
-    frame.info:SetText("No tab you can view.")
+    frame.info:SetText(L["No tab you can view."])
   else
-    frame.info:SetText(("|cffffffff%s|r   %s"):format(info.name or ("Tab " .. current), G.RightsText(info)))
+    frame.info:SetText(("|cffffffff%s|r   %s"):format(info.name or L["Tab %d"]:format(current), G.RightsText(info)))
   end
   local show = info and info.viewable
   local filled = 0
@@ -290,7 +291,7 @@ function G.Refresh()
       button:Hide()
     end
   end
-  frame.free:SetText(show and ("Free %d / %d"):format(SLOTS - filled, SLOTS) or "")
+  frame.free:SetText(show and L["Free %d / %d"]:format(SLOTS - filled, SLOTS) or "")
   UpdateMoney()
   ApplySearch()
 end
@@ -358,10 +359,10 @@ function G.CreateWindow()
   frame = B.NewWindow("CodexGuildBankFrame", "guildBankPoint", { "TOPLEFT", "TOPLEFT", 40, -120 })
   B.TitleBar(frame)
   local top = -(5 + title + 11)
-  frame.log = B.TextButton(frame, 60, "Log", function()
+  frame.log = B.TextButton(frame, 60, L["Log"], function()
     G.ToggleLog()
   end, function()
-    return { "Guild bank log", "Shows the game's guild bank window with its logs. Click again to hide it." }
+    return { L["Guild bank log"], L["Shows the game's guild bank window with its logs. Click again to hide it."] }
   end)
   frame.log:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -pad, top)
   frame.search = B.SearchBox(frame, frame.log, function(text)
@@ -389,12 +390,12 @@ function G.CreateWindow()
   end
   B.Footer(frame)
   frame.money:SetScript("OnEnter", nil)
-  frame.deposit = B.TextButton(frame.band, 70, "Deposit", function()
+  frame.deposit = B.TextButton(frame.band, 70, L["Deposit"], function()
     ShowPopup("GUILDBANK_DEPOSIT")
   end)
   frame.deposit:SetHeight(22)
   frame.deposit:SetPoint("RIGHT", frame.band, "CENTER", 30, 0)
-  frame.withdraw = B.TextButton(frame.band, 70, "Withdraw", function()
+  frame.withdraw = B.TextButton(frame.band, 70, L["Withdraw"], function()
     ShowPopup("GUILDBANK_WITHDRAW")
   end)
   frame.withdraw:SetHeight(22)
@@ -404,7 +405,7 @@ function G.CreateWindow()
   frame.money:SetPoint("LEFT", frame.withdraw, "RIGHT", 10, 0)
   local width = left + COLUMNS * cell - spacing + pad
   frame:SetSize(math.max(width, 560), frame.top + INFO + PER_COLUMN * cell - spacing + select(9, B.Sizes()))
-  frame.title:SetText(ns.Theme().titlebar.upper and "GUILD BANK" or "Guild bank")
+  frame.title:SetText(ns.Theme().titlebar.upper and L["Guild bank"]:upper() or L["Guild bank"])
   frame:SetScript("OnShow", function()
     G.Refresh()
   end)

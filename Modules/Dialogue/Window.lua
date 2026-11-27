@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- The three styles' frames and the pieces they share (board R4-Gossip / R4-Quest; "B and C use the same pieces"):
 --   A  CodexDialogueFrame  a themed window (UI.Panel) where the game's would be, drag it by its top; as tall as
@@ -19,7 +20,7 @@ local T = ns.T
 local CIRCLE = "Interface\\AddOns\\Codex\\Media\\Circle"
 local BOOK_ICON = "Interface\\QuestFrame\\UI-QuestLog-BookIcon"
 local CHECK = "Interface\\Buttons\\UI-CheckBox-Check"
-local GAME_FONT = "Fonts\\FRIZQT__.TTF"
+local GAME_FONT = (STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF")
 
 -- Quest marks and difficulty colours (the game's), with darker ink versions for light paper (board R4).
 D.MARK = { gold = { 1, 0.82, 0 }, blue = { 0.31, 0.70, 1 }, grey = { 0.62, 0.62, 0.62 } }
@@ -1024,7 +1025,7 @@ function D.LayoutBar(bar)
   end
   bar.hint:ClearAllPoints()
   bar.hint:SetPoint("BOTTOMLEFT", 18 + (count > 1 and count * 12 + 6 or 0), 17)
-  bar.hint:SetText(count > 1 and (page.part or 1) < count and "Click the bar to read on" or "")
+  bar.hint:SetText(count > 1 and (page.part or 1) < count and L["Click the bar to read on"] or "")
   -- buttons: right aligned in the bottom row
   local shown = {}
   for index, button in ipairs(bar.buttons) do

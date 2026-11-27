@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- The Codex window: title bar, a sidebar (a search box, Home, one page per part of the game, General, Look and
 -- Profiles) and the selected page. Every page but Home is one scrolling page of foldable sections (Areas.lua).
@@ -47,7 +48,7 @@ local function CreatePage(id)
       geterrorhandler()(err)
       local text = UI.Text(page, "body", 13, "bad")
       text:SetPoint("TOPLEFT", 4, -4)
-      text:SetText("This page failed to load: " .. tostring(err))
+      text:SetText(L["This page failed to load: %s"]:format(tostring(err)))
     end
   end
   return page
@@ -150,13 +151,13 @@ local function CreateBanner()
   end
   local text = UI.Text(banner, "body", 12, "bright")
   text:SetPoint("LEFT", 12, 0)
-  text:SetText("Your changes take effect after a reload.")
-  local reload = UI.Button(banner, 110, 24, "Reload now")
+  text:SetText(L["Your changes take effect after a reload."])
+  local reload = UI.Button(banner, 110, 24, L["Reload now"])
   reload:SetPoint("RIGHT", -6, 0)
   -- only reached in combat or when the secure button could not be made: the overlay takes the click
   reload:SetScript("OnClick", function()
-    ns.Say(InCombatLockdown() and "type /reload after the fight to apply your changes."
-      or "type /reload to apply your changes.")
+    ns.Say(InCombatLockdown() and L["type /reload after the fight to apply your changes."]
+      or L["type /reload to apply your changes."])
   end)
   banner.reload = reload
   banner:Hide()

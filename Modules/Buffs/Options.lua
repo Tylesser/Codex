@@ -1,4 +1,5 @@
 local addonName, codex = ...
+local L = codex.L
 local ns = codex.buffs
 local UI = codex.UI
 
@@ -80,35 +81,36 @@ end
 
 local function ModeTooltip(self)
   GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-  GameTooltip:AddLine("When to show this buff")
-  GameTooltip:AddLine("When missing: only while it's not on you.", 1, 1, 1)
-  GameTooltip:AddLine("When active: only while it's on you.", 1, 1, 1)
-  GameTooltip:AddLine("Always: dimmed with a red border while it's missing.", 1, 1, 1)
-  GameTooltip:AddLine("Click to change.", 0.6, 0.6, 0.6)
+  GameTooltip:AddLine(L["When to show this buff"])
+  GameTooltip:AddLine(L["When missing: only while it's not on you."], 1, 1, 1)
+  GameTooltip:AddLine(L["When active: only while it's on you."], 1, 1, 1)
+  GameTooltip:AddLine(L["Always: dimmed with a red border while it's missing."], 1, 1, 1)
+  GameTooltip:AddLine(L["Click to change."], 0.6, 0.6, 0.6)
   GameTooltip:Show()
 end
 
 local function ItemTooltip(self)
   local entry = self:GetParent().item
   GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-  GameTooltip:AddLine("Item to use")
-  GameTooltip:AddLine("Clicking the icon uses this item, like a food for Well Fed or an elixir.", 1, 1, 1, true)
+  GameTooltip:AddLine(L["Item to use"])
+  GameTooltip:AddLine(L["Clicking the icon uses this item, like a food for Well Fed or an elixir."], 1, 1, 1, true)
   if entry.slot then
-    GameTooltip:AddLine("For a weapon enchant: an oil, poison or sharpening stone, put on this weapon.", 1, 1, 1, true)
+    GameTooltip:AddLine(L["For a weapon enchant: an oil, poison or sharpening stone, put on this weapon."], 1, 1, 1, true)
   else
-    GameTooltip:AddLine("Without one, a bag item named after the buff is used when you don't know its spell.",
+    GameTooltip:AddLine(L["Without one, a bag item named after the buff is used when you don't know its spell."],
       1, 1, 1, true)
   end
-  GameTooltip:AddLine("Click: next usable item in your bags. Right-click: none.", 0.6, 0.6, 0.6, true)
-  GameTooltip:AddLine("Or type /codex buffs item " .. entry.name .. " = <item name>", 0.6, 0.6, 0.6, true)
+  GameTooltip:AddLine(L["Click: next usable item in your bags. Right-click: none."], 0.6, 0.6, 0.6, true)
+  -- (the command takes the entry's own name: for weapon enchants the English one)
+  GameTooltip:AddLine(L["Or type %s = <item name>"]:format("/codex buffs item " .. entry.name), 0.6, 0.6, 0.6, true)
   GameTooltip:Show()
 end
 
 local function AlertTooltip(self)
   GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-  GameTooltip:AddLine("Alert")
-  GameTooltip:AddLine("Play a sound and flash the icon when this buff drops during combat.", 1, 1, 1, true)
-  GameTooltip:AddLine("Only works while the game lets addons see your buffs in combat.", 0.6, 0.6, 0.6, true)
+  GameTooltip:AddLine(L["Alert"])
+  GameTooltip:AddLine(L["Play a sound and flash the icon when this buff drops during combat."], 1, 1, 1, true)
+  GameTooltip:AddLine(L["Only works while the game lets addons see your buffs in combat."], 0.6, 0.6, 0.6, true)
   GameTooltip:Show()
 end
 
@@ -116,13 +118,13 @@ end
 local function ItemLabel(entry)
   local id, auto = ns.ItemFor(entry)
   if not id then
-    return "Use item: none"
+    return L["Use item: none"]
   end
-  local name = ns.ItemName(id) or ("item " .. id)
+  local name = ns.ItemName(id) or L["item %s"]:format(id)
   if auto then
-    return "Use: " .. name .. " (auto)"
+    return L["Use: %s (auto)"]:format(name)
   end
-  return string.format("Use: %s (%d)", name, ns.ItemCount(id))
+  return L["Use: %s (%d)"]:format(name, ns.ItemCount(id))
 end
 
 -- A tracked row (UI.List row; row.item is the tracked entry).
@@ -165,7 +167,7 @@ local function CreateTrackedRow(row)
   row.use:SetScript("OnEnter", ItemTooltip)
   row.use:SetScript("OnLeave", Hide)
 
-  row.alert = ns.TightCheck(UI.Check(row, "Alert"))
+  row.alert = ns.TightCheck(UI.Check(row, L["Alert"]))
   row.alert:SetPoint("LEFT", row.use, "RIGHT", 6, 0)
   row.alert:SetScript("OnClick", function(self)
     self:GetParent().item.alert = self:GetChecked() and true or nil
@@ -174,7 +176,7 @@ local function CreateTrackedRow(row)
   row.alert:SetScript("OnLeave", Hide)
 
   -- where and when it shows (ConditionsOptions.lua): the row's rules, or its own
-  row.where = UI.Button(row, 54, 20, "Where")
+  row.where = UI.Button(row, 54, 20, L["Where"])
   row.where:SetPoint("TOPRIGHT", -2, -27)
   row.where:SetScript("OnClick", function(self)
     ns.OpenConditions(self:GetParent().item, self)
@@ -187,7 +189,7 @@ end
 
 local function UpdateTrackedRow(row, entry)
   SetIcon(row.icon, ns.EntryIcon(entry))
-  row.name:SetText(entry.name)
+  row.name:SetText(ns.EntryName(entry))
   row.mode:SetText(ns.MODE_LABELS[entry.mode])
   row.use:SetText(ItemLabel(entry))
   row.alert:SetChecked(entry.alert or false)
@@ -226,7 +228,7 @@ end
 
 local function UpdatePickerRow(row, item)
   SetIcon(row.icon, item.icon)
-  row.name:SetText(item.name)
+  row.name:SetText(item.label or item.name)
   row.tag:SetText(item.tag)
 end
 
@@ -243,26 +245,28 @@ local function RefreshPicker()
   local filter = strtrim(searchBox:GetText() or ""):lower()
   local items, seen = {}, {}
 
-  local function Add(name, icon, tag, weaponSlot)
+  -- label: the text shown and searched, when it differs from the name (weapon enchant entries)
+  local function Add(name, icon, tag, weaponSlot, label)
     local key = name:lower()
     if seen[key] or ns.IsTracked(name) then
       return
     end
     seen[key] = true
-    if filter ~= "" and not key:find(filter, 1, true) then
+    if filter ~= "" and not key:find(filter, 1, true) and not (label and label:lower():find(filter, 1, true)) then
       return
     end
-    items[#items + 1] = { name = name, icon = icon, tag = tag, weaponSlot = weaponSlot }
+    items[#items + 1] = { name = name, icon = icon, tag = tag, weaponSlot = weaponSlot, label = label }
   end
 
   for _, buff in ipairs(ns.buffs) do
-    Add(buff.name, buff.icon, "on you")
+    Add(buff.name, buff.icon, L["on you"])
   end
   for _, spell in ipairs(spellbook) do
     Add(spell.name, spell.icon, "")
   end
   for _, slot in ipairs(ns.WEAPON_SLOTS) do
-    Add(ns.WEAPON_NAMES[slot], GetInventoryItemTexture and GetInventoryItemTexture("player", slot), "weapon", slot)
+    Add(ns.WEAPON_NAMES[slot], GetInventoryItemTexture and GetInventoryItemTexture("player", slot), L["weapon"], slot,
+      ns.WEAPON_LABELS[slot])
   end
   pickerList:SetItems(items)
   pickerEmpty:SetShown(#items == 0)
@@ -271,7 +275,7 @@ local function RefreshPicker()
   if ns.scanComplete then
     status:SetText("")
   else
-    status:SetText("The game is hiding your buffs right now. They'll update when it stops.")
+    status:SetText(L["The game is hiding your buffs right now. They'll update when it stops."])
   end
 end
 
@@ -281,11 +285,11 @@ local function RefreshMain()
   end
   lockCheck:SetChecked(ns.db.locked)
   clickCheck:SetChecked(ns.db.clickToCast)
-  sizeText:SetText("Icon size: " .. ns.db.iconSize)
-  shapeButton:SetText(ns.RoundFromSettings() and "Shape: Circle (Round icons)"
-    or ("Shape: " .. (ns.SHAPE_LABELS[ns.db.iconShape] or "Square")))
+  sizeText:SetText(L["Icon size: %d"]:format(ns.db.iconSize))
+  shapeButton:SetText(ns.RoundFromSettings() and L["Shape: Circle (Round icons)"]
+    or L["Shape: %s"]:format(ns.SHAPE_LABELS[ns.db.iconShape] or L["Square"]))
   local preset = ns.PresetBuffs()
-  presetButton:SetText("Add " .. (UnitClass("player") or "class") .. " basics")
+  presetButton:SetText(L["Add %s basics"]:format(UnitClass("player") or L["class"]))
   presetButton:SetShown(preset ~= nil)
   presetButton:SetEnabled(preset ~= nil and #preset > 0)
   RefreshTracked()
@@ -305,9 +309,9 @@ local function PresetTooltip(self)
   GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
   GameTooltip:AddLine(self:GetText())
   if #list > 0 then
-    GameTooltip:AddLine("Adds: " .. table.concat(list, ", "), 1, 1, 1, true)
+    GameTooltip:AddLine(L["Adds: %s"]:format(table.concat(list, ", ")), 1, 1, 1, true)
   else
-    GameTooltip:AddLine("You already track the basic buffs of your class that you know.", 1, 1, 1, true)
+    GameTooltip:AddLine(L["You already track the basic buffs of your class that you know."], 1, 1, 1, true)
   end
   GameTooltip:Show()
 end
@@ -333,13 +337,13 @@ end
 local function BuildTrackedTab(tab)
   panel = tab
 
-  lockCheck = ns.TightCheck(UI.Check(tab, "Lock position (untick to drag the icons)"))
+  lockCheck = ns.TightCheck(UI.Check(tab, L["Lock position (untick to drag the icons)"]))
   lockCheck:SetPoint("TOPLEFT", 0, -4)
   lockCheck:SetScript("OnClick", function(self)
     ns.SetLocked(self:GetChecked() and true or false)
   end)
 
-  clickCheck = ns.TightCheck(UI.Check(tab, "Click icons to cast (out of combat)"))
+  clickCheck = ns.TightCheck(UI.Check(tab, L["Click icons to cast (out of combat)"]))
   clickCheck:SetPoint("TOPLEFT", lockCheck, "BOTTOMLEFT", 0, -4)
   clickCheck:SetScript("OnClick", function(self)
     ns.SetClickToCast(self:GetChecked() and true or false)
@@ -364,12 +368,12 @@ local function BuildTrackedTab(tab)
   status = UI.Text(tab, "body", 11, "warn")
   status:SetPoint("TOPLEFT", 0, -58)
 
-  local trackedTitle = ns.SectionHeading(tab, "Tracked buffs", LEFT_WIDTH)
+  local trackedTitle = ns.SectionHeading(tab, L["Tracked buffs"], LEFT_WIDTH)
   trackedTitle:SetPoint("TOPLEFT", 0, -74)
 
   -- "Add Mage basics": the class buffs you know (Core.lua, ns.PRESETS). Hidden for other classes.
   -- where and when the whole row shows (ConditionsOptions.lua)
-  local rowWhere = UI.Button(tab, 140, 22, "Where the row shows")
+  local rowWhere = UI.Button(tab, 140, 22, L["Where the row shows"])
   rowWhere:SetPoint("TOPLEFT", 0, -94)
   rowWhere:SetScript("OnClick", function(self)
     ns.OpenConditions("row", self)
@@ -388,7 +392,7 @@ local function BuildTrackedTab(tab)
   presetButton:SetScript("OnEnter", PresetTooltip)
   presetButton:SetScript("OnLeave", Hide)
 
-  local addTitle = ns.SectionHeading(tab, "Add a buff", RIGHT_WIDTH)
+  local addTitle = ns.SectionHeading(tab, L["Add a buff"], RIGHT_WIDTH)
   addTitle:SetPoint("TOPLEFT", RIGHT_X, -74)
 
   searchBox = UI.EditBox(tab, RIGHT_WIDTH, 22)
@@ -400,14 +404,14 @@ local function BuildTrackedTab(tab)
 
   searchHint = UI.Text(searchBox, "body", 11, "muted")
   searchHint:SetPoint("LEFT", 6, 0)
-  searchHint:SetText("Search, or type a name or spell ID")
+  searchHint:SetText(L["Search, or type a name or spell ID"])
 
   trackedList = UI.List(tab, { rowHeight = TRACKED_ROW_HEIGHT, CreateRow = CreateTrackedRow,
     UpdateRow = UpdateTrackedRow })
   trackedList:SetPoint("TOPLEFT", 0, LIST_TOP)
   trackedList:SetPoint("BOTTOMLEFT", 0, 0)
   trackedList:SetWidth(LEFT_WIDTH)
-  trackedEmpty = ns.HelpText(trackedList, "Nothing tracked yet. Pick a buff from the list on the right.",
+  trackedEmpty = ns.HelpText(trackedList, L["Nothing tracked yet. Pick a buff from the list on the right."],
     LEFT_WIDTH - 16)
   trackedEmpty:SetPoint("TOPLEFT", 8, -8)
 
@@ -416,7 +420,7 @@ local function BuildTrackedTab(tab)
   pickerList:SetPoint("BOTTOMLEFT", RIGHT_X, 0)
   pickerList:SetWidth(RIGHT_WIDTH)
   pickerEmpty = ns.HelpText(pickerList,
-    "No matches. Press Enter to track this name anyway. It must match the buff's name exactly.", RIGHT_WIDTH - 16)
+    L["No matches. Press Enter to track this name anyway. It must match the buff's name exactly."], RIGHT_WIDTH - 16)
   pickerEmpty:SetPoint("TOPLEFT", 8, -8)
 
   ns.trackedList, ns.pickerList = trackedList, pickerList
@@ -435,18 +439,16 @@ local tabFrames = {}
 -- A module that is off (or left to the standalone Buff Tracker) never ran Enable: no saved data,
 -- so the section only says why.
 local function BuildOffPage(page)
-  local heading = UI.Heading(page, "Buffs", 20)
+  local heading = UI.Heading(page, L["Buffs"], 20)
   heading:SetPoint("TOPLEFT")
   local text = UI.Text(page, "body", 12, "text")
   text:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -10)
   text:SetWidth(600)
   text:SetJustifyH("LEFT")
   if codex.ModuleState("buffs") == "standalone" then
-    text:SetText("Buff Tracker is installed on its own, so Codex leaves buffs to it. Use /btrack for its options, "
-      .. "or pick \"Use Codex's instead\" at the top of this section.")
+    text:SetText(L["Buff Tracker is installed on its own, so Codex leaves buffs to it. Use %s for its options, or pick \"Use Codex's instead\" at the top of this section."]:format("/btrack"))
   else
-    text:SetText("The buff tracker is off, or switched on since the last reload. Switch it on at the top of the "
-      .. "Buff tracker section and reload to use it.")
+    text:SetText(L["The buff tracker is off, or switched on since the last reload. Switch it on at the top of the Buff tracker section and reload to use it."])
   end
   return { Height = function()
     return 70
@@ -458,11 +460,11 @@ function ns.BuildPage(module, page)
   if not ns.db then
     return BuildOffPage(page)
   end
-  local heading = UI.Heading(page, "Buffs", 20)
+  local heading = UI.Heading(page, L["Buffs"], 20)
   heading:SetPoint("TOPLEFT")
   local intro = UI.Text(page, "body", 12, "muted")
   intro:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -4)
-  intro:SetText("Choose the buffs to watch. The list is saved per character.")
+  intro:SetText(L["Choose the buffs to watch. The list is saved per character."])
   local tab = CreateFrame("Frame", nil, page)
   tab:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", 0, -12)
   tab:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", 0, 0)
@@ -493,7 +495,7 @@ local function SubSection(id, key, title, order, height, estimate, build, show, 
     notice = function()
       local state = codex.ModuleState("buffs")
       if state == "off" then
-        return "The buff tracker is off (the switch of the Buff tracker section above)."
+        return L["The buff tracker is off (the switch of the Buff tracker section above)."]
       end
       return nil
     end,
@@ -512,10 +514,11 @@ local function SubSection(id, key, title, order, height, estimate, build, show, 
     end,
   })
 end
-SubSection("buffs-party", "party", "Party buff buttons", 12, 580, nil, function(holder) ns.BuildPartyTab(holder) end,
-  function() ns.ShowPartyTab() end, { "party buffs blessings reagents range click to buff" })
-SubSection("buffs-dispel", "dispel", "Dispel buttons", 14, nil, 400, function(holder) ns.BuildDispelTab(holder) end,
-  function() ns.ShowDispelTab() end, { "dispels poison curse disease magic" })
+SubSection("buffs-party", "party", L["Party buff buttons"], 12, 580, nil, function(holder) ns.BuildPartyTab(holder) end,
+  function() ns.ShowPartyTab() end,
+  { "party buffs blessings reagents range click to buff", L["party buffs blessings reagents range click to buff"] })
+SubSection("buffs-dispel", "dispel", L["Dispel buttons"], 14, nil, 400, function(holder) ns.BuildDispelTab(holder) end,
+  function() ns.ShowDispelTab() end, { "dispels poison curse disease magic", L["dispels poison curse disease magic"] })
 
 -- Opens the Buffs page at a section: "tracked" (default, the buff tracker), "party" or "dispel".
 local SECTION_OF = { tracked = "buffs", party = "buffs-party", dispel = "buffs-dispel" }

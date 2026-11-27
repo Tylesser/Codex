@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Quest tracker, part 3: the module (the user's request, 2026-11-20: "show the zone names as groups", option 2 =
 -- Codex's own tracker). Settings `CodexDB.questtracker` (width, background, yield, foldOthers, collapsed, point),
@@ -11,9 +12,9 @@ local QT = ns.questtracker
 local QO = ns.QuestOrder
 
 local DEFAULTS = { width = 260, background = true, yield = true, foldOthers = false, collapsed = false }
-QT.WIDTHS = { { 220, "Narrow" }, { 260, "Normal" }, { 300, "Wide" } }
+QT.WIDTHS = { { 220, L["Narrow"] }, { 260, L["Normal"] }, { 300, L["Wide"] } }
 -- nil = the game's tracker's own height (its Edit Mode "Height", or down to the screen's bottom in its default place)
-QT.HEIGHTS = { { false, "Game's" }, { 300, "300" }, { 450, "450" }, { 600, "600" }, { 800, "800" } }
+QT.HEIGHTS = { { false, L["Game's"] }, { 300, "300" }, { 450, "450" }, { 600, "600" }, { 800, "800" } }
 
 local events
 local pending = false
@@ -80,7 +81,7 @@ end
 -- Clicks on a quest, as Blizzard's tracker does them.
 local function OpenQuest(questID)
   if InCombat() then
-    ns.Say("The quest log opens after the fight.")
+    ns.Say(L["The quest log opens after the fight."])
     return
   end
   if type(QuestMapFrame_OpenToQuestDetails) == "function" then
@@ -103,7 +104,7 @@ local function LinkInChat(questID)
 end
 
 function QT.Menu(questID, anchor)
-  local title = QO.Str(QO.Ask(QO.API("GetTitleForQuestID"), questID)) or "Quest"
+  local title = QO.Str(QO.Ask(QO.API("GetTitleForQuestID"), questID)) or L["Quest"]
   local focused = C_SuperTrack and QO.Num(QO.Ask(C_SuperTrack.GetSuperTrackedQuestID)) == questID
   local list = { { text = title, title = true } }
   if C_SuperTrack then
@@ -256,20 +257,23 @@ end
 
 function QT.StatusText()
   if ns.ModuleState("questtracker") ~= "on" then
-    return "Off: the game's quest tracker is shown."
+    return L["Off: the game's quest tracker is shown."]
   end
   if QT.otherAddon then
-    return "Another addon has replaced the game's tracker, so Codex leaves the quests to it."
+    return L["Another addon has replaced the game's tracker, so Codex leaves the quests to it."]
   end
   if QT.running and QT.Yielding() then
-    return "The game's tracker is showing other objectives, so it shows your quests for now."
+    return L["The game's tracker is showing other objectives, so it shows your quests for now."]
   end
   local count = 0
   for _, group in ipairs(QT.groups or {}) do
     count = count + #group.quests
   end
-  return ("%d tracked quest%s in %d zone%s."):format(count, count == 1 and "" or "s", #(QT.groups or {}),
-    #(QT.groups or {}) == 1 and "" or "s")
+  local zones = #(QT.groups or {})
+  if count == 1 then
+    return zones == 1 and L["1 tracked quest in 1 zone."] or L["1 tracked quest in %d zones."]:format(zones)
+  end
+  return (zones == 1 and L["%d tracked quests in 1 zone."] or L["%d tracked quests in %d zones."]):format(count, zones)
 end
 
 local function RefreshPage()
@@ -298,7 +302,7 @@ end
 
 function QT.BuildPage(page)
   view.page = page
-  local heading = UI.Heading(page, "Codex quest tracker", 20)
+  local heading = UI.Heading(page, L["Codex quest tracker"], 20)
   heading:SetPoint("TOPLEFT")
   view.status = UI.Text(page, "body", 12, "muted")
   view.status:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -4)
@@ -308,32 +312,28 @@ function QT.BuildPage(page)
   about:SetPoint("TOPLEFT", view.status, "BOTTOMLEFT", 0, -14)
   about:SetPoint("RIGHT", 0, 0)
   about:SetJustifyH("LEFT")
-  about:SetText("Codex's own quest tracker shows your tracked quests under a heading per zone, the zone you're in "
-    .. "first, the nearest quest first. Click a zone to fold it. Click a quest to open it in the quest log, "
-    .. "Shift-click to stop tracking it, right-click for more. Quest items have their own button. Move it while "
-    .. "Edit Mode is open (right-click its handle to put it back). Switching it on or off takes a reload.")
+  about:SetText(L["Codex's own quest tracker shows your tracked quests under a heading per zone, the zone you're in first, the nearest quest first. Click a zone to fold it. Click a quest to open it in the quest log, Shift-click to stop tracking it, right-click for more. Quest items have their own button. Move it while Edit Mode is open (right-click its handle to put it back). Switching it on or off takes a reload."])
 
-  view.background = UI.Check(page, "Background")
+  view.background = UI.Check(page, L["Background"])
   view.background:SetPoint("TOPLEFT", about, "BOTTOMLEFT", 0, -16)
   view.background:SetScript("OnClick", function(self) Set("background", self:GetChecked() and true or false) end)
 
-  view.foldOthers = UI.Check(page, "Fold the zones you aren't in")
+  view.foldOthers = UI.Check(page, L["Fold the zones you aren't in"])
   view.foldOthers:SetPoint("TOPLEFT", view.background, "BOTTOMLEFT", 0, -8)
   view.foldOthers:SetScript("OnClick", function(self) Set("foldOthers", self:GetChecked() and true or false) end)
 
-  view.yield = UI.Check(page, "Show the game's tracker while it has other objectives")
+  view.yield = UI.Check(page, L["Show the game's tracker while it has other objectives"])
   view.yield:SetPoint("TOPLEFT", view.foldOthers, "BOTTOMLEFT", 0, -8)
   view.yield:SetScript("OnClick", function(self) Set("yield", self:GetChecked() and true or false) end)
   local yieldNote = UI.Text(page, "body", 11, "muted")
   yieldNote:SetPoint("TOPLEFT", view.yield, "BOTTOMLEFT", 26, -2)
   yieldNote:SetPoint("RIGHT", 0, 0)
   yieldNote:SetJustifyH("LEFT")
-  yieldNote:SetText("A dungeon scenario, a tracked recipe or achievement, bonus objectives: the game's tracker comes "
-    .. "back for them (with your quests) and Codex's steps aside until they're gone.")
+  yieldNote:SetText(L["A dungeon scenario, a tracked recipe or achievement, bonus objectives: the game's tracker comes back for them (with your quests) and Codex's steps aside until they're gone."])
 
   local widthLabel = UI.Text(page, "body", 12, "text")
   widthLabel:SetPoint("TOPLEFT", yieldNote, "BOTTOMLEFT", -26, -14)
-  widthLabel:SetText("Width")
+  widthLabel:SetText(L["Width"])
   view.widths = {}
   local last
   for _, entry in ipairs(QT.WIDTHS) do
@@ -350,7 +350,7 @@ function QT.BuildPage(page)
   end
   local heightLabel = UI.Text(page, "body", 12, "text")
   heightLabel:SetPoint("TOPLEFT", widthLabel, "BOTTOMLEFT", 0, -22)
-  heightLabel:SetText("Height")
+  heightLabel:SetText(L["Height"])
   view.heights = {}
   last = nil
   for _, entry in ipairs(QT.HEIGHTS) do
@@ -369,9 +369,8 @@ function QT.BuildPage(page)
   heightNote:SetPoint("TOPLEFT", view.heights[1], "BOTTOMLEFT", 0, -6)
   heightNote:SetPoint("RIGHT", 0, 0)
   heightNote:SetJustifyH("LEFT")
-  heightNote:SetText("Game's: as tall as the game's own tracker (its Edit Mode height). Quests that don't fit scroll "
-    .. "with the mouse wheel over the tracker, out of combat.")
-  local reset = UI.Button(page, 150, 24, "Put it back")
+  heightNote:SetText(L["Game's: as tall as the game's own tracker (its Edit Mode height). Quests that don't fit scroll with the mouse wheel over the tracker, out of combat."])
+  local reset = UI.Button(page, 150, 24, L["Put it back"])
   reset:SetPoint("TOPLEFT", heightNote, "BOTTOMLEFT", 0, -16)
   reset:SetScript("OnClick", function()
     QT.ResetPosition()
@@ -381,10 +380,10 @@ end
 
 ns.RegisterModule({
   id = "questtracker",
-  name = "Codex quest tracker",
+  name = L["Codex quest tracker"],
   area = "quests", sectionOrder = 28, pageEstimate = 330,
   icon = "Interface\\Icons\\INV_Misc_Book_09",
-  desc = "Codex's own quest tracker: your quests under a heading per zone, the zone you're in first.",
+  desc = L["Codex's own quest tracker: your quests under a heading per zone, the zone you're in first."],
   order = 96,
   Enable = function()
     QT.DB()

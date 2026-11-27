@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Personal bars, part 3: the module's page (which bars; width, when they show, text, layout) and its registration.
 
@@ -12,22 +13,22 @@ local COLUMN_GAP, ROW = 30, 26
 
 -- Left column: which bars. indent: belongs to the row above.
 local BARS = {
-  { key = "health", name = "Health" },
-  { key = "power", name = "Power (mana, rage or energy)" },
-  { key = "fsr", name = "Five-second rule spark", indent = true },
-  { key = "ticks", name = "Mana and energy ticks", indent = true },
-  { key = "castCost", name = "What the cast will spend", indent = true },
-  { key = "druidMana", name = "Druid: mana while in a form" },
-  { key = "combo", name = "Combo points (rogue, druid in cat form)" },
-  { key = "seal", name = "Paladin: seal time left" },
-  { key = "swing", name = "Swing timer (main and off hand)" },
-  { key = "ranged", name = "Ranged swing timer" },
-  { key = "standStill", name = "Stand-still zone (its last half second)", indent = true },
+  { key = "health", name = L["Health"] },
+  { key = "power", name = L["Power (mana, rage or energy)"] },
+  { key = "fsr", name = L["Five-second rule spark"], indent = true },
+  { key = "ticks", name = L["Mana and energy ticks"], indent = true },
+  { key = "castCost", name = L["What the cast will spend"], indent = true },
+  { key = "druidMana", name = L["Druid: mana while in a form"] },
+  { key = "combo", name = L["Combo points (rogue, druid in cat form)"] },
+  { key = "seal", name = L["Paladin: seal time left"] },
+  { key = "swing", name = L["Swing timer (main and off hand)"] },
+  { key = "ranged", name = L["Ranged swing timer"] },
+  { key = "standStill", name = L["Stand-still zone (its last half second)"], indent = true },
 }
 R.PAGE_BARS = BARS
 
-R.SHOW_MODES = { { key = "always", name = "Always" }, { key = "combat", name = "Only in combat" },
-  { key = "notfull", name = "When not full" } }
+R.SHOW_MODES = { { key = "always", name = L["Always"] }, { key = "combat", name = L["Only in combat"] },
+  { key = "notfull", name = L["When not full"] } }
 
 local function NameOf(list, key)
   for _, item in ipairs(list) do
@@ -41,19 +42,20 @@ end
 function R.StatusText()
   local state = ns.ModuleState("resource")
   if state ~= "on" then
-    return "Off: switch it on at the top of this section (then reload)."
+    return L["Off: switch it on at the top of this section (then reload)."]
   end
   if not R.running then
-    return "On after a reload."
+    return L["On after a reload."]
   end
-  local where = R.Beside() and "beside" or "under"
+  local beside = R.Beside()
   local show = R.DB().show
   if show == "combat" then
-    return "Shown " .. where .. " your character in combat."
+    return beside and L["Shown beside your character in combat."] or L["Shown under your character in combat."]
   elseif show == "notfull" then
-    return "Shown " .. where .. " your character while a bar isn't full (rage: while you have some)."
+    return beside and L["Shown beside your character while a bar isn't full (rage: while you have some)."]
+      or L["Shown under your character while a bar isn't full (rage: while you have some)."]
   end
-  return "Shown " .. where .. " your character."
+  return beside and L["Shown beside your character."] or L["Shown under your character."]
 end
 
 local function Wrap(text)
@@ -64,10 +66,10 @@ end
 
 -- The size steppers (R.SIZES): key, label; side = only for the bars beside the character.
 local STEPPERS = {
-  { key = "width", name = "Width" },
-  { key = "sideGap", name = "Side gap", side = true },
-  { key = "sideHeight", name = "Side height", side = true },
-  { key = "sideWidth", name = "Side width", side = true },
+  { key = "width", name = L["Width"] },
+  { key = "sideGap", name = L["Side gap"], side = true },
+  { key = "sideHeight", name = L["Side height"], side = true },
+  { key = "sideWidth", name = L["Side width"], side = true },
 }
 
 function R.RefreshPage()
@@ -109,7 +111,7 @@ function R.BuildPage(page)
   if icon.SetTexCoord then
     icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
   end
-  local heading = UI.Heading(page, "Personal bars", 22)
+  local heading = UI.Heading(page, L["Personal bars"], 22)
   heading:SetPoint("TOPLEFT", icon, "TOPRIGHT", 12, -1)
   view.status = Wrap(UI.Text(page, "body", 13, "muted"))
   view.status:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -4)
@@ -117,12 +119,10 @@ function R.BuildPage(page)
   local about = Wrap(UI.Text(page, "body", 13, "text"))
   about:SetPoint("TOPLEFT", icon, "BOTTOMLEFT", 0, -12)
   about:SetSpacing(2)
-  about:SetText("Slim health and power bars under or beside your character, with the timers that matter in a fight. "
-    .. "A spark crosses the mana bar for five seconds after you spend mana (no spirit regeneration then); a "
-    .. "fainter one shows when the next mana or energy tick comes. Seal and swing rows show only while they run.")
+  about:SetText(L["Slim health and power bars under or beside your character, with the timers that matter in a fight. A spark crosses the mana bar for five seconds after you spend mana (no spirit regeneration then); a fainter one shows when the next mana or energy tick comes. Seal and swing rows show only while they run."])
 
   -- left: which bars
-  local bars = UI.Section(page, "Bars")
+  local bars = UI.Section(page, L["Bars"])
   bars:SetPoint("TOPLEFT", about, "BOTTOMLEFT", 0, -16)
   for index, bar in ipairs(BARS) do
     local check = UI.Check(page, bar.name)
@@ -135,7 +135,7 @@ function R.BuildPage(page)
   end
 
   -- right: sizes, when they show, text, layout, place (one line every LINE pixels)
-  local look = UI.Section(page, "Look and place")
+  local look = UI.Section(page, L["Look and place"])
   look:SetPoint("TOPLEFT", about, "BOTTOMLEFT", columnWidth + COLUMN_GAP, -16)
   local LABEL, LINE = 92, 30
   local function Label(line, text)
@@ -177,16 +177,16 @@ function R.BuildPage(page)
   end
 
   Stepper(0, STEPPERS[1])
-  view.show = Picker(1, "Show", R.SHOW_MODES, "show", function() return R.DB().show end)
-  view.fade = UI.Check(page, "Fade out of combat")
+  view.show = Picker(1, L["Show"], R.SHOW_MODES, "show", function() return R.DB().show end)
+  view.fade = UI.Check(page, L["Fade out of combat"])
   view.fade.key = "fade"
   view.fade:SetPoint("TOPLEFT", look, "BOTTOMLEFT", -2, -12 - 2 * LINE + 4)
   view.fade:SetScript("OnClick", function(self)
     R.Set("fade", self:GetChecked() and true or false)
   end)
   view.checks[#view.checks + 1] = view.fade
-  view.text = Picker(3, "Text", R.TEXT_MODES, "text", R.TextMode)
-  view.layout = Picker(4, "Layout", R.LAYOUTS, "layout", R.LayoutMode)
+  view.text = Picker(3, L["Text"], R.TEXT_MODES, "text", R.TextMode)
+  view.layout = Picker(4, L["Layout"], R.LAYOUTS, "layout", R.LayoutMode)
   for index = 2, #STEPPERS do
     Stepper(3 + index, STEPPERS[index])
   end
@@ -194,10 +194,9 @@ function R.BuildPage(page)
   sideNote:SetPoint("TOPLEFT", look, "BOTTOMLEFT", 0, -12 - (#STEPPERS + 4) * LINE + 6)
   sideNote:SetWidth(columnWidth)
   sideNote:SetJustifyH("LEFT")
-  sideNote:SetText("Beside (upright or as arcs): health on the left, power on the right, the text at their tops; "
-    .. "combo points and timers stay under your character, as wide as Width. Short numbers (1.9K) follow Unit frames > Player, target, pet and focus.")
+  sideNote:SetText(L["Beside (upright or as arcs): health on the left, power on the right, the text at their tops; combo points and timers stay under your character, as wide as Width. Short numbers (1.9K) follow Unit frames > Player, target, pet and focus."])
 
-  local reset = UI.Button(page, 150, 24, "Reset position")
+  local reset = UI.Button(page, 150, 24, L["Reset position"])
   reset:SetPoint("TOPLEFT", sideNote, "BOTTOMLEFT", 0, -10)
   reset:SetScript("OnClick", function()
     R.ResetPosition()
@@ -206,8 +205,7 @@ function R.BuildPage(page)
   moveNote:SetPoint("TOPLEFT", reset, "BOTTOMLEFT", 0, -6)
   moveNote:SetWidth(columnWidth)
   moveNote:SetJustifyH("LEFT")
-  moveNote:SetText("To move the bars open Edit Mode and drag the box over them; right-click the box puts them back. "
-    .. "Each layout keeps its own place.")
+  moveNote:SetText(L["To move the bars open Edit Mode and drag the box over them; right-click the box puts them back. Each layout keeps its own place."])
 
   ns.On("RESOURCE_CHANGED", function()
     if view.page:IsVisible() then
@@ -219,11 +217,11 @@ end
 
 ns.RegisterModule({
   id = "resource",
-  name = "Personal bars",
+  name = L["Personal bars"],
   -- its section in the Codex window (Areas.lua)
   area = "units", sectionOrder = 50, folded = true, pageEstimate = 430,
   icon = ICON,
-  desc = "Health and power under your character, with the five-second rule, seal and swing timers.",
+  desc = L["Health and power under your character, with the five-second rule, seal and swing timers."],
   default = false,
   order = 96,
   Enable = function()

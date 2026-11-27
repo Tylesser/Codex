@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Quality of life in the Codex window: each toggle is a section of its own on the page it belongs to (Q.SECTIONS:
 -- proc glow and spell ranks on Action bars, faster loot on Bags and items, ...), its switch in the section's header.
@@ -26,8 +27,10 @@ function Q.NoteText(key)
     return ""
   end
   local toggle = Q.Toggle(key)
-  return ("%s is doing this, so Codex's %s stays idle. Turn it off there (or disable %s) to use Codex's.")
-    :format(other, toggle.name:lower(), other)
+  -- (the name in lower case in English only: German nouns keep their capital, string.lower doesn't know Cyrillic)
+  local name = (ns.T and ns.T.LOCALE or "enUS"):sub(1, 2) == "en" and toggle.name:lower() or toggle.name
+  return L["%s is doing this, so Codex's %s stays idle. Turn it off there (or disable %s) to use Codex's."]
+    :format(other, name, other)
 end
 
 -- The text a choice option shows for its current value (entries { title = "..." } are menu headings).
@@ -301,24 +304,24 @@ end
 
 -- Where each toggle's section goes (Areas.lua): page, place, the header's name, folded at first.
 Q.SECTIONS = {
-  procGlow = { area = "bars", order = 30, title = "Proc glow" },
-  spellRanks = { area = "bars", order = 40, title = "Spell ranks", folded = true },
-  futureSpells = { area = "bars", order = 45, title = "Future spells", folded = true },
-  hoverBind = { area = "bars", order = 50, title = "Bind keys by hovering" },
-  cooldownNumbers = { area = "bars", order = 55, title = "Numbers on cooldowns" },
-  greyOut = { area = "bars", order = 56, title = "Grey out what you can't use" },
-  hideEmpty = { area = "bars", order = 57, title = "Hide empty slots" },
-  trainerAll = { area = "trade", order = 40, title = "Learn all at trainers" },
-  fasterLoot = { area = "items", order = 30, title = "Faster loot" },
-  questTooltips = { area = "tooltips", order = 20, title = "Quest info in tooltips" },
-  gatherTooltips = { area = "tooltips", order = 30, title = "Gathering skill in tooltips" },
-  trackerSort = { area = "quests", order = 35, title = "Quest tracker order" },
-  addonButtons = { area = "map", order = 15, title = "Addon buttons on the minimap", folded = true },
-  revealMap = { area = "map", order = 20, title = "Reveal unexplored areas", folded = true },
-  zoneLevels = { area = "map", order = 30, title = "Zone levels on the world map", folded = true },
-  mapExtras = { area = "map", order = 40, title = "Dungeons and town services on the map", folded = true },
-  skullMark = { area = "units", order = 70, title = "Skull mark" },
-  lfgWhisper = { area = "chat", order = 50, title = "Whisper group leaders" },
+  procGlow = { area = "bars", order = 30, title = L["Proc glow"] },
+  spellRanks = { area = "bars", order = 40, title = L["Spell ranks"], folded = true },
+  futureSpells = { area = "bars", order = 45, title = L["Future spells"], folded = true },
+  hoverBind = { area = "bars", order = 50, title = L["Bind keys by hovering"] },
+  cooldownNumbers = { area = "bars", order = 55, title = L["Numbers on cooldowns"] },
+  greyOut = { area = "bars", order = 56, title = L["Grey out what you can't use"] },
+  hideEmpty = { area = "bars", order = 57, title = L["Hide empty slots"] },
+  trainerAll = { area = "trade", order = 40, title = L["Learn all at trainers"] },
+  fasterLoot = { area = "items", order = 30, title = L["Faster loot"] },
+  questTooltips = { area = "tooltips", order = 20, title = L["Quest info in tooltips"] },
+  gatherTooltips = { area = "tooltips", order = 30, title = L["Gathering skill in tooltips"] },
+  trackerSort = { area = "quests", order = 35, title = L["Quest tracker order"] },
+  addonButtons = { area = "map", order = 15, title = L["Addon buttons on the minimap"], folded = true },
+  revealMap = { area = "map", order = 20, title = L["Reveal unexplored areas"], folded = true },
+  zoneLevels = { area = "map", order = 30, title = L["Zone levels on the world map"], folded = true },
+  mapExtras = { area = "map", order = 40, title = L["Dungeons and town services on the map"], folded = true },
+  skullMark = { area = "units", order = 70, title = L["Skull mark"] },
+  lfgWhisper = { area = "chat", order = 50, title = L["Whisper group leaders"] },
 }
 
 local function ModuleOff()
@@ -352,16 +355,16 @@ for _, toggle in ipairs(Q.toggles) do
       end,
     },
     tag = function()
-      return Q.Elsewhere(key) and "other addon" or ""
+      return Q.Elsewhere(key) and L["other addon"] or ""
     end,
     notice = function()
       if ModuleOff() then
-        return "Every small switch is off (General > Quality of life), so this one waits.", "Switch them on",
+        return L["Every small switch is off (General > Quality of life), so this one waits."], L["Switch them on"],
           SwitchModuleOn
       end
       local module = ns.modules.qol
       if module and not module.running and ns.ModuleState("qol") == "on" then
-        return "Switched on: it starts after a reload."
+        return L["Switched on: it starts after a reload."]
       end
       return nil
     end,
@@ -383,13 +386,12 @@ end
 -- The module's own section (General): the switch for all of them, and where each one lives.
 function Q.BuildSection(holder, width, section)
   local stack = ns.UIStack(holder)
-  stack.AddText(ns.UIWrapping(holder, 12, "muted", width, "Small conveniences, each with its own switch on the page "
-    .. "it belongs to. This switch turns all of them off at once."), 10)
+  stack.AddText(ns.UIWrapping(holder, 12, "muted", width, L["Small conveniences, each with its own switch on the page it belongs to. This switch turns all of them off at once."]), 10)
   for _, toggle in ipairs(Q.toggles) do
     local place = Q.SECTIONS[toggle.key] or {}
     local row = CreateFrame("Frame", nil, holder)
     row:SetSize(width, 22)
-    local open = UI.Button(row, 60, 20, "Open")
+    local open = UI.Button(row, 60, 20, L["Open"])
     open:SetPoint("RIGHT", 0, 0)
     open:SetScript("OnClick", function()
       ns.ShowPage("qol-" .. toggle.key)

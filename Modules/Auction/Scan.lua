@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Auction house module, part 2: full scans (C_AuctionHouse.ReplicateItems), prices from whatever the player
 -- browses or searches, and shopping list searches. Modern auction house only (Forever, Retail); the legacy
@@ -53,15 +54,16 @@ local function FinishScan(reason)
     local count = A.Commit(scan.entries or {}, when)
     realm.scanned, realm.scanDone = count, when
     local below = A.SaveBelow(scan, when)
-    scan.lastResult = ("Scan done: %d items, %d auctions%s.%s"):format(count, scan.total,
-      scan.skipped > 0 and (", " .. scan.skipped .. " skipped (no item data)") or "",
-      below > 0 and (" " .. below .. (below == 1 and " item" or " items") .. " below the vendor price.") or "")
+    scan.lastResult = (scan.skipped > 0 and L["Scan done: %d items, %d auctions, %d skipped (no item data)."]:format(count,
+      scan.total, scan.skipped) or L["Scan done: %d items, %d auctions."]:format(count, scan.total))
+      .. (below > 0 and (" " .. (below == 1 and L["1 item below the vendor price."]
+        or L["%d items below the vendor price."]:format(below))) or "")
     ns.Say(scan.lastResult)
   elseif reason == "closed" then
-    scan.lastResult = "Scan stopped: the auction house was closed."
+    scan.lastResult = L["Scan stopped: the auction house was closed."]
     ns.Say(scan.lastResult)
   elseif reason == "timeout" then
-    scan.lastResult = "Scan stopped: the server sent no data. Try again after the 15-minute wait."
+    scan.lastResult = L["Scan stopped: the server sent no data. Try again after the 15-minute wait."]
     ns.Say(scan.lastResult)
   end
   scan.state = "idle"
@@ -211,17 +213,17 @@ end
 -- Asks the server for every auction. Returns true, or false and why not.
 function A.StartScan()
   if not A.IsModern() then
-    return false, "The old auction house of this game version isn't supported yet."
+    return false, L["The old auction house of this game version isn't supported yet."]
   end
   if not A.open then
-    return false, "Open the auction house first."
+    return false, L["Open the auction house first."]
   end
   if A.scan.state ~= "idle" then
-    return false, "A scan is already running."
+    return false, L["A scan is already running."]
   end
   local wait = A.NextScanIn()
   if wait > 0 then
-    return false, ("The server allows one full scan every 15 minutes. The next one is possible in %s."):format(A.Duration(wait))
+    return false, L["The server allows one full scan every 15 minutes. The next one is possible in %s."]:format(A.Duration(wait))
   end
   local scan = A.scan
   scan.gen = scan.gen + 1
@@ -244,7 +246,7 @@ end
 function A.ScanCommand()
   local ok, why = A.StartScan()
   if ok then
-    ns.Say("Full scan started. This takes a moment; you can keep using the auction house.")
+    ns.Say(L["Full scan started. This takes a moment; you can keep using the auction house."])
   else
     ns.Say(why)
   end
@@ -254,21 +256,21 @@ end
 function A.ScanText()
   local scan = A.scan
   if scan.state == "waiting" then
-    return "Waiting for the server..."
+    return L["Waiting for the server..."]
   elseif scan.state == "reading" then
     local percent = scan.total > 0 and math.floor(scan.done / scan.total * 100) or 0
-    return ("Reading auctions: %d%% (%d of %d)"):format(percent, scan.done, scan.total)
+    return L["Reading auctions: %d%% (%d of %d)"]:format(percent, scan.done, scan.total)
   elseif scan.state == "loading" then
-    return ("Loading item data for %d auctions..."):format(#(scan.pending or {}))
+    return L["Loading item data for %d auctions..."]:format(#(scan.pending or {}))
   end
   if not A.IsModern() then
-    return "The old auction house of this game version isn't supported yet."
+    return L["The old auction house of this game version isn't supported yet."]
   end
   local wait = A.NextScanIn()
   if wait > 0 then
-    return ("Next full scan possible in %s."):format(A.Duration(wait))
+    return L["Next full scan possible in %s."]:format(A.Duration(wait))
   end
-  return A.open and "Ready to scan." or "Open the auction house to scan."
+  return A.open and L["Ready to scan."] or L["Open the auction house to scan."]
 end
 
 -- Prices from browsing and searching -----------------------------------------------------------------------
@@ -400,7 +402,7 @@ local function Collect(term, results)
       local skipRecipe = (term.noRecipes or (term.exact and not name)) and IsRecipe(result.itemKey)
       if not skipRecipe and not (term.exact and name and name:lower() ~= wanted) then
         shop.results[#shop.results + 1] = {
-          result = result, name = name or ("Item " .. tostring(result.itemKey.itemID)), icon = icon,
+          result = result, name = name or L["Item %s"]:format(tostring(result.itemKey.itemID)), icon = icon,
           quality = quality, count = result.totalQuantity or 0, price = result.minPrice, term = term,
           deal = term.maxPrice and result.minPrice and result.minPrice <= term.maxPrice or false,
         }
@@ -452,13 +454,13 @@ end
 -- Searches every term of a list in turn. Returns true, or false and why not.
 function A.SearchList(list)
   if not A.IsModern() then
-    return false, "The old auction house of this game version isn't supported yet."
+    return false, L["The old auction house of this game version isn't supported yet."]
   end
   if not A.open then
-    return false, "Open the auction house first."
+    return false, L["Open the auction house first."]
   end
   if not list or #list.terms == 0 then
-    return false, "This list has no search terms yet."
+    return false, L["This list has no search terms yet."]
   end
   local shop = A.shop
   shop.gen = shop.gen + 1
@@ -491,7 +493,7 @@ end
 function A.SearchText()
   local shop = A.shop
   if shop.state == "searching" or shop.state == "throttled" then
-    return ("Searching %d of %d: %s"):format(shop.index, #shop.terms, shop.term.text)
+    return L["Searching %d of %d: %s"]:format(shop.index, #shop.terms, shop.term.text)
   elseif shop.state == "done" then
     local deals = 0
     for _, entry in ipairs(shop.results) do
@@ -499,12 +501,14 @@ function A.SearchText()
         deals = deals + 1
       end
     end
-    return ("%s: %d results%s."):format(shop.list.name, #shop.results,
-      deals > 0 and (", " .. deals .. " under your max price") or "")
+    if deals > 0 then
+      return L["%s: %d results, %d under your max price."]:format(shop.list.name, #shop.results, deals)
+    end
+    return L["%s: %d results."]:format(shop.list.name, #shop.results)
   elseif shop.state == "stopped" then
-    return "Search stopped."
+    return L["Search stopped."]
   end
-  return "Click a list to search it."
+  return L["Click a list to search it."]
 end
 
 -- Opens a result in the game's own buy view (the player buys there; only Buy.lua's button buys, on a click).

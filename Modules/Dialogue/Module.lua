@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Quest windows (boards R4-Gossip, R4-Quest, R4-Options): Codex draws the windows you get when you talk to an
 -- NPC (gossip, a quest giver's greeting, a quest's offer, progress and reward pages) in one of three styles:
@@ -38,9 +39,9 @@ D.DEFAULTS = {
 }
 
 D.STYLES = {
-  { key = "a", name = "A · Codex window", desc = "The game's window in the theme, sized to its content." },
-  { key = "b", name = "B · Subtitle bar", desc = "A bar at the bottom of the screen; the NPC stays in view." },
-  { key = "c", name = "C · Book page", desc = "A page at the side of the screen, like a storybook." },
+  { key = "a", name = L["A · Codex window"], desc = L["The game's window in the theme, sized to its content."] },
+  { key = "b", name = L["B · Subtitle bar"], desc = L["A bar at the bottom of the screen; the NPC stays in view."] },
+  { key = "c", name = L["C · Book page"], desc = L["A page at the side of the screen, like a storybook."] },
 }
 
 D.SIZES = { s = 336, m = 388, l = 440 }
@@ -469,29 +470,29 @@ end
 function D.StatusText()
   local state = ns.ModuleState("dialogue")
   if state == "standalone" then
-    return "DialogueUI is loaded, so Codex leaves the NPC windows to it."
+    return L["DialogueUI is loaded, so Codex leaves the NPC windows to it."]
   elseif state == "off" or not D.running then
-    return "Off: the game's own quest and gossip windows."
+    return L["Off: the game's own quest and gossip windows."]
   end
   if not D.DB().windows then
-    return "Codex leaves the windows to the game; the quest options below still work."
+    return L["Codex leaves the windows to the game; the quest options below still work."]
   end
   for _, style in ipairs(D.STYLES) do
     if style.key == D.DB().style then
-      return "On: " .. style.name:gsub("^%a · ", "") .. "."
+      return L["On: %s."]:format((style.name:gsub("^%a · ", "")))
     end
   end
-  return "On."
+  return L["On."]
 end
 
 ns.RegisterModule({
   id = "dialogue",
-  name = "Quest windows",
+  name = L["Quest windows"],
   -- its section in the Codex window (Areas.lua)
   area = "quests", sectionOrder = 10, pageEstimate = 600,
   standalone = "DialogueUI",
   icon = "Interface\\Icons\\INV_Misc_Book_09",
-  desc = "Quest and gossip windows in the Codex look, in three styles, with number keys and reputation rewards.",
+  desc = L["Quest and gossip windows in the Codex look, in three styles, with number keys and reputation rewards."],
   order = 94,
   Enable = function()
     D.Enable()

@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = TylesserCodex.L
 local S = ns.S
 
 -- Action bars: every action button (main bar, the multi-bars, pet, stance, possess, totem bar and the vehicle
@@ -473,10 +474,10 @@ end
 -- Spacing check for the setup guide (Codex Settings > "Check spacing"): which shown panels overlap and how
 -- far one would have to move to clear the other. Returns nil when panels are off or can't be measured
 -- (in combat), else a list of { a = name, b = name, x = units, y = units } (empty = all clear).
-local BAR_NAMES = { MainActionBar = "Main bar", MultiBarBottomLeft = "Bar 2", MultiBarBottomRight = "Bar 3",
-  MultiBarRight = "Bar 4", MultiBarLeft = "Bar 5", MultiBar5 = "Bar 6", MultiBar6 = "Bar 7", MultiBar7 = "Bar 8",
-  StanceBar = "Stance bar", PetActionBar = "Pet bar", PossessActionBar = "Possess bar",
-  MultiCastActionBarFrame = "Totem bar", MicroMenu = "Micro menu", BagsBar = "Bags" }
+local BAR_NAMES = { MainActionBar = L["Main bar"], MultiBarBottomLeft = L["Bar 2"], MultiBarBottomRight = L["Bar 3"],
+  MultiBarRight = L["Bar 4"], MultiBarLeft = L["Bar 5"], MultiBar5 = L["Bar 6"], MultiBar6 = L["Bar 7"], MultiBar7 = L["Bar 8"],
+  StanceBar = L["Stance bar"], PetActionBar = L["Pet bar"], PossessActionBar = L["Possess bar"],
+  MultiCastActionBarFrame = L["Totem bar"], MicroMenu = L["Micro menu"], BagsBar = L["Bags"] }
 
 local function PanelRect(panel)
   local host = panel.host

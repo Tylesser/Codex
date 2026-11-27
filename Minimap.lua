@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Minimap button: click opens Codex, right-click shows the quick menu, drag moves it around the minimap.
 
@@ -26,20 +27,20 @@ local function QuickMenu()
   for _, module in ipairs(ns.moduleList) do
     local state = ns.ModuleState(module.id)
     items[#items + 1] = {
-      text = module.name .. (state == "standalone" and " (addon)" or ""),
+      text = module.name .. (state == "standalone" and L[" (addon)"] or ""),
       checked = state == "on",
       func = function()
         ns.ShowPage(module.id)
       end,
     }
   end
-  items[#items + 1] = { text = "Open Codex", func = function() ns.ShowPage("home") end }
-  items[#items + 1] = { text = "General", func = function() ns.ShowPage("general") end }
-  items[#items + 1] = { text = "Look", func = function() ns.ShowPage("look") end }
-  items[#items + 1] = { text = "Hide this button", func = function()
+  items[#items + 1] = { text = L["Open Codex"], func = function() ns.ShowPage("home") end }
+  items[#items + 1] = { text = L["General"], func = function() ns.ShowPage("general") end }
+  items[#items + 1] = { text = L["Look"], func = function() ns.ShowPage("look") end }
+  items[#items + 1] = { text = L["Hide this button"], func = function()
     ns.db.minimap.hide = true
     ns.UpdateMinimapButton()
-    ns.Say("minimap button hidden. Type /codex to open the window, and show it again in General > Codex window.")
+    ns.Say(L["minimap button hidden. Type /codex to open the window, and show it again in General > Codex window."])
   end }
   UI.ShowMenu(button, items)
 end
@@ -90,10 +91,10 @@ function ns.CreateMinimapButton()
         off = off + 1
       end
     end
-    GameTooltip:AddLine(("%d modules on, %d off"):format(on, off), 0.85, 0.85, 0.85)
-    GameTooltip:AddLine("Click: open Codex", 0.25, 1, 0.25)
-    GameTooltip:AddLine("Right-click: quick menu", 0.25, 1, 0.25)
-    GameTooltip:AddLine("Drag: move around the minimap", 0.25, 1, 0.25)
+    GameTooltip:AddLine(L["%d modules on, %d off"]:format(on, off), 0.85, 0.85, 0.85)
+    GameTooltip:AddLine(L["Click: open Codex"], 0.25, 1, 0.25)
+    GameTooltip:AddLine(L["Right-click: quick menu"], 0.25, 1, 0.25)
+    GameTooltip:AddLine(L["Drag: move around the minimap"], 0.25, 1, 0.25)
     GameTooltip:Show()
   end)
   button:SetScript("OnLeave", GameTooltip_Hide)

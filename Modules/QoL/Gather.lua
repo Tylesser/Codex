@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Gathering skill in tooltips: herbs and ore show the skill they need, coloured like Classic's difficulty from
 -- your own rank (red = you can't gather it yet, orange, yellow, green, grey = no more skill-ups). Without the
@@ -381,9 +382,8 @@ end
 
 Q.AddToggle({
   key = KEY,
-  name = "Gathering skill in tooltips",
-  desc = "Herbs and ore show the Herbalism or Mining skill they need, on the node and on the minimap "
-    .. "(\"Mithril Deposit (175)\"), coloured from your own skill: red = too low, then orange, yellow, green, grey.",
+  name = L["Gathering skill in tooltips"],
+  desc = L["Herbs and ore show the Herbalism or Mining skill they need, on the node and on the minimap (\"Mithril Deposit (175)\"), coloured from your own skill: red = too low, then orange, yellow, green, grey."],
   order = 30,
   Enable = G.Enable,
   Changed = G.Changed,

@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Start-up and the /codex command. Loaded last, after every module has registered itself.
 
@@ -93,23 +94,23 @@ frame:SetScript("OnEvent", function(self, event, name)
     ns.CreateMinimapButton()
     if ns.db.skins.enabled then
       if not ns.LoadAddOn("Codex_Skins") then
-        ns.Say("the game UI restyle (Codex_Skins) could not be loaded: " .. tostring(ns.loadErrors and ns.loadErrors.Codex_Skins))
+        ns.Say(L["the game UI restyle (Codex_Skins) could not be loaded: %s"]:format(
+          tostring(ns.loadErrors and ns.loadErrors.Codex_Skins)))
       elseif ns.UIOverlap() then
         ns.Say(ns.OVERLAP_NOTE:format(ns.UIOverlap()))
       end
     elseif not ns.db.skins.told then
       -- once: the restyle is off by default, so say where it is
       ns.db.skins.told = true
-      ns.Say("Codex can restyle your game interface (action bars, chat, quests, minimap, ...) in your theme: "
-        .. "/codex settings, then \"Restyle the game's interface\" in General.")
+      ns.Say(L["Codex can restyle your game interface (action bars, chat, quests, minimap, ...) in your theme: /codex settings, then \"Restyle the game's interface\" in General."])
     end
     if ns.themeMissing then
-      ns.Say(("the %s theme (folder %s) is missing or switched off, so a plain look is used.")
+      ns.Say(L["the %s theme (folder %s) is missing or switched off, so a plain look is used."]
         :format(ns.themeMissing.name, ns.themeMissing.folder))
     end
     HookGameMenu()
     ns.T.AddCompartment({ text = ns.TITLE, onClick = function() ns.ToggleWindow() end,
-      tooltip = { "Click to open Codex." } })
+      tooltip = { L["Click to open Codex."] } })
     if ns.MaybeShowSetup then
       ns.MaybeShowSetup() -- the first-run setup, once (Setup.lua)
     end
@@ -216,8 +217,7 @@ SlashCmdList.CODEX = function(input)
     for _, module in ipairs(ns.moduleList) do
       names[#names + 1] = module.id
     end
-    ns.Say("/codex opens the window. /codex <" .. table.concat(names, "|") .. "|settings> opens a page. "
-      .. "/codex setup runs the setup again, /codex whatsnew shows what changed, /codex profile opens the profiles, "
-      .. "/codex feedback shows the feedback link.")
+    ns.Say(L["/codex opens the window. /codex <%s|settings> opens a page. /codex setup runs the setup again, /codex whatsnew shows what changed, /codex profile opens the profiles, /codex feedback shows the feedback link."]
+      :format(table.concat(names, "|")))
   end
 end

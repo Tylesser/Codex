@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Font styles per text element (2026-11-24, the user's "do both" after FlareUI's tracker fonts): an element is a
 -- kind of text Codex draws (the tracker's quest names, unit frame names, chat lines, ...). Each one can get its own
@@ -26,14 +27,14 @@ function ns.AddFontElement(def)
 end
 
 ns.FONT_OUTLINES = {
-  { key = "none", name = "None", flags = "" },
-  { key = "thin", name = "Thin", flags = "OUTLINE" },
-  { key = "thick", name = "Thick", flags = "THICKOUTLINE" },
+  { key = "none", name = L["None##outline"], flags = "" },
+  { key = "thin", name = L["Thin##outline"], flags = "OUTLINE" },
+  { key = "thick", name = L["Thick##outline"], flags = "THICKOUTLINE" },
 }
 ns.FONT_SHADOWS = {
-  { key = "none", name = "None", x = 0, y = 0, a = 0 },
-  { key = "soft", name = "Soft", x = 1, y = -1, a = 0.6 },
-  { key = "strong", name = "Strong", x = 2, y = -2, a = 1 },
+  { key = "none", name = L["None##outline"], x = 0, y = 0, a = 0 },
+  { key = "soft", name = L["Soft##shadow"], x = 1, y = -1, a = 0.6 },
+  { key = "strong", name = L["Strong"], x = 2, y = -2, a = 1 },
 }
 ns.FONT_SIZE_MIN, ns.FONT_SIZE_MAX = 9, 24 -- never under 9 px (the game's fonts blur)
 
@@ -163,16 +164,16 @@ function ns.FontStyleValueName(key, field)
   local style = ns.FontStyle(key) or {}
   local value = style[field]
   if field == "font" then
-    return value and ns.FontInfo(value).name or "Element's own"
+    return value and ns.FontInfo(value).name or L["Element's own"]
   elseif field == "size" then
     local base = (ns.FONT_ELEMENT_BY_KEY[key] or {}).base or 12
-    return value and tostring(value) or ("Own (" .. math.floor(base + 0.5) .. ")")
+    return value and tostring(value) or L["Own (%d)"]:format(math.floor(base + 0.5))
   elseif field == "outline" then
     local entry = value and Find(ns.FONT_OUTLINES, value)
-    return entry and entry.name or "Own"
+    return entry and entry.name or L["Own"]
   elseif field == "shadow" then
     local entry = value and Find(ns.FONT_SHADOWS, value)
-    return entry and entry.name or "Own"
+    return entry and entry.name or L["Own"]
   end
   return ""
 end
@@ -189,25 +190,25 @@ end
 
 -- The elements. Groups are the pages their rows show on (FontStylesUI.lua makes a "Fonts" section per group).
 ns.FONT_GROUPS = {
-  { id = "quests", area = "quests", title = "Fonts", order = 90 },
-  { id = "units", area = "units", title = "Fonts", order = 90 },
-  { id = "chat", area = "chat", title = "Fonts", order = 90 },
-  { id = "info", area = "info", title = "Fonts", order = 90 },
+  { id = "quests", area = "quests", title = L["Fonts"], order = 90 },
+  { id = "units", area = "units", title = L["Fonts"], order = 90 },
+  { id = "chat", area = "chat", title = L["Fonts"], order = 90 },
+  { id = "info", area = "info", title = L["Fonts"], order = 90 },
 }
 for _, def in ipairs({
-  { key = "tracker.header", group = "quests", label = "Tracker header and zones", base = 13 },
-  { key = "tracker.quest", group = "quests", label = "Quest names", base = 12 },
-  { key = "tracker.objective", group = "quests", label = "Objectives", base = 11.5 },
-  { key = "dialogue.title", group = "quests", label = "Quest window titles", base = 16 },
-  { key = "dialogue.text", group = "quests", label = "Quest window text", base = 14 },
-  { key = "units.name", group = "units", label = "Unit frame names", base = 12 },
-  { key = "units.bars", group = "units", label = "Unit frame bar texts", base = 10 },
-  { key = "plates.name", group = "units", label = "Nameplate names", base = 10 },
-  { key = "plates.health", group = "units", label = "Nameplate health text", base = 10 },
-  { key = "personal.text", group = "units", label = "Personal bars text", base = 10 },
-  { key = "chat.text", group = "chat", label = "Chat text", base = 14, absolute = true },
-  { key = "chat.tabs", group = "chat", label = "Chat tabs", base = 12 },
-  { key = "infobar.text", group = "info", label = "Info bar texts", base = 12 },
+  { key = "tracker.header", group = "quests", label = L["Tracker header and zones"], base = 13 },
+  { key = "tracker.quest", group = "quests", label = L["Quest names"], base = 12 },
+  { key = "tracker.objective", group = "quests", label = L["Objectives"], base = 11.5 },
+  { key = "dialogue.title", group = "quests", label = L["Quest window titles"], base = 16 },
+  { key = "dialogue.text", group = "quests", label = L["Quest window text"], base = 14 },
+  { key = "units.name", group = "units", label = L["Unit frame names"], base = 12 },
+  { key = "units.bars", group = "units", label = L["Unit frame bar texts"], base = 10 },
+  { key = "plates.name", group = "units", label = L["Nameplate names"], base = 10 },
+  { key = "plates.health", group = "units", label = L["Nameplate health text"], base = 10 },
+  { key = "personal.text", group = "units", label = L["Personal bars text"], base = 10 },
+  { key = "chat.text", group = "chat", label = L["Chat text"], base = 14, absolute = true },
+  { key = "chat.tabs", group = "chat", label = L["Chat tabs"], base = 12 },
+  { key = "infobar.text", group = "info", label = L["Info bar texts"], base = 12 },
 }) do
   ns.AddFontElement(def)
 end

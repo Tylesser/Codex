@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 local R = ns.rings
 
 -- The secure side of the rings: works in combat because everything that acts is a secure frame and the logic
@@ -259,7 +260,7 @@ function R.Layout(id)
     end
   end
   entry.infos = infos
-  entry.name = ring and ring.name or ""
+  entry.name = ring and R.RingName(ring) or ""
   if R.LayoutDisplay then
     R.LayoutDisplay(entry)
   end
@@ -413,17 +414,17 @@ end
 -- only: then plain Lua may show and move it. Escape closes it, a click on a slice uses it.
 function R.ToggleAtCursor(ring)
   if not R.running then
-    return false, "The Rings module is off."
+    return false, L["The Rings module is off."]
   end
   if Combat() then
-    return false, "Rings can only be opened this way out of combat."
+    return false, L["Rings can only be opened this way out of combat."]
   end
   if not BuildBase() then
-    return false, "Not ready yet."
+    return false, L["Not ready yet."]
   end
   local entry = BuildRing(ring.id)
   if not entry then
-    return false, "Not ready yet."
+    return false, L["Not ready yet."]
   end
   if entry.ring:IsShown() then
     entry.ring:Hide()
@@ -435,7 +436,7 @@ function R.ToggleAtCursor(ring)
   R.Layout(ring.id)
   entry.preview = nil
   if #(entry.infos or {}) == 0 then
-    return false, ("%s has no slices yet."):format(ring.name)
+    return false, L["%s has no slices yet."]:format(R.RingName(ring))
   end
   -- the ring may be shown even though it is switched off (the count set for this try)
   entry.ring:SetAttribute("count", #entry.infos)

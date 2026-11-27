@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = TylesserCodex.L
 
 -- Codex_Skins: restyles the game's own interface in the active Codex theme. Shared helpers here; one file
 -- per part (TylesserCodex.SKIN_PARTS id), run by Run.lua.
@@ -16,6 +17,7 @@ local UI = Codex.UI
 local S = {}
 ns.S = S
 S.UI = UI
+S.L = Codex.L -- the translations (UnitFrames.lua has no room for a local L)
 S.parts = {} -- [id] = function, registered by the part files
 
 local PREFIX = "|TInterface\\AddOns\\Codex\\Media\\Stud:12|t |cfff0c24eCodex:|r "
@@ -155,8 +157,8 @@ function S.Report()
   end
   if #names > 0 then
     table.sort(names)
-    print(PREFIX .. "could not restyle " .. table.concat(names, ", ")
-      .. " on this client; the rest is restyled. (/dump TylesserCodex.skinErrors)")
+    print(PREFIX .. L["could not restyle %s on this client; the rest is restyled. (/dump TylesserCodex.skinErrors)"]
+      :format(table.concat(names, ", ")))
   end
 end
 

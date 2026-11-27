@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Bags module, part 3: the Codex bag window. Your own bags are real item buttons (the game's
 -- ContainerFrameItemButtonTemplate under holder frames whose ID is the bag), so clicking, using, dragging and
@@ -138,7 +139,7 @@ local function SlotLook(button, icon)
   -- every count is ours: 11px, bottom right, kept inside the slot (the game's own count is left empty)
   local count = button:CreateFontString(nil, "OVERLAY", nil, 7)
   if not count:SetFont(COUNT_FONT, 11, "OUTLINE") then
-    count:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+    count:SetFont((STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"), 10, "OUTLINE")
   end
   count:SetTextColor(1, 1, 1)
   count:SetJustifyH("RIGHT")
@@ -211,10 +212,10 @@ function B.FreeTooltip(button)
   end
   GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
   if button.codexFreeKind == "reagent" then
-    GameTooltip:SetText(("%d free slot%s in your reagent bag"):format(count, count == 1 and "" or "s"))
-    GameTooltip:AddLine("Only reagents go in there.", 0.6, 0.6, 0.6, true)
+    GameTooltip:SetText(count == 1 and L["1 free slot in your reagent bag"] or L["%d free slots in your reagent bag"]:format(count))
+    GameTooltip:AddLine(L["Only reagents go in there."], 0.6, 0.6, 0.6, true)
   else
-    GameTooltip:SetText(("%d free slot%s in your bags"):format(count, count == 1 and "" or "s"))
+    GameTooltip:SetText(count == 1 and L["1 free slot in your bags"] or L["%d free slots in your bags"]:format(count))
   end
   GameTooltip:Show()
 end
@@ -224,8 +225,8 @@ function B.AddStacksLine(button)
   if not stacks or stacks < 2 or not GameTooltip:IsOwned(button) then
     return
   end
-  local where = button.codexSaved and "here" or "in your bags"
-  GameTooltip:AddLine(("%d %s (%d stacks)"):format(button.codexTotal or 0, where, stacks), 0.6, 0.8, 1)
+  local text = button.codexSaved and L["%d here (%d stacks)"] or L["%d in your bags (%d stacks)"]
+  GameTooltip:AddLine(text:format(button.codexTotal or 0, stacks), 0.6, 0.8, 1)
   GameTooltip:Show()
 end
 
@@ -275,7 +276,7 @@ local function LiveButton(set, bagID, slot)
   button.codexFree:SetPoint("TOP", 0, -5)
   button.codexFreeLabel = UI.Text(button, "body", 10, "muted", "OVERLAY")
   button.codexFreeLabel:SetPoint("TOP", button.codexFree, "BOTTOM", 0, -1)
-  button.codexFreeLabel:SetText("free")
+  button.codexFreeLabel:SetText(L["free##bags"])
   button.codexFree:Hide()
   button.codexFreeLabel:Hide()
   button:HookScript("OnEnter", B.AddStacksLine)
@@ -407,7 +408,7 @@ function B.CategorySections(entries, free)
     end
   end
   if #freeEntries > 0 then
-    sections[#sections + 1] = { id = "free", name = "Free", entries = freeEntries }
+    sections[#sections + 1] = { id = "free", name = L["Free"], entries = freeEntries }
   end
   return sections
 end
@@ -447,10 +448,10 @@ local function LiveSections(entries, slots, free)
     end
     sections = { { id = "bags", entries = bags, wide = true } } -- the plain grid, never made narrower
     if #reagentSlots > 0 then
-      sections[#sections + 1] = { id = "reagent", name = "Reagent bag", entries = reagentSlots }
+      sections[#sections + 1] = { id = "reagent", name = L["Reagent bag"], entries = reagentSlots }
     end
     if #keys > 0 then
-      sections[#sections + 1] = { id = "keys", name = "Keyring", entries = keys }
+      sections[#sections + 1] = { id = "keys", name = L["Keyring"], entries = keys }
     end
   end
   return DropKeys(sections)
@@ -568,20 +569,20 @@ local function UpdateFooter(freeText)
   local char = B.Character(ViewedKey())
   local money = view.key and (char and char.money) or GetMoney()
   local _, total = B.MoneyList()
-  frame.money.text:SetText(ns.Money(money or 0) .. "   |cff999999Total|r " .. ns.Money(total))
+  frame.money.text:SetText(ns.Money(money or 0) .. "   |cff999999" .. L["Total"] .. "|r " .. ns.Money(total))
 end
 
 -- Every character's money, richest first, and the total.
 function B.ShowMoneyTooltip(owner)
   GameTooltip:SetOwner(owner, "ANCHOR_TOPRIGHT")
   local accent = Theme().accent
-  GameTooltip:AddLine("Money on your characters", accent[1], accent[2], accent[3])
+  GameTooltip:AddLine(L["Money on your characters"], accent[1], accent[2], accent[3])
   local list, total = B.MoneyList()
   for _, entry in ipairs(list) do
     GameTooltip:AddDoubleLine(B.ColoredName(entry.key), ns.Money(entry.money), 1, 1, 1, 1, 1, 1)
   end
   GameTooltip:AddLine(" ")
-  GameTooltip:AddDoubleLine("Total", ns.Money(total), accent[1], accent[2], accent[3], 1, 1, 1)
+  GameTooltip:AddDoubleLine(L["Total"], ns.Money(total), accent[1], accent[2], accent[3], 1, 1, 1)
   GameTooltip:Show()
 end
 
@@ -826,7 +827,7 @@ local function UpdateHeader()
   local key = ViewedKey()
   local char = B.Character(key)
   local name = char and ns.CharacterDisplayName(char) or ns.PlayerFullName()
-  local title = (view.bank and "Bank" or "Bags") .. (view.key and (" - " .. name) or "")
+  local title = (view.bank and L["Bank"] or L["Bags"]) .. (view.key and (" - " .. name) or "")
   frame.title:SetText(Theme().titlebar.upper and title:upper() or title)
   SetIconState(frame.mode, B.db.categories, true)
   SetIconState(frame.combine, B.ShouldCombine(), true)
@@ -848,13 +849,13 @@ function B.Refresh()
     local free, size
     if InCombatLockdown() then
       free = RefillLive()
-      UpdateFooter(("Free %d"):format(free))
+      UpdateFooter(L["Free %d"]:format(free))
       return
     end
     live.frame:Show()
     saved.frame:Hide()
     free, size = LayoutLive()
-    UpdateFooter(("Free %d / %d"):format(free, size))
+    UpdateFooter(L["Free %d / %d"]:format(free, size))
     return
   end
   if InCombatLockdown() then
@@ -867,7 +868,7 @@ function B.Refresh()
   local containers = char and (view.bank and char.bank or char.bags) or {}
   local free, size = LayoutSaved(containers)
   local stamp = char and (view.bank and char.bankUpdated or char.updated)
-  UpdateFooter(("Free %d / %d  |cff999999%s ago|r"):format(free, size, ns.Age(stamp)))
+  UpdateFooter(L["Free %d / %d"]:format(free, size) .. "  |cff999999" .. L["%s ago"]:format(ns.Age(stamp)) .. "|r")
 end
 
 -- Coalesces bursts of bag events into one refresh, and only while the window is open.
@@ -923,7 +924,7 @@ end
 -- that, so not during a fight.
 function B.View(key, bank)
   if InCombatLockdown() then
-    ns.Say("other characters and the bank can be viewed after the fight.")
+    ns.Say(L["other characters and the bank can be viewed after the fight."])
     return false
   end
   if key == B.PlayerKey() then
@@ -937,10 +938,10 @@ function B.View(key, bank)
 end
 
 function B.ShowCharacterMenu(anchor)
-  local items = { { text = "Characters", title = true } }
+  local items = { { text = L["Characters"], title = true } }
   local mine = B.PlayerKey()
   for _, key in ipairs(B.CharacterKeys(false)) do
-    local text = B.ColoredName(key) .. (key == mine and " |cff999999(you)|r" or "")
+    local text = B.ColoredName(key) .. (key == mine and (" |cff999999" .. L["(you)"] .. "|r") or "")
     items[#items + 1] = { text = text, checked = key == ViewedKey(), func = function()
       B.View(key, false)
     end }
@@ -1016,7 +1017,7 @@ function B.SearchBox(win, rightOf, onChange)
   glass:SetVertexColor(muted[1], muted[2], muted[3])
   local hint = UI.Text(search, "body", 13, "muted")
   hint:SetPoint("LEFT", 26, 0)
-  hint:SetText("Search")
+  hint:SetText(L["Search"])
   search:SetScript("OnTextChanged", function(self)
     local text = self:GetText() or ""
     hint:SetShown(text == "")
@@ -1034,19 +1035,19 @@ local function HeaderRow(bar)
     B.View(view.key, not view.bank)
   end, function()
     if view.bank then
-      return { "Bank (saved copy)", "Showing the bank as it was at the last visit. Click for the bags." }
+      return { L["Bank (saved copy)"], L["Showing the bank as it was at the last visit. Click for the bags."] }
     end
     local char = B.Character(ViewedKey())
     if not (char and char.bank) then
-      return { "Bank", "Not seen yet: visit the bank once with this character." }
+      return { L["Bank"], L["Not seen yet: visit the bank once with this character."] }
     end
-    return { "Bank (saved copy)", "Click to see the bank as it was at the last visit (" .. ns.Age(char.bankUpdated) .. " ago)." }
+    return { L["Bank (saved copy)"], L["Click to see the bank as it was at the last visit (%s ago)."]:format(ns.Age(char.bankUpdated)) }
   end)
   frame.bank:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -PAD, -(5 + TITLE + 11))
   frame.character = IconButton(frame, ICONS.unknown, function(self)
     B.ShowCharacterMenu(self)
   end, function()
-    return { "Showing: " .. B.ColoredName(ViewedKey()), "Click to pick a character." }
+    return { L["Showing: %s"]:format(B.ColoredName(ViewedKey())), L["Click to pick a character."] }
   end)
   frame.character.keepColors = true
   frame.character:SetPoint("RIGHT", frame.bank, "LEFT", -6, 0)
@@ -1055,12 +1056,12 @@ local function HeaderRow(bar)
     B.Refresh()
     ns.Fire("BAGS_CHANGED", "options")
   end, function()
-    local lines = { "Combine identical items: " .. (B.db.combine and "on" or "off"),
-      "One button per item with the total. Click to switch." }
+    local lines = { B.db.combine and L["Combine identical items: on"] or L["Combine identical items: off"],
+      L["One button per item with the total. Click to switch."] }
     if B.db.combine and not B.ShouldCombine() then
       lines[#lines + 1] = B.db.categories
-        and "Shown one by one right now: a bank, trade, mail, vendor or auction window is open."
-        or "Shown one by one in bag order."
+        and L["Shown one by one right now: a bank, trade, mail, vendor or auction window is open."]
+        or L["Shown one by one in bag order."]
     end
     return lines
   end)
@@ -1071,9 +1072,9 @@ local function HeaderRow(bar)
     ns.Fire("BAGS_CHANGED", "options")
   end, function()
     if B.db.categories then
-      return { "View: Categories", "Click for bag order." }
+      return { L["View: Categories"], L["Click for bag order."] }
     end
-    return { "View: Bag order", "Click for categories." }
+    return { L["View: Bag order"], L["Click for categories."] }
   end)
   frame.mode:SetPoint("RIGHT", frame.combine, "LEFT", -6, 0)
   frame.keys = IconButton(frame, ICONS.keys, function()
@@ -1082,9 +1083,9 @@ local function HeaderRow(bar)
     ns.Fire("BAGS_CHANGED", "options")
   end, function()
     if B.db.showKeys ~= false then
-      return { "Keys: shown", "Your keyring and other keys. Click to hide them." }
+      return { L["Keys: shown"], L["Your keyring and other keys. Click to hide them."] }
     end
-    return { "Keys: hidden", "Click to show your keyring and other keys." }
+    return { L["Keys: hidden"], L["Click to show your keyring and other keys."] }
   end)
   frame.keys:SetPoint("RIGHT", frame.mode, "LEFT", -6, 0)
 
@@ -1236,7 +1237,7 @@ function B.Toggle()
     B.CreateWindow()
   end
   if not frame then
-    ns.Say("the bag window is made after the fight.")
+    ns.Say(L["the bag window is made after the fight."])
     return
   end
   if frame:IsShown() then

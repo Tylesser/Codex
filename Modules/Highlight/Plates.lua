@@ -175,7 +175,10 @@ local function InQuestIndex(name)
   if not ok or type(index) ~= "table" then
     return false
   end
-  return (index[name] or index[name:lower()]) and true or false
+  -- (the names sit in index.byName, lower case; this looked them up on the index itself and never matched,
+  -- found by the 2026-11-27 audit)
+  local byName = type(index.byName) == "table" and index.byName or {}
+  return (byName[name:lower()] or byName[name]) and true or false
 end
 
 function P.IsQuest(unit, object, name)

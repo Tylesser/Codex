@@ -108,7 +108,7 @@ Home shows a card for each feature with what it is doing right now; click a card
   sound when one starts: 14 sounds made for procs (or each proc its own) and 14 of the game's, soft or loud, with a Test button, only in combat if you like,
   and a different sound per ability if you want. While an ability procs, art shows on both sides of your
   character as in later expansions: Codex's own art, a piece drawn for each proc it knows (Overpower, Execute,
-  Hammer of Wrath, Shadow Trance, Clearcasting and the paladin's Unsealed Wrath echoes, one per seal, at 3 stacks),
+  Hammer of Wrath, Shadow Trance, Clearcasting and the paladin's Unsealed Wrath echoes, one per seal, at 3 stacks; in a fight, track Unsealed Wrath in the cooldown manager),
   with "Show all arts" to see them; sixteen styles for any proc (flames, runes, feathers, crescent moons,
   lightning, vines, crystal shards, stars, swords, daggers, arrows, claw marks, skulls, snowflakes, rays of light,
   arcane sigils) in each proc's own colour, the glow colour or one you pick; or the spell's icon, or a plain arc, for all procs or
@@ -232,6 +232,8 @@ width and Ctrl + wheel just its height.
 - The minimap button: click to open, right-click for a quick menu, drag to move it.
 - Interface scale (General): the size of the whole game interface, from 50 % to 115 % (smaller than the game's own
   64 % too), or Pixel perfect for your screen. "Game's own" hands it back to the game's setting.
+
+Languages: English, German, French, Spanish (Spain and Mexico), Russian and Brazilian Portuguese, following your game client.
 
 ## Feedback
 

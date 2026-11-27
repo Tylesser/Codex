@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Future spells in the spellbook (the user's ask, 2026-11-19: "add a tab to the spell window to show future spells
 -- and expected prices for them"; then "add a tab to here" pointing at the spellbook's icon tabs, and "I'd like to see
@@ -37,7 +38,7 @@ Q.future = F
 
 local KEY = "futureSpells"
 F.ROW = 24
-F.TAB_TEXT = "Future spells"
+F.TAB_TEXT = L["Future spells"]
 F.ICON = "Interface\\Icons\\INV_Misc_Book_11"
 
 local function Readable(value)
@@ -333,7 +334,7 @@ function F.GameSpells(known)
     local forRace = not races or races == 0 or not race or HasBit(races, race)
     local name = forRace and SpellName(id)
     if name and (talent ~= 1 or names[name:lower()]) then
-      local rankText = rank > 0 and (C_Spell and Str(Ask(C_Spell.GetSpellSubtext, id)) or ("Rank %d"):format(rank))
+      local rankText = rank > 0 and (C_Spell and Str(Ask(C_Spell.GetSpellSubtext, id)) or L["Rank %d"]:format(rank))
         or nil
       out[#out + 1] = { id = id, level = level, name = name, rank = rankText, game = true,
         icon = C_Spell and Num(Ask(C_Spell.GetSpellTexture, id)) }
@@ -447,18 +448,18 @@ function F.Rows(list)
 end
 
 local function Spells(count)
-  return count == 1 and "1 spell" or ("%d spells"):format(count)
+  return count == 1 and L["1 spell"] or L["%d spells"]:format(count)
 end
 
 -- A sum: "1g 20s", "price not seen yet" when none of it is known, "1g 20s + 2 not seen yet" when part is.
 local function Cost(bucket)
   local unknown, copper = bucket.unknown or 0, bucket.cost or 0
   if unknown > 0 and unknown >= (bucket.count or 0) then
-    return "price not seen yet"
+    return L["price not seen yet"]
   end
   local text = ns.Money(copper)
   if unknown > 0 then
-    text = ("%s + %d not seen yet"):format(text, unknown)
+    text = L["%s + %d not seen yet"]:format(text, unknown)
   end
   return text
 end
@@ -469,18 +470,18 @@ function F.Summary(list, totals)
   totals = totals or F.Totals(list)
   local lines = {}
   if totals.now.count > 0 then
-    lines[#lines + 1] = ("Learn now: %s for %s"):format(Spells(totals.now.count), Cost(totals.now))
+    lines[#lines + 1] = L["Learn now: %s for %s"]:format(Spells(totals.now.count), Cost(totals.now))
   else
-    lines[#lines + 1] = "Nothing new to learn at your level."
+    lines[#lines + 1] = L["Nothing new to learn at your level."]
   end
   if totals.next.level then
-    lines[#lines + 1] = ("Next, at level %d: %s for %s"):format(totals.next.level, Spells(totals.next.count),
+    lines[#lines + 1] = L["Next, at level %d: %s for %s"]:format(totals.next.level, Spells(totals.next.count),
       Cost(totals.next))
   end
   if totals.all.count > 0 then
     local money = Num(Ask(GetMoney))
-    lines[#lines + 1] = ("Everything to level %d: %s for %s%s"):format(totals.top or totals.level,
-      Spells(totals.all.count), Cost(totals.all), money and (" (you have %s)"):format(ns.Money(money)) or "")
+    lines[#lines + 1] = L["Everything to level %d: %s for %s%s"]:format(totals.top or totals.level,
+      Spells(totals.all.count), Cost(totals.all), money and L[" (you have %s)"]:format(ns.Money(money)) or "")
   end
   return lines
 end
@@ -488,9 +489,9 @@ end
 function F.Note()
   local store = F.Store()
   if not store.seen then
-    return "Levels from the game's own data. Visit your class trainer once and Codex notes what each spell costs."
+    return L["Levels from the game's own data. Visit your class trainer once and Codex notes what each spell costs."]
   end
-  return ("Prices as your class trainer asked them %s ago."):format(ns.Age and ns.Age(store.seen) or "a while")
+  return L["Prices as your class trainer asked them %s ago."]:format(ns.Age and ns.Age(store.seen) or L["a while"])
 end
 
 -- The page --------------------------------------------------------------------------------------------------------
@@ -509,8 +510,8 @@ local function Tooltip(row)
     end
   end
   GameTooltip:AddLine(" ")
-  GameTooltip:AddLine(("Level %d · %s"):format(entry.level or 0, entry.cost and ns.Money(entry.cost) or
-    "price not seen yet"), 1, 1, 1)
+  GameTooltip:AddLine(L["Level %d · %s"]:format(entry.level or 0, entry.cost and ns.Money(entry.cost) or
+    L["price not seen yet"]), 1, 1, 1)
   GameTooltip:Show()
 end
 
@@ -544,7 +545,7 @@ local function UpdateRow(row, item)
     row.icon:Hide()
     row.name:SetText("")
     row.head:Show()
-    row.head:SetText(("Level %d"):format(item.header) .. (item.now and "  ·  learn now" or ""))
+    row.head:SetText((item.now and L["Level %d  ·  learn now"] or L["Level %d"]):format(item.header))
     row.cost:SetText(("%s · %s"):format(Spells(item.count), Cost(item)))
     return
   end
@@ -580,7 +581,7 @@ function F.BuildPage(book)
   UI.Panel(page, { shadow = false, strip = false, alpha = 1 })
   page.title = UI.Text(page, "head", 18, "accent")
   page.title:SetPoint("TOPLEFT", 20, -16)
-  page.title:SetText("Future spells")
+  page.title:SetText(L["Future spells"])
   page.note = UI.Text(page, "body", 11, "muted")
   page.note:SetPoint("TOPLEFT", page.title, "BOTTOMLEFT", 0, -4)
   page.note:SetPoint("RIGHT", -20, 0)
@@ -598,7 +599,7 @@ function F.BuildPage(book)
   page.list:SetPoint("BOTTOMRIGHT", -16, 16)
   page.empty = UI.Text(page.list, "body", 12, "muted")
   page.empty:SetPoint("CENTER")
-  page.empty:SetText("You know every spell your class learns.")
+  page.empty:SetText(L["You know every spell your class learns."])
   page:SetScript("OnShow", function()
     F.Refresh()
   end)
@@ -748,7 +749,7 @@ local function TabTooltip(tab)
   end
   GameTooltip:SetOwner(tab, "ANCHOR_RIGHT")
   GameTooltip:SetText(F.TAB_TEXT)
-  GameTooltip:AddLine("Spells you haven't learned yet, by level, with their prices.", 1, 1, 1, true)
+  GameTooltip:AddLine(L["Spells you haven't learned yet, by level, with their prices."], 1, 1, 1, true)
   GameTooltip:Show()
 end
 
@@ -903,11 +904,8 @@ end
 
 Q.AddToggle({
   key = KEY,
-  name = "Future spells in the spellbook",
-  desc = "A tab after the spellbook's school tabs: every spell and rank your class learns that you haven't learned "
-    .. "yet, by level, with what your class trainer asks for it, and what it all adds up to (what you can learn now, "
-    .. "at the next level, and everything). Codex notes the prices when you visit your class trainer (shared by your "
-    .. "characters of the same class); until then the list shows the spells without prices.",
+  name = L["Future spells in the spellbook"],
+  desc = L["A tab after the spellbook's school tabs: every spell and rank your class learns that you haven't learned yet, by level, with what your class trainer asks for it, and what it all adds up to (what you can learn now, at the next level, and everything). Codex notes the prices when you visit your class trainer (shared by your characters of the same class); until then the list shows the spells without prices."],
   default = true,
   order = 56,
   Enable = F.Enable,

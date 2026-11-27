@@ -7,6 +7,7 @@ local addonName, ns = ...
 -- Ported from Tylesser - Commerce Authority, whose list was Auctionator's.
 
 local C = ns.commerce
+local L = ns.L
 
 C.SHOPPING_LIST = "Commerce Authority"
 local MAX_WRITS = 20
@@ -91,7 +92,7 @@ end
 local function MakeList(picks)
   local A = Auction()
   if not A then
-    ns.Say("the buy list needs Codex's Auction House module; switch it on in the Codex window.")
+    ns.Say(L["the buy list needs Codex's Auction House module; switch it on in the Codex window."])
     return nil
   end
   local list
@@ -121,16 +122,16 @@ function C.CreateCrateBuyList(crate)
   local A = Auction()
   local option = crate and crate.options[1]
   if not A then
-    ns.Say("the buy list needs Codex's Auction House module; switch it on in the Codex window.")
+    ns.Say(L["the buy list needs Codex's Auction House module; switch it on in the Codex window."])
     return false
   end
   if not option then
-    ns.Say("no known fill for " .. (crate and crate.info.name or "that crate") .. ".")
+    ns.Say(L["no known fill for %s."]:format(crate and crate.info.name or L["that crate"]))
     return false
   end
   local need = math.max(option.count * crate.count - option.owned, 0)
   if need == 0 then
-    ns.Say(("your bags already hold enough %s to fill %s."):format(option.name, crate.info.name))
+    ns.Say(L["your bags already hold enough %s to fill %s."]:format(option.name, crate.info.name))
     return false
   end
   local list
@@ -149,7 +150,7 @@ function C.CreateCrateBuyList(crate)
     term.noRecipes = true
   end
   A.Changed("lists")
-  ns.Say(("shopping list \"%s\": %s, %d to fill %d %s."):format(C.SHOPPING_LIST, option.name, need, crate.count,
+  ns.Say(L["shopping list \"%s\": %s, %d to fill %d %s."]:format(C.SHOPPING_LIST, option.name, need, crate.count,
     crate.info.name))
   return true
 end
@@ -161,7 +162,7 @@ function C.SearchCrate(crate)
     return false
   end
   if InCombatLockdown and InCombatLockdown() then
-    ns.Say("auction searches wait until the fight is over.")
+    ns.Say(L["auction searches wait until the fight is over."])
     return false
   end
   local terms = {}
@@ -169,7 +170,7 @@ function C.SearchCrate(crate)
     terms[#terms + 1] = option.name
   end
   if #terms == 0 then
-    ns.Say("no known fill for " .. crate.info.name .. ".")
+    ns.Say(L["no known fill for %s."]:format(crate.info.name))
     return false
   end
   local A = ns.auction
@@ -183,15 +184,18 @@ function C.SearchCrate(crate)
       if A.ShowPanel then
         pcall(A.ShowPanel)
       end
-      ns.Say(("searching the auction house: what fills %s (%d item%s)."):format(crate.info.name, #terms,
-        #terms == 1 and "" or "s"))
+      if #terms == 1 then
+        ns.Say(L["searching the auction house: what fills %s (1 item)."]:format(crate.info.name))
+      else
+        ns.Say(L["searching the auction house: what fills %s (%d items)."]:format(crate.info.name, #terms))
+      end
       return true
     end
   end
   local ok, started = pcall(C.BlizzardSearch, terms[1])
   if ok and started then
     if #terms > 1 then
-      ns.Say(("searching for %s; switch Codex's Auction House module on to search all %d fills in turn."):format(
+      ns.Say(L["searching for %s; switch Codex's Auction House module on to search all %d fills in turn."]:format(
         terms[1], #terms))
     end
     return true
@@ -200,25 +204,25 @@ function C.SearchCrate(crate)
 end
 
 local function Where()
-  return " At the auction house, click it in the Codex panel to search it."
+  return " " .. L["At the auction house, click it in the Codex panel to search it."]
 end
 
 -- The cheapest writs to your next standing.
 function C.CreateBuyList()
   local plan = C.PlanPurchases()
   if plan.goal <= 0 then
-    ns.Say("the writs in your bags already reach your next standing.")
+    ns.Say(L["the writs in your bags already reach your next standing."])
     return false
   end
   if #plan.picks == 0 then
-    ns.Say("no priced writs yet. Scan the auction house, or search for \"Craftsman's Writ\".")
+    ns.Say(L["no priced writs yet. Scan the auction house, or search for \"%s\"."]:format("Craftsman's Writ"))
     return false
   end
   if not MakeList(plan.picks) then
     return false
   end
-  ns.Say(("shopping list \"%s\": %d writs for about %s reputation (%s needed), about %s in all.%s"):format(
-    C.SHOPPING_LIST, #plan.picks, C.Number(plan.rep), C.Number(plan.goal), C.Money(plan.cost), Where()))
+  ns.Say(L["shopping list \"%s\": %d writs for about %s reputation (%s needed), about %s in all."]:format(
+    C.SHOPPING_LIST, #plan.picks, C.Number(plan.rep), C.Number(plan.goal), C.Money(plan.cost)) .. Where())
   return true
 end
 
@@ -227,9 +231,9 @@ function C.CreateCustomerBuyList(group)
   if not (group and #group.writs > 0) or not MakeList(group.writs) then
     return false
   end
-  ns.Say(("shopping list \"%s\": %d writs for %s, about %s reputation, about %s in all.%s"):format(
-    C.SHOPPING_LIST, #group.writs, C.CustomerText(group.customer), C.Number(group.rep), C.Money(group.total),
-    Where()))
+  ns.Say(L["shopping list \"%s\": %d writs for %s, about %s reputation, about %s in all."]:format(
+    C.SHOPPING_LIST, #group.writs, C.CustomerText(group.customer), C.Number(group.rep), C.Money(group.total))
+    .. Where())
   return true
 end
 
@@ -238,8 +242,8 @@ function C.CreateZoneBuyList(zone)
   if not (zone and #zone.writs > 0) or not MakeList(zone.writs) then
     return false
   end
-  ns.Say(("shopping list \"%s\": %d writs for %d NPCs in %s, about %s reputation, about %s in all.%s"):format(
-    C.SHOPPING_LIST, #zone.writs, #zone.npcs, zone.name, C.Number(zone.rep), C.Money(zone.total), Where()))
+  ns.Say(L["shopping list \"%s\": %d writs for %d NPCs in %s, about %s reputation, about %s in all."]:format(
+    C.SHOPPING_LIST, #zone.writs, #zone.npcs, zone.name, C.Number(zone.rep), C.Money(zone.total)) .. Where())
   return true
 end
 
@@ -273,7 +277,7 @@ function C.SearchWrits(writIDs, held)
     return false
   end
   if InCombatLockdown and InCombatLockdown() then
-    ns.Say("auction searches wait until the fight is over.")
+    ns.Say(L["auction searches wait until the fight is over."])
     return false
   end
   held = held or {}
@@ -297,7 +301,7 @@ function C.SearchWrits(writIDs, held)
     end
   end
   if #terms == 0 then
-    ns.Say("you already hold all of these writs, and they're ready.")
+    ns.Say(L["you already hold all of these writs, and they're ready."])
     return false
   end
   local A = ns.auction
@@ -311,8 +315,12 @@ function C.SearchWrits(writIDs, held)
       if A.ShowPanel then
         pcall(A.ShowPanel)
       end
-      ns.Say(("searching the auction house: %d writ%s and the items they ask for (the materials for those you "
-        .. "craft)."):format(writCount, writCount == 1 and "" or "s"))
+      if writCount == 1 then
+        ns.Say(L["searching the auction house: 1 writ and the items they ask for (the materials for those you craft)."])
+      else
+        ns.Say(L["searching the auction house: %d writs and the items they ask for (the materials for those you craft)."]
+          :format(writCount))
+      end
       return true
     end
     if ok and why then
@@ -322,7 +330,7 @@ function C.SearchWrits(writIDs, held)
   local ok, started = pcall(BlizzardSearch, terms[1])
   if ok and started then
     if #terms > 1 then
-      ns.Say(("searching for %s; switch Codex's Auction House module on to search all %d names in turn."):format(
+      ns.Say(L["searching for %s; switch Codex's Auction House module on to search all %d names in turn."]:format(
         terms[1], #terms))
     end
     return true

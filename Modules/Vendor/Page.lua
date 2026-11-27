@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- The Vendor page (board R2-CodexModule, page "vendor"): icon + heading + status, the about text, three
 -- options (guild funds indented, dimmed while repair is off), the Also sell / Never sell lists side by side
@@ -21,8 +22,8 @@ local function Wrap(text)
 end
 
 local LIST_INFO = {
-  alsoSell = { title = "ALSO SELL", desc = "Sold with the junk, whatever its quality." },
-  neverSell = { title = "NEVER SELL", desc = "Kept even when it is grey." },
+  alsoSell = { title = L["ALSO SELL"], desc = L["Sold with the junk, whatever its quality."] },
+  neverSell = { title = L["NEVER SELL"], desc = L["Kept even when it is grey."] },
 }
 
 -- Shift-click puts the link into the box that has the cursor.
@@ -69,7 +70,7 @@ local function BuildList(page, which, left)
   col.desc:SetText(info.desc)
   col.desc:SetPoint("TOPLEFT", col.title, "BOTTOMLEFT", 0, -2)
 
-  col.add = UI.Button(page, 56, 28, "Add")
+  col.add = UI.Button(page, 56, 28, L["Add"])
   UI.Font(col.add.label, "body", 14)
   col.add:SetPoint("TOP", col.desc, "BOTTOM", 0, -8)
   if left then
@@ -83,7 +84,7 @@ local function BuildList(page, which, left)
   col.box:SetPoint("RIGHT", col.add, "LEFT", -6, 0)
   col.hint = UI.Text(col.box, "body", 13, "muted")
   col.hint:SetPoint("LEFT", 10, 0)
-  col.hint:SetText("Shift-click an item or type its ID")
+  col.hint:SetText(L["Shift-click an item or type its ID"])
   local function Hint()
     col.hint:SetShown(col.box:GetText() == "" and not col.box:HasFocus())
   end
@@ -93,7 +94,7 @@ local function BuildList(page, which, left)
     if V.AddToList(which, text) then
       col.box:SetText("")
     elseif text ~= "" then
-      ns.Say("Shift-click an item, drag it here or type its item ID.")
+      ns.Say(L["Shift-click an item, drag it here or type its item ID."])
     end
     col.box:ClearFocus()
     Hint()
@@ -121,7 +122,7 @@ local function BuildList(page, which, left)
   col.box:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_TOP")
     GameTooltip:AddLine(info.desc)
-    GameTooltip:AddLine("Click here, then Shift-click an item; or drag an item here; or type its item ID.", 1, 1, 1, true)
+    GameTooltip:AddLine(L["Click here, then Shift-click an item; or drag an item here; or type its item ID."], 1, 1, 1, true)
     GameTooltip:Show()
   end)
   col.box:SetScript("OnLeave", GameTooltip_Hide)
@@ -144,7 +145,7 @@ local function BuildList(page, which, left)
       row.remove:SetPoint("RIGHT", -6, 0)
       row.remove.label = UI.Text(row.remove, "body", 13, "muted")
       row.remove.label:SetPoint("CENTER")
-      row.remove.label:SetText("remove")
+      row.remove.label:SetText(L["remove"])
       local hover = row.remove:CreateTexture(nil, "HIGHLIGHT")
       hover:SetAllPoints()
       UI.SetColor(hover, ns.Theme().accent, 0.12)
@@ -182,31 +183,34 @@ local function BuildList(page, which, left)
   return col
 end
 
-function V.LastText()
+-- accent: a colour hex for "Last visit" (the page), nil for plain text.
+function V.LastText(accent)
   local last = V.DB().last
   if not last then
-    return "No merchant visit yet."
+    return L["No merchant visit yet."]
   end
-  local where = (last.merchant and ("at " .. last.merchant .. ", ") or "") .. ns.Age(last.time) .. " ago"
+  local where = last.merchant and L["at %s, %s ago"]:format(last.merchant, ns.Age(last.time)) or L["%s ago"]:format(ns.Age(last.time))
   local parts = {}
   if (last.sold or 0) > 0 then
-    parts[#parts + 1] = ("sold %d junk item%s for %s"):format(last.sold, last.sold == 1 and "" or "s",
-      ns.Money(last.soldValue))
+    parts[#parts + 1] = last.sold == 1 and L["sold 1 junk item for %s"]:format(ns.Money(last.soldValue))
+      or L["sold %d junk items for %s"]:format(last.sold, ns.Money(last.soldValue))
   end
   if (last.left or 0) > 0 then
-    parts[#parts + 1] = ("%d left unsold"):format(last.left)
+    parts[#parts + 1] = L["%d left unsold"]:format(last.left)
   end
   if (last.repair or 0) > 0 then
-    local by = last.guild == "all" and " (guild)" or last.guild == "part" and " (partly guild)" or ""
-    parts[#parts + 1] = "repaired for " .. ns.Money(last.repair) .. by
+    local text = last.guild == "all" and L["repaired for %s (guild)"] or last.guild == "part"
+      and L["repaired for %s (partly guild)"] or L["repaired for %s"]
+    parts[#parts + 1] = text:format(ns.Money(last.repair))
   end
   if last.noGold then
-    parts[#parts + 1] = "not enough gold to repair (" .. ns.Money(last.noGold) .. ")"
+    parts[#parts + 1] = L["not enough gold to repair (%s)"]:format(ns.Money(last.noGold))
   end
   if #parts == 0 then
-    parts[1] = "nothing to sell or repair"
+    parts[1] = L["nothing to sell or repair"]
   end
-  return "Last visit (" .. where .. "): " .. table.concat(parts, "; ") .. "."
+  local label = accent and ("|cff" .. accent .. L["Last visit"] .. "|r") or L["Last visit"]
+  return label .. " (" .. where .. "): " .. table.concat(parts, "; ") .. "."
 end
 
 local function Hex(color)
@@ -227,20 +231,20 @@ function V.RefreshPage()
   view.guild:SetAlpha(db.repair and 1 or 0.45) -- board: guildOpacity
   local notes = {}
   if V.LeatrixDoes("sell") then
-    notes[#notes + 1] = "Leatrix Plus has \"Sell junk automatically\" on, so Codex leaves selling to it."
+    notes[#notes + 1] = L["Leatrix Plus has \"Sell junk automatically\" on, so Codex leaves selling to it."]
   end
   if V.LeatrixDoes("repair") then
-    notes[#notes + 1] = "Leatrix Plus has \"Repair automatically\" on, so Codex leaves repairing to it."
+    notes[#notes + 1] = L["Leatrix Plus has \"Repair automatically\" on, so Codex leaves repairing to it."]
   end
   if #notes > 0 then
-    notes[#notes + 1] = "Turn it off there to use Codex's (the buttons under the merchant window always work)."
+    notes[#notes + 1] = L["Turn it off there to use Codex's (the buttons under the merchant window always work)."]
   end
   view.leatrix:SetText(table.concat(notes, " "))
   view.also.list:SetItems(V.ListItems("alsoSell"))
   view.never.list:SetItems(V.ListItems("neverSell"))
   view.also.Hint()
   view.never.Hint()
-  local text = V.LastText():gsub("^Last visit", "|cff" .. Hex(ns.Theme().accent) .. "Last visit|r")
+  local text = V.LastText(Hex(ns.Theme().accent))
   view.last:SetText(text)
 end
 
@@ -258,7 +262,7 @@ function V.BuildPage(page)
   icon:SetTexture(ns.modules.vendor.icon)
   icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
   T.Outline(tile, 0, { 0, 0, 0, 0.55 }, 1, "OVERLAY")
-  local heading = UI.Heading(page, "Vendor", 24)
+  local heading = UI.Heading(page, L["Vendor"], 24)
   heading:SetPoint("TOPLEFT", tile, "TOPRIGHT", 12, 1)
   view.status = Wrap(UI.Text(page, "body", 14, "muted"))
   view.status:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -3)
@@ -268,23 +272,21 @@ function V.BuildPage(page)
   if about.SetSpacing then
     about:SetSpacing(4) -- board: line-height 1.45
   end
-  about:SetText("When you talk to a merchant, Codex sells your grey items (a few at a time, so the server keeps "
-    .. "up) and repairs your gear, with one line in chat for each. Hold Shift while opening the merchant to skip "
-    .. "both. The merchant window gets Sell junk and Repair buttons for doing it by hand.")
+  about:SetText(L["When you talk to a merchant, Codex sells your grey items (a few at a time, so the server keeps up) and repairs your gear, with one line in chat for each. Hold Shift while opening the merchant to skip both. The merchant window gets Sell junk and Repair buttons for doing it by hand."])
 
-  view.sell = UI.Check(page, "Sell junk automatically")
+  view.sell = UI.Check(page, L["Sell junk automatically"])
   view.sell:SetPoint("TOPLEFT", about, "BOTTOMLEFT", 0, -14)
   view.sell:SetScript("OnClick", function(self)
     V.DB().sellJunk = self:GetChecked() and true or false
     V.RefreshPage()
   end)
-  view.repair = UI.Check(page, "Repair automatically")
+  view.repair = UI.Check(page, L["Repair automatically"])
   view.repair:SetPoint("TOPLEFT", view.sell, "BOTTOMLEFT", 0, -8)
   view.repair:SetScript("OnClick", function(self)
     V.DB().repair = self:GetChecked() and true or false
     V.RefreshPage()
   end)
-  view.guild = UI.Check(page, "Use guild funds first (when your rank may)")
+  view.guild = UI.Check(page, L["Use guild funds first (when your rank may)"])
   view.guild:SetPoint("TOPLEFT", view.repair, "BOTTOMLEFT", 28, -8)
   view.guild:SetScript("OnClick", function(self)
     V.DB().guildFunds = self:GetChecked() and true or false

@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Auction house module, part 4: its page in the Codex window. Tabs: Prices (search the price database),
 -- Shopping lists (edit lists and terms), Scan, Options.
@@ -28,13 +29,13 @@ local function ShowItemTooltip(owner, key)
   local history = A.GetHistory(key)
   if #history > 1 then
     GameTooltip:AddLine(" ")
-    GameTooltip:AddLine("Lowest price per day", UI.Unpack(Color("accent")))
+    GameTooltip:AddLine(L["Lowest price per day"], UI.Unpack(Color("accent")))
     for index = #history, math.max(1, #history - 6), -1 do
       local day = history[index]
       GameTooltip:AddDoubleLine(A.HistoryDayText(day), ns.Money(day.price), 0.8, 0.8, 0.8, 1, 1, 1)
     end
   end
-  GameTooltip:AddLine("Click for its price history.", 0.6, 0.6, 0.6)
+  GameTooltip:AddLine(L["Click for its price history."], 0.6, 0.6, 0.6)
   GameTooltip:Show()
 end
 A.ShowItemTooltip = ShowItemTooltip
@@ -113,7 +114,7 @@ local function RefreshPrices()
   prices.rows = A.PriceRows(prices.search:GetText(), prices.sortKey, prices.reverse)
   prices.list:SetItems(prices.rows)
   local total = A.ItemCount()
-  prices.count:SetText(#prices.rows == total and (total .. " items") or (#prices.rows .. " of " .. total .. " items"))
+  prices.count:SetText(#prices.rows == total and L["%d items"]:format(total) or L["%d of %d items"]:format(#prices.rows, total))
 end
 
 local function BuildPrices(body)
@@ -123,7 +124,7 @@ local function BuildPrices(body)
 
   local label = UI.Text(body, "body", 12, "text")
   label:SetPoint("TOPLEFT", 0, -4)
-  label:SetText("Search")
+  label:SetText(L["Search"])
   prices.search = UI.EditBox(body, 200, 22)
   prices.search:SetPoint("LEFT", label, "RIGHT", 8, 0)
   prices.search:SetScript("OnTextChanged", function()
@@ -141,7 +142,7 @@ local function BuildPrices(body)
 
   prices.sortButtons = {}
   local previous
-  for _, sort in ipairs({ { "trend", "Trend" }, { "age", "Age" }, { "price", "Price" }, { "name", "Name" } }) do
+  for _, sort in ipairs({ { "trend", L["Trend"] }, { "age", L["Age"] }, { "price", L["Price"] }, { "name", L["Name"] } }) do
     local button = UI.Button(body, 56, 20, sort[2])
     if previous then
       button:SetPoint("RIGHT", previous, "LEFT", -4, 0)
@@ -161,7 +162,7 @@ local function BuildPrices(body)
   end
   local sortLabel = UI.Text(body, "body", 11, "muted")
   sortLabel:SetPoint("RIGHT", previous, "LEFT", -6, 0)
-  sortLabel:SetText("Sort")
+  sortLabel:SetText(L["Sort"])
 
   prices.list = UI.List(body, {
     rowHeight = 22,
@@ -219,7 +220,7 @@ local function BuildPrices(body)
         end
       end
       row.icon:SetTexture(item.icon or 134400)
-      row.name:SetText(item.name or ("Item " .. tostring(item.key)))
+      row.name:SetText(item.name or L["Item %s"]:format(tostring(item.key)))
       row.name:SetTextColor(UI.Unpack(A.QualityColor(item.quality)))
       row.price:SetText(ns.Money(item.rec.m))
       row.age:SetText(ns.Age(item.rec.t))
@@ -252,7 +253,7 @@ local function EditorValues()
   local maxText = lists.maxPrice:GetText() or ""
   local maxPrice = A.ParseMoney(maxText)
   if maxText:match("%S") and not maxPrice then
-    return nil, "Max price: write it like 12g 50s, or a number of gold."
+    return nil, L["Max price: write it like 12g 50s, or a number of gold."]
   end
   return lists.text:GetText(), lists.exact:GetChecked(), maxPrice
 end
@@ -276,7 +277,7 @@ RefreshLists = function()
   lists.listList:SetItems(all)
   local selected = lists.selected
   lists.terms:SetItems(selected and selected.terms or {})
-  lists.title:SetText(selected and selected.name or "No list yet: type a name and press New.")
+  lists.title:SetText(selected and selected.name or L["No list yet: type a name and press New."])
   for _, button in ipairs({ lists.rename, lists.delete, lists.add }) do
     button:SetEnabled(selected ~= nil)
   end
@@ -295,23 +296,21 @@ local function BuildLists(body)
   listsLabel:SetText("LISTS")
 
   -- Auctionator's saved lists, while it is loaded and has some (A.ImportAuctionator)
-  lists.import = UI.Button(body, 130, 18, "From Auctionator")
+  lists.import = UI.Button(body, 130, 18, L["From Auctionator"])
   lists.import:SetPoint("TOPRIGHT", body, "TOPLEFT", leftWidth, 0)
   lists.import:SetShown(#A.AuctionatorLists() > 0)
   lists.import:SetScript("OnClick", function()
     local made, merged, added = A.ImportAuctionator()
     if added == 0 then
-      ns.Say("Auctionator's lists are already in Codex.")
+      ns.Say(L["Auctionator's lists are already in Codex."])
     else
-      ns.Say(("From Auctionator: %d new %s, %d %s added to, %d %s."):format(made, made == 1 and "list" or "lists",
-        merged, merged == 1 and "list" or "lists", added, added == 1 and "term" or "terms"))
+      ns.Say(L["From Auctionator: new lists %d, lists added to %d, terms %d."]:format(made, merged, added))
     end
   end)
   lists.import:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-    GameTooltip:AddLine("Import from Auctionator")
-    GameTooltip:AddLine("Copies Auctionator's saved shopping lists into Codex (exact names stay exact). Lists "
-      .. "you already have here get only the terms they lack. Auctionator's lists stay as they are.", 1, 1, 1, true)
+    GameTooltip:AddLine(L["Import from Auctionator"])
+    GameTooltip:AddLine(L["Copies Auctionator's saved shopping lists into Codex (exact names stay exact). Lists you already have here get only the terms they lack. Auctionator's lists stay as they are."], 1, 1, 1, true)
     GameTooltip:Show()
   end)
   lists.import:SetScript("OnLeave", GameTooltip_Hide)
@@ -341,26 +340,26 @@ local function BuildLists(body)
 
   lists.name = UI.EditBox(body, leftWidth, 22)
   lists.name:SetPoint("BOTTOMLEFT", 0, 34)
-  lists.new = UI.Button(body, 66, 24, "New")
+  lists.new = UI.Button(body, 66, 24, L["New##list"])
   lists.new:SetPoint("BOTTOMLEFT", 0, 4)
   lists.new:SetScript("OnClick", function()
     lists.selected = A.NewList(lists.name:GetText())
     lists.name:SetText(lists.selected.name)
     SelectTerm(nil)
   end)
-  lists.rename = UI.Button(body, 68, 24, "Rename")
+  lists.rename = UI.Button(body, 68, 24, L["Rename"])
   lists.rename:SetPoint("LEFT", lists.new, "RIGHT", 6, 0)
   lists.rename:SetScript("OnClick", function()
     A.RenameList(lists.selected, lists.name:GetText())
   end)
-  lists.delete = UI.Button(body, 64, 24, "Delete")
+  lists.delete = UI.Button(body, 64, 24, L["Delete"])
   lists.delete:SetPoint("LEFT", lists.rename, "RIGHT", 6, 0)
   lists.delete:SetScript("OnClick", function()
     if IsShiftKeyDown() or (lists.selected and #lists.selected.terms == 0) then
       A.DeleteList(lists.selected)
       lists.name:SetText("")
     else
-      ns.Say("Hold Shift and click Delete to delete a list that still has terms.")
+      ns.Say(L["Hold Shift and click Delete to delete a list that still has terms."])
     end
   end)
 
@@ -388,8 +387,8 @@ local function BuildLists(body)
     end,
     UpdateRow = function(row, term)
       row.text:SetText(term.text)
-      row.tag:SetText(term.exact and "exact" or "")
-      row.price:SetText(term.maxPrice and ("max " .. ns.Money(term.maxPrice)) or "")
+      row.tag:SetText(term.exact and L["exact"] or "")
+      row.price:SetText(term.maxPrice and L["max %s"]:format(ns.Money(term.maxPrice)) or "")
       row.selected:SetShown(term == lists.term)
     end,
   })
@@ -398,20 +397,20 @@ local function BuildLists(body)
 
   local textLabel = UI.Text(body, "body", 12, "text")
   textLabel:SetPoint("BOTTOMLEFT", left, 38)
-  textLabel:SetText("Search for")
+  textLabel:SetText(L["Search for"])
   lists.text = UI.EditBox(body, math.max(140, width - left - 330), 22)
   lists.text:SetPoint("LEFT", textLabel, "RIGHT", 8, 0)
-  lists.exact = UI.Check(body, "Exact name")
+  lists.exact = UI.Check(body, L["Exact name"])
   lists.exact:SetPoint("LEFT", lists.text, "RIGHT", 8, 0)
   local maxLabel = UI.Text(body, "body", 12, "text")
   maxLabel:SetPoint("LEFT", lists.exact.label, "RIGHT", 14, 0)
-  maxLabel:SetText("Max")
+  maxLabel:SetText(L["Max"])
   lists.maxPrice = UI.EditBox(body, 90, 22)
   lists.maxPrice:SetPoint("LEFT", maxLabel, "RIGHT", 6, 0)
   lists.maxPrice:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_TOP")
-    GameTooltip:AddLine("Highest unit price you'd pay")
-    GameTooltip:AddLine("Like 12g 50s, or a number of gold. Results at or below it are marked at the auction house.", 1, 1, 1, true)
+    GameTooltip:AddLine(L["Highest unit price you'd pay"])
+    GameTooltip:AddLine(L["Like 12g 50s, or a number of gold. Results at or below it are marked at the auction house."], 1, 1, 1, true)
     GameTooltip:Show()
   end)
   lists.maxPrice:SetScript("OnLeave", GameTooltip_Hide)
@@ -424,7 +423,7 @@ local function BuildLists(body)
     end
     fn(text, exact, maxPrice)
   end
-  lists.add = UI.Button(body, 80, 24, "Add")
+  lists.add = UI.Button(body, 80, 24, L["Add"])
   lists.add:SetPoint("BOTTOMLEFT", left, 4)
   lists.add:SetScript("OnClick", function()
     Apply(function(text, exact, maxPrice)
@@ -434,14 +433,14 @@ local function BuildLists(body)
       end
     end)
   end)
-  lists.save = UI.Button(body, 80, 24, "Save")
+  lists.save = UI.Button(body, 80, 24, L["Save"])
   lists.save:SetPoint("LEFT", lists.add, "RIGHT", 6, 0)
   lists.save:SetScript("OnClick", function()
     Apply(function(text, exact, maxPrice)
       A.EditTerm(lists.term, text, exact, maxPrice)
     end)
   end)
-  lists.remove = UI.Button(body, 80, 24, "Remove")
+  lists.remove = UI.Button(body, 80, 24, L["Remove"])
   lists.remove:SetPoint("LEFT", lists.save, "RIGHT", 6, 0)
   lists.remove:SetScript("OnClick", function()
     A.RemoveTerm(lists.selected, lists.term)
@@ -450,7 +449,7 @@ local function BuildLists(body)
   local hint = UI.Text(body, "body", 11, "muted")
   hint:SetPoint("LEFT", lists.remove, "RIGHT", 10, 0)
   hint:SetPoint("RIGHT", 0, 0)
-  hint:SetText("Search a list from the Codex panel beside the auction house.")
+  hint:SetText(L["Search a list from the Codex panel beside the auction house."])
 
   lists.Refresh = RefreshLists
 end
@@ -465,19 +464,19 @@ local function RefreshScan()
   local realm = A.Realm(false)
   scan.status:SetText(A.ScanText())
   scan.button:SetEnabled(A.IsModern() and A.open and A.scan.state == "idle" and A.NextScanIn() == 0)
-  local lines = { ("Prices on %s: %d items."):format(A.RealmKey(), A.ItemCount()) }
+  local lines = { L["Prices on %s: %d items."]:format(A.RealmKey(), A.ItemCount()) }
   if realm and realm.scanDone then
-    lines[#lines + 1] = ("Last full scan %s ago: %d items."):format(ns.Age(realm.scanDone), realm.scanned or 0)
+    lines[#lines + 1] = L["Last full scan %s ago: %d items."]:format(ns.Age(realm.scanDone), realm.scanned or 0)
   else
-    lines[#lines + 1] = "No full scan yet on this realm."
+    lines[#lines + 1] = L["No full scan yet on this realm."]
   end
   if A.scan.lastResult then
     lines[#lines + 1] = A.scan.lastResult
   end
   local below = A.BelowCount()
   if below > 0 then
-    lines[#lines + 1] = ("%d %s on sale below the vendor price: \"Below vendor\" in the Codex panel at the auction house.")
-      :format(below, below == 1 and "item" or "items")
+    lines[#lines + 1] = L["Items on sale below the vendor price: %d. See \"Below vendor\" in the Codex panel at the auction house."]
+      :format(below)
   end
   scan.info:SetText(table.concat(lines, "\n"))
 end
@@ -488,10 +487,10 @@ local function BuildScan(body)
   local intro = UI.Text(body, "body", 12, "text")
   intro:SetPoint("TOPLEFT", 0, -4)
   intro:SetPoint("RIGHT", 0, 0)
-  intro:SetText("A full scan reads every auction of your realm at once and saves the lowest price of each item. "
-    .. "The auction house must be open, and the server allows one full scan every 15 minutes. "
-    .. "Prices also update by themselves whenever you browse or search the auction house.")
-  scan.button = UI.Button(body, 140, 28, "Full scan")
+  intro:SetText(L["A full scan reads every auction of your realm at once and saves the lowest price of each item."] .. " "
+    .. L["The auction house must be open, and the server allows one full scan every 15 minutes."] .. " "
+    .. L["Prices also update by themselves whenever you browse or search the auction house."])
+  scan.button = UI.Button(body, 140, 28, L["Full scan"])
   scan.button:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", 0, -14)
   scan.button:SetScript("OnClick", function()
     A.ScanCommand()
@@ -505,7 +504,7 @@ local function BuildScan(body)
   local note = UI.Text(body, "body", 11, "muted")
   note:SetPoint("TOPLEFT", scan.info, "BOTTOMLEFT", 0, -40)
   note:SetPoint("RIGHT", 0, 0)
-  note:SetText("You can also type /codex scan at the auction house.")
+  note:SetText(L["You can also type /codex scan at the auction house."])
   scan.Refresh = RefreshScan
 end
 
@@ -526,9 +525,9 @@ end
 -- "Keep 30 days of price history"; past 90 days the older ones are kept per week.
 function A.DaysText(days)
   if days > A.DAILY then
-    return ("Keep %d days of price history (after %d days, one entry per week)"):format(days, A.DAILY)
+    return L["Keep %d days of price history (after %d days, one entry per week)"]:format(days, A.DAILY)
   end
-  return ("Keep %d days of price history"):format(days)
+  return L["Keep %d days of price history"]:format(days)
 end
 
 -- The next or previous length in A.DAY_CHOICES from any saved number of days.
@@ -564,10 +563,10 @@ local function BuildOptions(body)
   view.options = options
   local anchor
   for _, option in ipairs({
-    { "tooltip", "Auction price in item tooltips", "Hold Shift over a stack to see what the whole stack is worth." },
-    { "tooltipHistory", "Price history in item tooltips", "The past week's average and how today's price compares; hold Shift for the last days." },
-    { "vendor", "Vendor sell price in item tooltips", "The game's sell price shows one item's price; hold Shift for the whole stack. A Vendor line where the game shows none." },
-    { "panel", "Codex panel beside the auction house", "Shopping lists and the scan button at the auction house." },
+    { "tooltip", L["Auction price in item tooltips"], L["Hold Shift over a stack to see what the whole stack is worth."] },
+    { "tooltipHistory", L["Price history in item tooltips"], L["The past week's average and how today's price compares; hold Shift for the last days."] },
+    { "vendor", L["Vendor sell price in item tooltips"], L["The game's sell price shows one item's price; hold Shift for the whole stack. A Vendor line where the game shows none."] },
+    { "panel", L["Codex panel beside the auction house"], L["Shopping lists and the scan button at the auction house."] },
   }) do
     local check = UI.Check(body, option[2])
     check.key = option[1]
@@ -660,7 +659,7 @@ end
 function A.BuildPage(page)
   A.DB()
   view.page = page
-  local heading = UI.Heading(page, "Auction House", 20)
+  local heading = UI.Heading(page, L["Auction House"], 20)
   heading:SetPoint("TOPLEFT")
   view.status = UI.Text(page, "body", 12, "muted")
   view.status:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -4)
@@ -672,7 +671,7 @@ function A.BuildPage(page)
   options:SetPoint("RIGHT", page, "RIGHT", 0, 0)
   options:SetHeight(140)
   BuildPart("options", options)
-  local scanLabel = UI.Section(page, "Full scan")
+  local scanLabel = UI.Section(page, L["Full scan"])
   scanLabel:SetPoint("TOPLEFT", options, "BOTTOMLEFT", 0, -8)
   local scan = CreateFrame("Frame", nil, page)
   scan:SetPoint("TOPLEFT", scanLabel, "BOTTOMLEFT", 0, -6)
@@ -708,5 +707,5 @@ local function PartSection(id, partId, title, order, folded, keywords)
     end,
   })
 end
-PartSection("auction-lists", "lists", "Shopping lists", 11, false, { "shopping lists search terms max price" })
-PartSection("auction-prices", "prices", "Auction prices", 12, true, { "prices price history items" })
+PartSection("auction-lists", "lists", L["Shopping lists"], 11, false, { "shopping lists search terms max price" })
+PartSection("auction-prices", "prices", L["Auction prices"], 12, true, { "prices price history items" })

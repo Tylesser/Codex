@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Quest pages (board R4-Quest): the offer ("A quest is offered"), progress ("Back before it is done") and reward
 -- ("Hand it in and choose a reward"). Title in the body font, the text, then Objectives / Bring / Choose your
@@ -370,7 +371,7 @@ function D.RewardChips(page, palette, withCost)
   end
   if (page.xp or 0) > 0 then
     local number = Number(page.xp)
-    chips[#chips + 1] = { text = number .. " " .. muted .. "experience|r", raw = number .. " experience" }
+    chips[#chips + 1] = { text = number .. " " .. muted .. L["experience"] .. "|r", raw = number .. " " .. L["experience"] }
   end
   for _, rep in ipairs(page.rep or {}) do
     local amount = D.RepAmountText(rep.amount)
@@ -383,14 +384,14 @@ function D.RewardChips(page, palette, withCost)
       raw = "+" .. page.skill.points .. " " .. page.skill.name }
   end
   for _, spell in ipairs(page.spells or {}) do
-    chips[#chips + 1] = { text = muted .. "Learn|r " .. spell.name, raw = "Learn " .. spell.name }
+    chips[#chips + 1] = { text = muted .. L["Learn"] .. "|r " .. spell.name, raw = L["Learn"] .. " " .. spell.name }
   end
   for _, currency in ipairs(page.currencies or {}) do
     chips[#chips + 1] = { text = Number(currency.amount) .. " " .. muted .. currency.name .. "|r",
       raw = currency.amount .. " " .. currency.name }
   end
   if withCost and (page.cost or 0) > 0 then
-    chips[#chips + 1] = { text = muted .. "Costs|r " .. ns.Money(page.cost), raw = "Costs " .. ns.Money(page.cost):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "") }
+    chips[#chips + 1] = { text = muted .. L["Costs"] .. "|r " .. ns.Money(page.cost), raw = L["Costs"] .. " " .. ns.Money(page.cost):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "") }
   end
   return chips
 end
@@ -398,7 +399,7 @@ end
 local function TitleBlock(content, page)
   local text = page.title or ""
   if page.repeatable and D.Str(text) then
-    text = text .. "  |cff" .. Hex(content.palette.muted) .. "Repeatable|r"
+    text = text .. "  |cff" .. Hex(content.palette.muted) .. L["Repeatable"] .. "|r"
   end
   content:Text(text, { size = D.FontSize(5), color = "bright", gap = page.kind == "detail" and 2 or 8 })
 end
@@ -406,10 +407,10 @@ end
 local function LevelLine(content, page)
   local parts = {}
   if page.level then
-    parts[#parts + 1] = "Level " .. page.level
+    parts[#parts + 1] = L["Level %d"]:format(page.level)
   end
   if (page.group or 0) > 1 then
-    parts[#parts + 1] = "Suggested players: " .. page.group
+    parts[#parts + 1] = L["Suggested players: %d"]:format(page.group)
   end
   if #parts > 0 then
     content:Text(table.concat(parts, " · "), { size = D.FontSize(-1), color = "muted", gap = 8 })
@@ -435,36 +436,36 @@ function D.FillQuest(content, page, withText)
   end
   if page.kind == "detail" then
     if D.HasText(page.objectives) then
-      After(content:Section("Objectives"))
+      After(content:Section(L["Objectives"]))
       After(content:Text(page.objectives, { size = D.FontSize(0), gap = 10 }))
     end
     local chips = D.RewardChips(page, palette, true)
     if #page.choices > 0 or #page.rewards > 0 or #chips > 0 then
-      After(content:Section("Rewards"))
+      After(content:Section(L["Rewards"]))
       if #page.choices > 1 then
-        After(content:Text("Choose one when you hand it in:", { size = D.FontSize(-2), color = "muted", gap = 5 }))
+        After(content:Text(L["Choose one when you hand it in:"], { size = D.FontSize(-2), color = "muted", gap = 5 }))
       end
       After(D.ItemGrid(content, page.choices))
       if #page.rewards > 0 and #page.choices > 0 then
-        After(content:Text("You will also receive:", { size = D.FontSize(-2), color = "muted", gap = 5 }))
+        After(content:Text(L["You will also receive:"], { size = D.FontSize(-2), color = "muted", gap = 5 }))
       end
       After(D.ItemGrid(content, page.rewards))
       After(content:Chips(chips))
     end
   elseif page.kind == "progress" then
     if #page.need > 0 then
-      content:Section("Bring")
+      content:Section(L["Bring"])
       D.NeedRows(content, page)
     end
     if (page.cost or 0) > 0 then
-      content:Chips({ { text = "Costs " .. ns.Money(page.cost), raw = "Costs" } })
+      content:Chips({ { text = L["Costs"] .. " " .. ns.Money(page.cost), raw = L["Costs"] } })
     end
     if not page.completable then
-      content:Text("Continue opens once you have everything.", { size = D.FontSize(-2), color = "muted" })
+      content:Text(L["Continue opens once you have everything."], { size = D.FontSize(-2), color = "muted" })
     end
   elseif page.kind == "reward" then
     if #page.choices > 1 then
-      content:Section("Choose your reward")
+      content:Section(L["Choose your reward"])
       D.ChoiceRows(content, page)
     else
       D.choiceRows = {}
@@ -478,7 +479,7 @@ function D.FillQuest(content, page, withText)
     end
     local chips = D.RewardChips(page, palette, true)
     if #fixed > 0 or #chips > 0 then
-      content:Section(#page.choices > 1 and "You will also receive" or "Rewards")
+      content:Section(#page.choices > 1 and L["You will also receive"] or L["Rewards"])
       D.ItemGrid(content, fixed)
       content:Chips(chips)
     end

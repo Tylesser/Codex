@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Bags module, part 1: what every character carries. Each character's bags, bank (from the last bank
 -- visit), equipped gear and money are saved account-wide in CodexDB.bags.characters["Realm-Name"], so the
@@ -377,15 +378,15 @@ end
 -- Categories ------------------------------------------------------------------------------------------------
 
 B.CATEGORIES = {
-  { id = "new", name = "New items" },
-  { id = "equipment", name = "Equipment" },
-  { id = "consumable", name = "Consumables" },
-  { id = "trade", name = "Trade goods" },
-  { id = "recipe", name = "Recipes" },
-  { id = "quest", name = "Quest items" },
-  { id = "key", name = "Keys" },
-  { id = "misc", name = "Miscellaneous" },
-  { id = "junk", name = "Junk" },
+  { id = "new", name = L["New items"] },
+  { id = "equipment", name = L["Equipment"] },
+  { id = "consumable", name = L["Consumables"] },
+  { id = "trade", name = L["Trade goods"] },
+  { id = "recipe", name = L["Recipes"] },
+  { id = "quest", name = L["Quest items"] },
+  { id = "key", name = L["Keys"] },
+  { id = "misc", name = L["Miscellaneous"] },
+  { id = "junk", name = L["Junk"] },
 }
 
 -- Item class IDs (Enum.ItemClass) to a category.

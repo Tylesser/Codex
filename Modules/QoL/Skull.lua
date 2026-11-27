@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 local Q = ns.qol
 local UI = ns.UI
 
@@ -22,9 +23,9 @@ local S = {}
 Q.skull = S
 S.BUTTON = BUTTON
 
-S.ROLES = { { "tank", "Tank" }, { "healer", "Healer" }, { "damage", "Damage" }, { "any", "Any role" } }
+S.ROLES = { { "tank", L["Tank"] }, { "healer", L["Healer"] }, { "damage", L["Damage"] }, { "any", L["Any role"] } }
 local ROLE_KEYS = { TANK = "tank", HEALER = "healer", DAMAGER = "damage", NONE = "none" }
-local ROLE_NAMES = { tank = "tank", healer = "healer", damage = "damage" }
+local ROLE_NAMES = { tank = L["tank"], healer = L["healer"], damage = L["damage"] }
 local MODIFIER_KEYS = { LSHIFT = true, RSHIFT = true, LCTRL = true, RCTRL = true, LALT = true, RALT = true,
   LMETA = true, RMETA = true }
 local MOUSE_KEYS = { MiddleButton = "BUTTON3", Button4 = "BUTTON4", Button5 = "BUTTON5" }
@@ -75,10 +76,10 @@ end
 function S.Blocked()
   local db = Q.DB()
   if not Q.On(KEY) then
-    return "Skull mark is off."
+    return L["Skull mark is off."]
   end
   if db.skullGroupOnly ~= false and not S.InGroup() then
-    return "Only in a group, and you are not in one."
+    return L["Only in a group, and you are not in one."]
   end
   local want = db.skullRole or "tank"
   if want == "any" then
@@ -92,14 +93,14 @@ function S.Blocked()
     if db.skullNoRole ~= false then
       return nil
     end
-    return "You have no group role, and the skull is the " .. ROLE_NAMES[want] .. "'s."
+    return L["You have no group role, and the skull is the %s's."]:format(ROLE_NAMES[want] or want)
   end
-  return ("Your role is %s; the skull is the %s's."):format(ROLE_NAMES[role] or role, ROLE_NAMES[want] or want)
+  return L["Your role is %s; the skull is the %s's."]:format(ROLE_NAMES[role] or role, ROLE_NAMES[want] or want)
 end
 
 function S.KeyText(key)
   if not key then
-    return "No key"
+    return L["No key"]
   end
   local text = GetBindingText and Ask(GetBindingText, key)
   return (type(text) == "string" and text ~= "") and text or key
@@ -124,18 +125,18 @@ end
 
 local function ShowTooltip(self)
   GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-  GameTooltip:AddLine("Skull mark")
+  GameTooltip:AddLine(L["Skull mark"])
   local blocked = S.Blocked()
   if blocked then
     GameTooltip:AddLine(blocked, 1, 0.5, 0.4, true)
   else
-    GameTooltip:AddLine("Click: the skull on your target.", 1, 1, 1, true)
+    GameTooltip:AddLine(L["Click: the skull on your target."], 1, 1, 1, true)
   end
   local key = Q.DB().skullKey
   if key then
-    GameTooltip:AddLine("Key: " .. S.KeyText(key), 0.7, 0.7, 0.7)
+    GameTooltip:AddLine(L["Key: %s"]:format(S.KeyText(key)), 0.7, 0.7, 0.7)
   end
-  GameTooltip:AddLine("Right-click: options. Right-drag: move it (out of combat).", 0.7, 0.7, 0.7, true)
+  GameTooltip:AddLine(L["Right-click: options. Right-drag: move it (out of combat)."], 0.7, 0.7, 0.7, true)
   GameTooltip:Show()
 end
 
@@ -261,7 +262,7 @@ end
 
 function S.SetKey(key)
   if Combat() then
-    ns.Say("The skull key can only be changed out of combat.")
+    ns.Say(L["The skull key can only be changed out of combat."])
     return false
   end
   Q.DB().skullKey = key
@@ -279,7 +280,7 @@ local function BuildKeyRow(body, last, sub)
   holder:SetPoint("RIGHT", 0, 0)
   sub.label = UI.Text(holder, "body", 12, "text")
   sub.label:SetPoint("LEFT", 0, 0)
-  sub.label:SetText("Key")
+  sub.label:SetText(L["Key"])
   local key = UI.Button(holder, 160, 22, "")
   key:SetPoint("LEFT", 120, 0)
   key:RegisterForClicks("LeftButtonUp", "RightButtonUp")
@@ -290,7 +291,7 @@ local function BuildKeyRow(body, last, sub)
       S.SetKey(nil)
       return
     elseif Combat() then
-      ns.Say("The skull key can only be changed out of combat.")
+      ns.Say(L["The skull key can only be changed out of combat."])
     else
       view.capturing = true
       key:EnableKeyboard(true)
@@ -324,16 +325,16 @@ end
 local function RefreshKeyRow(sub, on)
   local db = Q.DB()
   if view.key then
-    view.key:SetText(view.capturing and "Press a key..." or S.KeyText(db.skullKey))
+    view.key:SetText(view.capturing and L["Press a key..."] or S.KeyText(db.skullKey))
   end
-  sub.hint:SetText("Click, then press a key. Right-click to clear.")
+  sub.hint:SetText(L["Click, then press a key. Right-click to clear."])
   local blocked = S.Blocked()
   if not on then
     sub.status:SetText("")
   elseif blocked then
-    sub.status:SetText("Not now: " .. blocked)
+    sub.status:SetText(L["Not now: %s"]:format(blocked))
   else
-    sub.status:SetText("Ready: your key and the button put the skull on your target.")
+    sub.status:SetText(L["Ready: your key and the button put the skull on your target."])
   end
 end
 
@@ -365,22 +366,20 @@ end
 
 Q.AddToggle({
   key = KEY,
-  name = "Skull mark",
-  desc = "A key (and a button) that puts the skull on your target, only while your group role is the one the skull "
-    .. "belongs to. The game doesn't let addons mark on their own, so it marks when you press the key: press it as "
-    .. "you pull. It never takes the skull off.",
+  name = L["Skull mark"],
+  desc = L["A key (and a button) that puts the skull on your target, only while your group role is the one the skull belongs to. The game doesn't let addons mark on their own, so it marks when you press the key: press it as you pull. It never takes the skull off."],
   default = false,
   order = 60,
   Enable = Enable,
   Changed = Changed,
   options = {
-    { key = "skullRole", kind = "choice", name = "Skull is for", default = "tank", choices = S.ROLES,
+    { key = "skullRole", kind = "choice", name = L["Skull is for"], default = "tank", choices = S.ROLES,
       Changed = Changed },
-    { key = "skullNoRole", name = "Also when you have no group role", Changed = Changed },
-    { key = "skullGroupOnly", name = "Only in a party or raid", Changed = Changed },
-    { key = "skullButton", name = "Show the skull button", Changed = Changed },
+    { key = "skullNoRole", name = L["Also when you have no group role"], Changed = Changed },
+    { key = "skullGroupOnly", name = L["Only in a party or raid"], Changed = Changed },
+    { key = "skullButton", name = L["Show the skull button"], Changed = Changed },
     { key = "skullKeyRow", kind = "custom", Build = BuildKeyRow, Refresh = RefreshKeyRow },
-    { key = "skullReset", kind = "button", name = "Put the button back", Click = S.ResetPlace },
+    { key = "skullReset", kind = "button", name = L["Put the button back"], Click = S.ResetPlace },
   },
 })
 

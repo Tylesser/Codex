@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = TylesserCodex.L
 local S = ns.S
 
 -- Blizzard's nameplates (Blizzard_NamePlates) as on the round-2 board (R2-Frames "Nameplates", R2-HUD):
@@ -1275,7 +1276,7 @@ end
 TylesserCodex.SetNameplateSize = SetPlateSize
 
 local function SizerText()
-  return ("Nameplates  ·  width %d%%  ·  height %d%%"):format(math.floor(PlateSize("width") * 100 + 0.5),
+  return L["Nameplates  ·  width %d%%  ·  height %d%%"]:format(math.floor(PlateSize("width") * 100 + 0.5),
     math.floor(PlateSize("height") * 100 + 0.5))
 end
 
@@ -1325,10 +1326,9 @@ local function BuildSizer()
   end)
   sizer:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_TOP")
-    GameTooltip:AddLine("Nameplates")
-    GameTooltip:AddLine("Mouse wheel: width. Shift + mouse wheel: height.", 1, 1, 1, true)
-    GameTooltip:AddLine("Shift + right-click: the game's size again. The game's Nameplate Size option "
-      .. "(Options > Nameplates) still scales them all.", 0.7, 0.7, 0.7, true)
+    GameTooltip:AddLine(L["Nameplates"])
+    GameTooltip:AddLine(L["Mouse wheel: width. Shift + mouse wheel: height."], 1, 1, 1, true)
+    GameTooltip:AddLine(L["Shift + right-click: the game's size again. The game's Nameplate Size option (Options > Nameplates) still scales them all."], 0.7, 0.7, 0.7, true)
     GameTooltip:Show()
   end)
   sizer:SetScript("OnLeave", function()

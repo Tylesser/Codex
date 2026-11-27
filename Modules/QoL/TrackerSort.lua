@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Quest tracker order (the user's request, 2026-11-20): the quests of the zone you're in go to the top of the game's
 -- quest tracker; the others follow grouped by zone, the nearest zone first; inside each zone the nearest quest first
@@ -134,10 +135,8 @@ end
 
 Q.AddToggle({
   key = KEY,
-  name = "Quest tracker order",
-  desc = "The quests of the zone you're in go to the top of the game's quest tracker, nearest first; the others "
-    .. "follow grouped by zone. Sorted again when you change zone or subzone, and never in a fight. Codex's own "
-    .. "quest tracker (Quest tracker module) sorts by itself.",
+  name = L["Quest tracker order"],
+  desc = L["The quests of the zone you're in go to the top of the game's quest tracker, nearest first; the others follow grouped by zone. Sorted again when you change zone or subzone, and never in a fight. Codex's own quest tracker (Quest tracker module) sorts by itself."],
   order = 35,
   Enable = function()
     if Q.On(KEY) then

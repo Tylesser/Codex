@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Vendor: sells junk and repairs at merchants.
 --
@@ -108,7 +109,7 @@ function V.ItemName(itemID, stored)
   if not name and type(stored) == "string" then
     name = stored
   end
-  return name or ("item " .. itemID)
+  return name or L["item %s"]:format(itemID)
 end
 
 local function Refundable(bag, slot)
@@ -218,17 +219,18 @@ local function Finish(reason)
   last.left = run.left
   last.stopped = reason
   if run.sold > 0 then
-    local text = ("sold %d junk item%s for %s"):format(run.sold, run.sold == 1 and "" or "s", ns.Money(run.value))
+    local text = run.sold == 1 and L["sold 1 junk item for %s"]:format(ns.Money(run.value))
+      or L["sold %d junk items for %s"]:format(run.sold, ns.Money(run.value))
     if reason == "closed" and run.left > 0 then
-      text = text .. (" (%d left: the vendor window closed)"):format(run.left)
+      text = text .. L[" (%d left: the vendor window closed)"]:format(run.left)
     elseif reason == "combat" and run.left > 0 then
-      text = text .. (" (%d left: stopped for combat)"):format(run.left)
+      text = text .. L[" (%d left: stopped for combat)"]:format(run.left)
     elseif run.left > 0 then
-      text = text .. (" (%d the merchant didn't take)"):format(run.left)
+      text = text .. L[" (%d the merchant didn't take)"]:format(run.left)
     end
     Say(text)
   elseif run.manual then
-    Say("the merchant didn't take any junk.")
+    Say(L["the merchant didn't take any junk."])
   end
   if V.repairWaiting then
     V.repairWaiting = false
@@ -320,20 +322,20 @@ function V.SellJunk(manual)
   end
   if not V.MerchantOpen() then
     if manual then
-      Say("open a merchant first.")
+      Say(L["open a merchant first."])
     end
     return false
   end
   if InCombatLockdown() then
     if manual then
-      Say("can't sell during a fight.")
+      Say(L["can't sell during a fight."])
     end
     return false
   end
   local queue = V.Candidates()
   if #queue == 0 then
     if manual then
-      Say("no junk to sell.")
+      Say(L["no junk to sell."])
     end
     return false
   end
@@ -379,17 +381,17 @@ local function OwnRepair(cost, guildPaid, afterSale)
       V.repairWaiting = true -- the junk gold may cover it
       return false
     end
-    Say(("not enough gold to repair (%s)."):format(ns.Money(cost)))
+    Say(L["not enough gold to repair (%s)."]:format(ns.Money(cost)))
     Last().noGold = cost
     Changed()
     return false
   end
   RepairAllItems()
   if guildPaid and guildPaid > 0 then
-    Say(("repaired for %s (guild %s, you %s)"):format(ns.Money(guildPaid + cost), ns.Money(guildPaid), ns.Money(cost)))
+    Say(L["repaired for %s (guild %s, you %s)"]:format(ns.Money(guildPaid + cost), ns.Money(guildPaid), ns.Money(cost)))
     Record(guildPaid + cost, "part")
   else
-    Say(("repaired for %s"):format(ns.Money(cost)))
+    Say(L["repaired for %s"]:format(ns.Money(cost)))
     Record(cost)
   end
   return true
@@ -400,19 +402,19 @@ function V.Repair(manual, afterSale)
   local cost = RepairCost()
   if not cost then
     if manual then
-      Say("this merchant can't repair.")
+      Say(L["this merchant can't repair."])
     end
     return false
   end
   if cost <= 0 then
     if manual then
-      Say("nothing to repair.")
+      Say(L["nothing to repair."])
     end
     return false
   end
   if InCombatLockdown() then
     if manual then
-      Say("can't repair during a fight.")
+      Say(L["can't repair during a fight."])
     end
     return false
   end
@@ -422,7 +424,7 @@ function V.Repair(manual, afterSale)
     C_Timer.After(1, function()
       local left = RepairCost() or 0
       if left <= 0 then
-        Say(("repaired for %s (guild)"):format(ns.Money(cost)))
+        Say(L["repaired for %s (guild)"]:format(ns.Money(cost)))
         Record(cost, "all")
       elseif V.MerchantOpen() then
         OwnRepair(left, cost - left, afterSale)
@@ -459,22 +461,22 @@ function V.RefreshButtons()
   local junk, value = V.Candidates()
   buttons.sell:SetEnabled(#junk > 0 and not V.run)
   if #junk > 0 then
-    buttons.junkText:SetText(("%d junk item%s"):format(#junk, #junk == 1 and "" or "s"))
+    buttons.junkText:SetText(#junk == 1 and L["1 junk item"] or L["%d junk items"]:format(#junk))
     buttons.junkMoney:SetText(ns.Money(value))
   else
-    buttons.junkText:SetText("No junk")
+    buttons.junkText:SetText(L["No junk"])
     buttons.junkMoney:SetText("")
   end
   local cost = RepairCost()
   buttons.repair:SetEnabled((cost or 0) > 0)
   if cost == nil then
-    buttons.repairText:SetText("Can't repair here")
+    buttons.repairText:SetText(L["Can't repair here"])
     buttons.repairMoney:SetText("")
   elseif cost > 0 then
-    buttons.repairText:SetText("Repair all")
+    buttons.repairText:SetText(L["Repair all"])
     buttons.repairMoney:SetText(ns.Money(cost))
   else
-    buttons.repairText:SetText("Nothing to repair")
+    buttons.repairText:SetText(L["Nothing to repair"])
     buttons.repairMoney:SetText("")
   end
 end
@@ -517,31 +519,34 @@ local function MakeButtons()
   strip:EnableMouse(true)
   buttons.strip = strip
 
-  buttons.sell, buttons.junkText, buttons.junkMoney = Column(strip, "Sell junk", true)
+  buttons.sell, buttons.junkText, buttons.junkMoney = Column(strip, L["Sell junk"], true)
   buttons.sell:SetScript("OnClick", function()
     V.SellJunk(true)
     V.RefreshButtons()
   end)
-  ButtonTip(buttons.sell, "Sell junk (Codex)", function()
+  ButtonTip(buttons.sell, L["Sell junk (Codex)"], function()
     local junk, value = V.Candidates()
     if #junk == 0 then
-      return "No junk in your bags."
+      return L["No junk in your bags."]
     end
-    return ("Sells %d item%s for %s: grey items and your Also sell list, never your Never sell list.")
-      :format(#junk, #junk == 1 and "" or "s", ns.Money(value))
+    if #junk == 1 then
+      return L["Sells 1 item for %s: grey items and your Also sell list, never your Never sell list."]:format(ns.Money(value))
+    end
+    return L["Sells %d items for %s: grey items and your Also sell list, never your Never sell list."]
+      :format(#junk, ns.Money(value))
   end)
-  buttons.repair, buttons.repairText, buttons.repairMoney = Column(strip, "Repair", false)
+  buttons.repair, buttons.repairText, buttons.repairMoney = Column(strip, L["Repair##action"], false)
   buttons.repair:SetScript("OnClick", function()
     V.Repair(true)
   end)
-  ButtonTip(buttons.repair, "Repair all (Codex)", function()
+  ButtonTip(buttons.repair, L["Repair all (Codex)"], function()
     local cost = RepairCost()
     if cost == nil then
-      return "This merchant can't repair."
+      return L["This merchant can't repair."]
     elseif cost <= 0 then
-      return "Nothing to repair."
+      return L["Nothing to repair."]
     end
-    return "Costs " .. ns.Money(cost) .. (V.DB().guildFunds and " (guild funds first)." or ".")
+    return (V.DB().guildFunds and L["Costs %s (guild funds first)."] or L["Costs %s."]):format(ns.Money(cost))
   end)
   V.buttons = buttons
 end
@@ -659,34 +664,34 @@ end
 
 function V.StatusText()
   if not V.running then
-    return "Off."
+    return L["Off."]
   end
   local parts = {}
   local db = V.DB()
   if V.LeatrixDoes("sell") then
-    parts[#parts + 1] = "Leatrix Plus sells junk"
+    parts[#parts + 1] = L["Leatrix Plus sells junk"]
   elseif db.sellJunk then
-    parts[#parts + 1] = "Sells junk"
+    parts[#parts + 1] = L["Sells junk"]
   end
   if V.LeatrixDoes("repair") then
-    parts[#parts + 1] = "Leatrix Plus repairs"
+    parts[#parts + 1] = L["Leatrix Plus repairs"]
   elseif db.repair then
-    parts[#parts + 1] = db.guildFunds and "repairs (guild funds first)" or "repairs"
+    parts[#parts + 1] = db.guildFunds and L["repairs (guild funds first)"] or L["repairs"]
   end
   if #parts == 0 then
-    return "Buttons on the merchant window only."
+    return L["Buttons on the merchant window only."]
   end
-  local text = table.concat(parts, ", ") .. " at merchants."
+  local text = L["%s at merchants."]:format(table.concat(parts, ", "))
   return text:sub(1, 1):upper() .. text:sub(2)
 end
 
 ns.RegisterModule({
   id = "vendor",
-  name = "Vendor",
+  name = L["Vendor"],
   -- its section in the Codex window (Areas.lua)
   area = "trade", sectionOrder = 30, folded = true, pageHeight = 450,
   icon = "Interface\\Icons\\INV_Misc_Bag_10",
-  desc = "Sells junk and repairs your gear when you talk to a merchant.",
+  desc = L["Sells junk and repairs your gear when you talk to a merchant."],
   order = 96,
   Enable = function()
     V.Enable()

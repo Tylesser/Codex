@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Bags module, part 5: its page in the Codex window. Options, and the list of characters Codex knows with
 -- their money (include or leave out of totals and tooltips, delete a character's data).
@@ -10,19 +11,19 @@ local view = {}
 B.pageView = view
 
 local OPTIONS = {
-  { key = "replace", text = "Open Codex bags instead of the game's", note = "Your bag keys and bag buttons open the Codex window." },
-  { key = "categories", text = "Group items into categories", note = "Off: every slot in bag order." },
-  { key = "pack", text = "Pack categories side by side", note = "Small categories share a row. Off: one category per row." },
-  { key = "combine", text = "Combine identical items", note = "One button with the total; one by one at the bank, trade, mail, vendors and auction house." },
-  { key = "showKeys", text = "Show keys", note = "The keyring and other keys. The key button above the bags switches it too." },
-  { key = "tooltip", text = "Item counts in tooltips", note = "How many of an item each of your characters has." },
+  { key = "replace", text = L["Open Codex bags instead of the game's"], note = L["Your bag keys and bag buttons open the Codex window."] },
+  { key = "categories", text = L["Group items into categories"], note = L["Off: every slot in bag order."] },
+  { key = "pack", text = L["Pack categories side by side"], note = L["Small categories share a row. Off: one category per row."] },
+  { key = "combine", text = L["Combine identical items"], note = L["One button with the total; one by one at the bank, trade, mail, vendors and auction house."] },
+  { key = "showKeys", text = L["Show keys"], note = L["The keyring and other keys. The key button above the bags switches it too."] },
+  { key = "tooltip", text = L["Item counts in tooltips"], note = L["How many of an item each of your characters has."] },
 }
 
 -- The "Bank and guild bank" section.
 local BANK_OPTIONS = {
-  { key = "bankWindow", text = "Use Codex's bank window", note = "Off: the game's own bank window." },
-  { key = "depositButton", text = "Deposit reagents button", note = "On the bank window: crafting reagents from your bags into the bank." },
-  { key = "guildBankWindow", text = "Use Codex's guild bank window", note = "Off: the game's own guild bank window." },
+  { key = "bankWindow", text = L["Use Codex's bank window"], note = L["Off: the game's own bank window."] },
+  { key = "depositButton", text = L["Deposit reagents button"], note = L["On the bank window: crafting reagents from your bags into the bank."] },
+  { key = "guildBankWindow", text = L["Use Codex's guild bank window"], note = L["Off: the game's own guild bank window."] },
 }
 
 local function SetOption(key, on)
@@ -44,7 +45,10 @@ B.SetOption = SetOption
 function B.StatusText()
   local keys = B.CharacterKeys(true)
   local _, total = B.MoneyList()
-  return ("%d character%s known; money on them: %s"):format(#keys, #keys == 1 and "" or "s", ns.Money(total))
+  if #keys == 1 then
+    return L["1 character known; money on them: %s"]:format(ns.Money(total))
+  end
+  return L["%d characters known; money on them: %s"]:format(#keys, ns.Money(total))
 end
 
 local function RefreshPage()
@@ -71,17 +75,17 @@ local function RefreshPage()
   end
   view.list:SetItems(rows)
   local _, total = B.MoneyList()
-  view.total:SetText("Total: " .. ns.Money(total))
+  view.total:SetText(L["Total: %s"]:format(ns.Money(total)))
 end
 B.RefreshPage = RefreshPage
 
 -- Number settings with -/+ (the window lays itself out again; during a fight, after it).
 local NUMBERS = {
-  { key = "columns", text = "Columns", min = 10, max = 20, step = 1 },
-  { key = "itemSize", text = "Item size", min = 28, max = 44, step = 1, unit = " px" },
-  { key = "itemSpacing", text = "Space between items", min = 0, max = 12, step = 1, unit = " px" },
-  { key = "sectionSpacing", text = "Space between categories", min = 0, max = 30, step = 2, unit = " px" },
-  { key = "bankColumns", text = "Bank columns", min = 10, max = 24, step = 1 },
+  { key = "columns", text = L["Columns"], min = 10, max = 20, step = 1 },
+  { key = "itemSize", text = L["Item size"], min = 28, max = 44, step = 1, unit = " px" },
+  { key = "itemSpacing", text = L["Space between items"], min = 0, max = 12, step = 1, unit = " px" },
+  { key = "sectionSpacing", text = L["Space between categories"], min = 0, max = 30, step = 2, unit = " px" },
+  { key = "bankColumns", text = L["Bank columns"], min = 10, max = 24, step = 1 },
 }
 
 function B.SetNumber(key, value)
@@ -99,12 +103,12 @@ end
 function B.BuildPage(page)
   B.DB()
   view.page = page
-  local heading = UI.Heading(page, "Bags", 20)
+  local heading = UI.Heading(page, L["Bags"], 20)
   heading:SetPoint("TOPLEFT")
   view.status = UI.Text(page, "body", 12, "muted")
   view.status:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -4)
   view.status:SetPoint("RIGHT", 0, 0)
-  local open = UI.Button(page, 110, 22, "Open bags")
+  local open = UI.Button(page, 110, 22, L["Open bags"])
   open:SetPoint("TOPRIGHT", 0, 0)
   open:SetScript("OnClick", function()
     B.Toggle()
@@ -164,7 +168,7 @@ function B.BuildPage(page)
 
   local bankLabel = UI.Text(page, "head", 11, "muted")
   bankLabel:SetPoint("TOPLEFT", lastRow, "BOTTOMLEFT", -2, -18)
-  bankLabel:SetText("BANK AND GUILD BANK")
+  bankLabel:SetText(L["BANK AND GUILD BANK"])
   local lastBank = Checks(BANK_OPTIONS, bankLabel, -8)
 
   local label = UI.Text(page, "head", 11, "muted")
@@ -187,17 +191,17 @@ function B.BuildPage(page)
       end)
       row.include:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Count this character in tooltips and money totals.")
+        GameTooltip:AddLine(L["Count this character in tooltips and money totals."])
         GameTooltip:Show()
       end)
       row.include:SetScript("OnLeave", GameTooltip_Hide)
-      row.delete = UI.Button(row, 60, 18, "Delete")
+      row.delete = UI.Button(row, 60, 18, L["Delete"])
       row.delete:SetPoint("RIGHT", -4, 0)
       row.delete:SetScript("OnClick", function(self)
         -- two clicks: the first asks
         if self.armed ~= row.item then
           self.armed = row.item
-          self:SetText("Sure?")
+          self:SetText(L["Sure?"])
           return
         end
         self.armed = nil
@@ -227,12 +231,12 @@ function B.BuildPage(page)
       local mine = key == B.PlayerKey()
       row.include:SetChecked(not B.db.hidden[key])
       row.include:SetEnabled(not mine)
-      row.name:SetText(B.ColoredName(key) .. (mine and " |cff999999(you)|r" or ""))
+      row.name:SetText(B.ColoredName(key) .. (mine and (" |cff999999" .. L["(you)"] .. "|r") or ""))
       row.money:SetText(ns.Money(char and char.money or 0))
-      row.age:SetText(mine and "now" or (ns.Age(char and char.updated) .. " ago"))
+      row.age:SetText(mine and L["now"] or L["%s ago"]:format(ns.Age(char and char.updated)))
       row.delete:SetShown(not mine)
       row.delete.armed = nil
-      row.delete:SetText("Delete")
+      row.delete:SetText(L["Delete"])
     end,
   })
   view.list:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -6)
@@ -240,8 +244,7 @@ function B.BuildPage(page)
   local note = UI.Text(page, "body", 11, "muted")
   note:SetPoint("BOTTOMLEFT", 0, 6)
   note:SetPoint("RIGHT", 0, 0)
-  note:SetText("Click a character to see their bags. Each character is saved when you log in with them; "
-    .. "their bank when they visit it.")
+  note:SetText(L["Click a character to see their bags. Each character is saved when you log in with them; their bank when they visit it."])
 
   ns.On("BAGS_CHANGED", function()
     if view.page:IsVisible() then

@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Settings: the skins parts and their option values, theme previews, look options, and the sections of the Look,
 -- General (Codex window), Tooltips (prices and stats) and Profiles pages (Areas.lua builds the pages).
@@ -7,33 +8,32 @@ local UI = ns.UI
 
 -- Parts of the game's UI that Codex_Skins can restyle. The skins folder handles each id.
 ns.SKIN_PARTS = {
-  { id = "actionbars", name = "Action bars" },
-  { id = "barpanels", name = "Panel behind the action bars", default = false },
-  { id = "unitframes", name = "Player, target, pet and focus frames" },
-  { id = "partyframes", name = "Party frames" },
-  { id = "raidframes", name = "Raid frames" },
-  { id = "nameplates", name = "Nameplates" },
-  { id = "auras", name = "Buffs and debuffs" },
-  { id = "cooldowns", name = "Cooldown manager" },
-  { id = "roundicons", name = "Round icons (buffs, debuffs, cooldown manager)", default = false },
-  { id = "minimap", name = "Minimap" },
-  { id = "chat", name = "Chat" },
-  { id = "tracker", name = "Quest tracker" },
-  { id = "damagemeter", name = "Damage meter" },
-  { id = "questlog", name = "Quest log and world map" },
-  { id = "tooltips", name = "Tooltips" },
-  { id = "menus", name = "Dropdown and right-click menus" },
-  { id = "lootroll", name = "Loot roll window", default = true },
-  { id = "questpins", name = "All your quests on continent, world and flight maps", default = true },
-  { id = "windows", name = "Game windows (character, bags, spellbook, ...)" },
+  { id = "actionbars", name = L["Action bars"] },
+  { id = "barpanels", name = L["Panel behind the action bars"], default = false },
+  { id = "unitframes", name = L["Player, target, pet and focus frames"] },
+  { id = "partyframes", name = L["Party frames"] },
+  { id = "raidframes", name = L["Raid frames"] },
+  { id = "nameplates", name = L["Nameplates"] },
+  { id = "auras", name = L["Buffs and debuffs"] },
+  { id = "cooldowns", name = L["Cooldown manager"] },
+  { id = "roundicons", name = L["Round icons (buffs, debuffs, cooldown manager)"], default = false },
+  { id = "minimap", name = L["Minimap"] },
+  { id = "chat", name = L["Chat"] },
+  { id = "tracker", name = L["Quest tracker"] },
+  { id = "damagemeter", name = L["Damage meter"] },
+  { id = "questlog", name = L["Quest log and world map"] },
+  { id = "tooltips", name = L["Tooltips"] },
+  { id = "menus", name = L["Dropdown and right-click menus"] },
+  { id = "lootroll", name = L["Loot roll window"], default = true },
+  { id = "questpins", name = L["All your quests on continent, world and flight maps"], default = true },
+  { id = "windows", name = L["Game windows (character, bags, spellbook, ...)"] },
   -- set at Codex's ADDON_LOADED (Theme.lua, ns.ApplyFloatingTextFont): the skins folder loads too late for it
-  { id = "floatingtext", name = "Floating combat text and damage numbers", default = true },
+  { id = "floatingtext", name = L["Floating combat text and damage numbers"], default = true },
 }
 
 -- UI addons that change the same frames as Codex's interface parts.
 local OVERLAPPING = { "FlareUI", "ElvUI", "ClassicUI" }
-ns.OVERLAP_NOTE = "%s is also changing the game's interface (it replaces or restyles the same frames). "
-  .. "Switch it off in the AddOns list to see Codex's look, or switch Codex's off here."
+ns.OVERLAP_NOTE = L["%s is also changing the game's interface (it replaces or restyles the same frames). Switch it off in the AddOns list to see Codex's look, or switch Codex's off here."]
 function ns.UIOverlap()
   for _, name in ipairs(OVERLAPPING) do
     if ns.IsAddOnLoaded(name) then
@@ -62,10 +62,10 @@ end
 
 -- How the bars of Codex's unit frames show their numbers (CodexDB.skins.unitText[bar]).
 ns.UNIT_TEXT_FORMATS = {
-  { key = "value", name = "Amount (1.9K / 2.1K)" },
-  { key = "percent", name = "Percent (73%)" },
-  { key = "both", name = "Amount and percent" },
-  { key = "none", name = "No text" },
+  { key = "value", name = L["Amount (1.9K / 2.1K)"] },
+  { key = "percent", name = L["Percent (73%)"] },
+  { key = "both", name = L["Amount and percent"] },
+  { key = "none", name = L["No text"] },
 }
 
 -- Each bar's format when the player hasn't picked one (bars not listed: "value").
@@ -92,9 +92,9 @@ ns.API.UnitTextShort = ns.UnitTextShort
 -- How Codex's unit frames are drawn (CodexDB.skins.frameStyle): compact (bars on the portrait ring, nothing
 -- behind them; the default), panel (a backdrop plate behind the bars) or bars (no portrait, the name in the bar).
 ns.FRAME_STYLES = {
-  { key = "compact", name = "Compact", desc = "Bars on the portrait" },
-  { key = "panel", name = "Panel", desc = "Backdrop behind the bars" },
-  { key = "bars", name = "Bars only", desc = "No portrait, the name in the bar" },
+  { key = "compact", name = L["Compact"], desc = L["Bars on the portrait"] },
+  { key = "panel", name = L["Panel"], desc = L["Backdrop behind the bars"] },
+  { key = "bars", name = L["Bars only"], desc = L["No portrait, the name in the bar"] },
 }
 
 function ns.FrameStyle()
@@ -111,7 +111,7 @@ ns.API.FrameStyle = ns.FrameStyle
 
 -- The way unit frame bars shade (CodexDB.skins.barGradient: nil = top to bottom, "horizontal" = left to right;
 -- 2026-11-22, after the user's "make unit frame colours gradient").
-ns.BAR_GRADIENTS = { { key = "vertical", name = "Top to bottom" }, { key = "horizontal", name = "Left to right" } }
+ns.BAR_GRADIENTS = { { key = "vertical", name = L["Top to bottom"] }, { key = "horizontal", name = L["Left to right"] } }
 function ns.BarGradient()
   local skins = ns.db and ns.db.skins
   return skins and skins.barGradient == "horizontal" and "horizontal" or "vertical"
@@ -119,10 +119,10 @@ end
 
 -- Where a unit frame's auras go (CodexDB.skins.auraPos[unit]: "target", "focus", "party"; nil = below; 2026-11-22).
 ns.AURA_PLACES = {
-  { key = "below", name = "Below the frame" },
-  { key = "above", name = "Above the frame" },
-  { key = "right", name = "Right of the frame" },
-  { key = "left", name = "Left of the frame" },
+  { key = "below", name = L["Below the frame"] },
+  { key = "above", name = L["Above the frame"] },
+  { key = "right", name = L["Right of the frame"] },
+  { key = "left", name = L["Left of the frame"] },
 }
 local AURA_PLACE_KEYS = { below = true, above = true, right = true, left = true }
 function ns.AuraPlace(unit)
@@ -179,35 +179,35 @@ end
 
 -- The guided setup for the action bars (Edit Mode does the moving).
 ns.BAR_GUIDE = table.concat({
-  "Open Edit Mode (Esc > Edit Mode), click a bar and drag it. Positions that suit the panels:",
-  "1. Main bar: bottom centre, 12 buttons in 1 row.",
-  "2. Bar 2: right above the main bar, same width, with a small gap so the panels don't touch.",
-  "3. Bar 3: above bar 2, or as a column at the right edge of the screen.",
-  "4. Pet and stance bars: above bar 2's left end. The experience bar: under the main bar.",
-  "Then click Check spacing to see whether any panels still overlap.",
+  L["Open Edit Mode (Esc > Edit Mode), click a bar and drag it. Positions that suit the panels:"],
+  L["1. Main bar: bottom centre, 12 buttons in 1 row."],
+  L["2. Bar 2: right above the main bar, same width, with a small gap so the panels don't touch."],
+  L["3. Bar 3: above bar 2, or as a column at the right edge of the screen."],
+  L["4. Pet and stance bars: above bar 2's left end. The experience bar: under the main bar."],
+  L["Then click Check spacing to see whether any panels still overlap."],
 }, "\n")
 
 -- One line about the bar panels' spacing (Settings > Check spacing).
 function ns.BarSpacingText()
   local check = ns.API.BarSpacing
   if not (ns.db.skins.enabled and ns.SkinPartOn("barpanels")) or type(check) ~= "function" then
-    return "Switch on \"Panel behind the action bars\" (and reload) first."
+    return L["Switch on \"Panel behind the action bars\" (and reload) first."]
   end
   if InCombatLockdown() then
-    return "Try again after the fight."
+    return L["Try again after the fight."]
   end
   local ok, found = pcall(check)
   if not ok or not found then
-    return "The bars couldn't be measured right now."
+    return L["The bars couldn't be measured right now."]
   end
   if #found == 0 then
-    return "All clear: no panels overlap."
+    return L["All clear: no panels overlap."]
   end
   local lines = {}
   for _, pair in ipairs(found) do
     -- the smaller move clears it
-    local how = pair.y <= pair.x and ("%d up or down"):format(pair.y) or ("%d left or right"):format(pair.x)
-    lines[#lines + 1] = ("%s and %s overlap: move one %s."):format(pair.a, pair.b, how)
+    local how = pair.y <= pair.x and L["%d up or down"]:format(pair.y) or L["%d left or right"]:format(pair.x)
+    lines[#lines + 1] = L["%s and %s overlap: move one %s."]:format(pair.a, pair.b, how)
   end
   return table.concat(lines, "\n")
 end
@@ -240,7 +240,7 @@ local PREVIEW = {
     inset = { { 0.11, 0.06, 0.02, 0.5 }, { 0.71, 0.51, 0.25, 0.5 } },
     button = { { 0.29, 0.18, 0.09 }, { 0.48, 0.32, 0.19 }, { 0.71, 0.51, 0.25 }, { 0.96, 0.83, 0.54 } },
     corner = { texture = CODEX_MEDIA .. "Circle", size = 6, color = { 0.83, 0.64, 0.29 } } },
-  classic = { head = "Fonts\\FRIZQT__.TTF",
+  classic = { head = (STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"),
     text = { 1, 1, 1 }, muted = { 0.71, 0.71, 0.71 },
     panel = { { 0.04, 0.04, 0.05 }, { 0.11, 0.11, 0.13 } }, rings = { { 0.42, 0.42, 0.45 }, { 0.66, 0.66, 0.69 } },
     title = { { 0.09, 0.09, 0.11 }, { 0.2, 0.2, 0.23 } }, titleLine = { 0.66, 0.66, 0.69 }, titleText = { 1, 0.82, 0 },
@@ -291,7 +291,7 @@ PREVIEW.onyx = { head = DUSK_MEDIA .. "Inter-SemiBold.ttf", body = DUSK_MEDIA ..
   side = { 1, 1, 1, 0.02 }, divider = { 0.097, 0.101, 0.104 },
   button = { { 0.078, 0.086, 0.098 }, { 0.078, 0.086, 0.098 }, { 0.152, 0.159, 0.170 }, { 0.827, 0.843, 0.863 } } }
 -- Bronze (2026-11-24): the calm theme, square, the game's font, one bronze line
-PREVIEW.bronze = { head = "Fonts\\FRIZQT__.TTF",
+PREVIEW.bronze = { head = (STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"),
   text = { 0.910, 0.875, 0.800 }, muted = { 0.659, 0.612, 0.533 },
   panel = { { 0.098, 0.082, 0.067 }, { 0.098, 0.082, 0.067 } }, rings = { { 0.416, 0.329, 0.204 } },
   title = { { 0.071, 0.059, 0.047 }, { 0.071, 0.059, 0.047 } }, titleLine = { 0.290, 0.235, 0.161 },
@@ -376,8 +376,8 @@ local function DrawStylePreview(frame, style, w, h)
   local font = theme.font or {}
   local function Label(text, size, color, justify)
     local label = frame:CreateFontString(nil, "OVERLAY")
-    if not label:SetFont(font.body or "Fonts\\FRIZQT__.TTF", size, "") then
-      label:SetFont("Fonts\\FRIZQT__.TTF", size, "")
+    if not label:SetFont(font.body or (STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"), size, "") then
+      label:SetFont((STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"), size, "")
     end
     local x, y, r, g, b, a = UI.TextShadow(theme)
     label:SetShadowOffset(x, y)
@@ -524,7 +524,7 @@ end
 ns.StyleCards = StyleCards
 ns.DrawStylePreview = DrawStylePreview
 
-local GAME_FONT = "Fonts\\FRIZQT__.TTF"
+local GAME_FONT = (STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF")
 local function PreviewText(parent, path, size, color)
   local text = parent:CreateFontString(nil, "OVERLAY")
   if not text:SetFont(path or GAME_FONT, size, "") then
@@ -618,7 +618,7 @@ local function BuildPreview(parent, id, width, height)
 
   local home = PreviewText(box, p.head, 10, p.accent)
   home:SetPoint("TOPLEFT", side, "TOPRIGHT", 7, -6)
-  home:SetText(p.upper and "HOME" or "Home")
+  home:SetText(p.upper and L["Home"]:upper() or L["Home"])
   local card = CreateFrame("Frame", nil, box)
   card:SetPoint("TOPLEFT", side, "TOPRIGHT", 7, -21)
   card:SetPoint("RIGHT", -inset - 5, 0)
@@ -628,10 +628,10 @@ local function BuildPreview(parent, id, width, height)
   cardIcon:SetPoint("LEFT", 4, 0)
   local cardName = PreviewText(card, p.body, 9, p.bright)
   cardName:SetPoint("LEFT", cardIcon, "RIGHT", 4, 0)
-  cardName:SetText("Buffs")
+  cardName:SetText(L["Buffs"])
   local cardState = PreviewText(card, p.body, 9, p.good)
   cardState:SetPoint("RIGHT", -4, 0)
-  cardState:SetText("On")
+  cardState:SetText(L["On"])
 
   local button = CreateFrame("Frame", nil, box)
   button:SetSize(58, 15)
@@ -643,7 +643,7 @@ local function BuildPreview(parent, id, width, height)
   ns.T.ColorLines(buttonLines, p.button[3])
   local buttonText = PreviewText(button, p.body, 9, p.button[4])
   buttonText:SetPoint("CENTER")
-  buttonText:SetText("Feedback")
+  buttonText:SetText(L["Feedback"])
 
   -- only textured corner pieces (Runestone's studs): a tinted dot is too small to read on a card this size
   if p.corner and not p.corner.color then
@@ -774,7 +774,7 @@ function ns.SetLookValue(key, value)
   end
 end
 
-ns.ACCENT_CHOICES = { { key = "theme", name = "Theme" }, { key = "class", name = "Class colour" } }
+ns.ACCENT_CHOICES = { { key = "theme", name = L["Theme"] }, { key = "class", name = L["Class colour"] } }
 
 -- The quest tracker's background panel (CodexDB.skins.trackerPanel: nil or true = shown, false = hidden).
 function ns.TrackerPanelOn()
@@ -784,9 +784,9 @@ ns.API.TrackerPanelOn = ns.TrackerPanelOn
 
 -- Minimap shape (CodexDB.skins.minimapShape; nil = the theme's own). The skins folder draws it.
 ns.MINIMAP_SHAPES = {
-  { key = "round", name = "Round" },
-  { key = "square", name = "Square" },
-  { key = "header", name = "Square with header" },
+  { key = "round", name = L["Round"] },
+  { key = "square", name = L["Square##shape"] },
+  { key = "header", name = L["Square with header"] },
 }
 -- each theme's own shape (board miniDefault; Skins/Minimap.lua uses the same)
 ns.MINIMAP_THEME_SHAPE = { runestone = "round", classic = "header", hearthwood = "round", slate = "square",
@@ -810,10 +810,10 @@ function ns.MinimapShapeName(key)
   end
   for _, shape in ipairs(ns.MINIMAP_SHAPES) do
     if shape.key == own then
-      return ("Theme default (%s)"):format(shape.name:lower())
+      return L["Theme default (%s)"]:format(shape.name:lower())
     end
   end
-  return "Theme default"
+  return L["Theme default"]
 end
 
 function ns.SetMinimapShape(key)
@@ -994,7 +994,7 @@ local function BuildThemes(body, width, section)
     cards[info.id] = card
   end
   body.themeButtons = cards
-  local themeNote = Wrapping(body, 12, "muted", width, "Only the theme you pick is loaded. It shows after a reload.")
+  local themeNote = Wrapping(body, 12, "muted", width, L["Only the theme you pick is loaded. It shows after a reload."])
   themeNote:SetPoint("TOPLEFT", body, "TOPLEFT", 0, -(cardsHeight + 8))
   section.Register({ refresh = function()
     local active = ns.Theme().id
@@ -1003,10 +1003,10 @@ local function BuildThemes(body, width, section)
       for _, line in ipairs(card.ring) do
         line:SetShown(picked)
       end
-      card.tag:SetText(picked and (active == id and "In use" or "After reload") or "")
+      card.tag:SetText(picked and (active == id and L["In use"] or L["After reload"]) or "")
     end
     if ns.themeMissing then
-      themeNote:SetText(("The %s theme folder (%s) is missing or switched off in the AddOns list, so a plain look is used.")
+      themeNote:SetText(L["The %s theme folder (%s) is missing or switched off in the AddOns list, so a plain look is used."]
         :format(ns.themeMissing.name, ns.themeMissing.folder))
     end
   end })
@@ -1020,7 +1020,7 @@ local function BuildFonts(body, width, section)
   local stack = Stack(body)
   local pickWidth = math.min(260, width - 110)
   body.fontPickers = {}
-  for _, slot in ipairs({ { key = "head", label = "Headings" }, { key = "body", label = "Text" } }) do
+  for _, slot in ipairs({ { key = "head", label = L["Headings"] }, { key = "body", label = L["Text"] } }) do
     local pick = UI.Picker(body, pickWidth, 24)
     LabelRow(body, stack, slot.label, width, pick, 92, 6)
     local function Show()
@@ -1041,7 +1041,7 @@ local function BuildFonts(body, width, section)
     Show()
   end
   stack.AddText(Wrapping(body, 12, "muted", width,
-    "Used by the Codex window and the restyled game interface. Shows after a reload."), 0)
+    L["Used by the Codex window and the restyled game interface. Shows after a reload."]), 0)
   ns.lookSections.fonts = body
   return { Height = stack.Layout }
 end
@@ -1059,7 +1059,7 @@ local function BuildAccent(body, width, section)
   section.Register(accent)
   body.accentSwitch = accent
   stack.AddText(Wrapping(body, 12, "muted", width,
-    "Class colour paints the portrait ring, frame lines, level and the chosen tab in your class's colour."), 0)
+    L["Class colour paints the portrait ring, frame lines, level and the chosen tab in your class's colour."]), 0)
   ns.lookSections.accent = body
   return { Height = stack.Layout }
 end
@@ -1068,14 +1068,14 @@ local function BuildEffects(body, width, section)
   local stack = Stack(body)
   body.lookChecks = {}
   local effects = {
-    { key = "shadows", name = "Soft shadows", note = "A soft dark edge round panels, so they stand out on a bright world." },
-    { key = "strips", name = "Decorative strips", note = "A thin line in the theme's style along the top of windows and frames." },
+    { key = "shadows", name = L["Soft shadows"], note = L["A soft dark edge round panels, so they stand out on a bright world."] },
+    { key = "strips", name = L["Decorative strips"], note = L["A thin line in the theme's style along the top of windows and frames."] },
   }
   -- only a theme with dark panels for the game's interface (Dawn) offers them; off = the game's interface is as
   -- light as the Codex window, with its texts darkened (Theme.lua, the light-theme rule)
   if type(ns.HasInkPanel) == "function" and ns.HasInkPanel() then
-    effects[#effects + 1] = { key = "inkHud", name = "Game interface on dark panels",
-      note = "Chat, tooltips, bars, frames and the game's windows on dark see-through panels instead of light ones. Shows after a reload." }
+    effects[#effects + 1] = { key = "inkHud", name = L["Game interface on dark panels"],
+      note = L["Chat, tooltips, bars, frames and the game's windows on dark see-through panels instead of light ones. Shows after a reload."] }
   end
   for index, effect in ipairs(effects) do
     local check = WrapCheck(body, effect.name, width)
@@ -1098,23 +1098,23 @@ local function BuildEffects(body, width, section)
   return { Height = stack.Layout }
 end
 
-ns.AddSection("look", { id = "theme", title = "Theme", order = 10, build = BuildThemes,
-  desc = "The look of every Codex window and of the parts of the game Codex restyles: colours, lines and fonts. A new theme shows after a reload.",
+ns.AddSection("look", { id = "theme", title = L["Theme"], order = 10, build = BuildThemes,
+  desc = L["The look of every Codex window and of the parts of the game Codex restyles: colours, lines and fonts. A new theme shows after a reload."],
   keywords = { "runestone hearthwood classic slate dusk dawn" } })
-ns.AddSection("look", { id = "fonts", title = "Fonts", order = 20, build = BuildFonts,
-  desc = "The fonts Codex uses for headings and text, and how large they are." })
-ns.AddSection("look", { id = "accent", title = "Accent colour", order = 30, build = BuildAccent,
-  desc = "The one colour that marks what is selected, focused or important: the theme's own, or your class colour.",
-  keywords = { "class colour" } })
-ns.AddSection("look", { id = "effects", title = "Effects", order = 40, build = BuildEffects,
-  desc = "Small touches on the windows: a soft shadow behind them and a thin line along their top.",
-  keywords = { "shadows strips dark panels" } })
+ns.AddSection("look", { id = "fonts", title = L["Fonts"], order = 20, build = BuildFonts,
+  desc = L["The fonts Codex uses for headings and text, and how large they are."] })
+ns.AddSection("look", { id = "accent", title = L["Accent colour"], order = 30, build = BuildAccent,
+  desc = L["The one colour that marks what is selected, focused or important: the theme's own, or your class colour."],
+  keywords = { "class colour", L["class colour"] } })
+ns.AddSection("look", { id = "effects", title = L["Effects"], order = 40, build = BuildEffects,
+  desc = L["Small touches on the windows: a soft shadow behind them and a thin line along their top."],
+  keywords = { "shadows strips dark panels", L["shadows strips dark panels"] } })
 
 -- General: the Codex window itself ---------------------------------------------------------------------------------
 
 local function BuildCodexWindow(body, width, section)
   local stack = Stack(body)
-  local minimap = WrapCheck(body, "Minimap button (right-click it for a quick menu)", width)
+  local minimap = WrapCheck(body, L["Minimap button (right-click it for a quick menu)"], width)
   minimap.refresh = function(self)
     self:SetChecked(not ns.db.minimap.hide)
   end
@@ -1127,7 +1127,7 @@ local function BuildCodexWindow(body, width, section)
   body.minimapCheck = minimap
 
   local size = UI.Stepper(body, 52)
-  LabelRow(body, stack, "Window size", width, size, 104, 4)
+  LabelRow(body, stack, L["Window size"], width, size, 104, 4)
   local function SetScale(scale)
     ns.db.scale = math.max(0.7, math.min(1.4, scale))
     if ns.window then
@@ -1141,9 +1141,9 @@ local function BuildCodexWindow(body, width, section)
   size.more:SetScript("OnClick", function() SetScale(ns.db.scale + 0.05) end)
   size.value:SetText(("%d%%"):format(math.floor((ns.db.scale or 1) * 100 + 0.5)))
   body.sizeStepper = size
-  stack.AddText(Wrapping(body, 12, "muted", width, "From 70% to 140%. Drag the title bar to move the window."), 0)
+  stack.AddText(Wrapping(body, 12, "muted", width, L["From 70% to 140%. Drag the title bar to move the window."]), 0)
 
-  local news = WrapCheck(body, "Show what's new after an update (once for each version)", width)
+  local news = WrapCheck(body, L["Show what's new after an update (once for each version)"], width)
   news.refresh = function(self)
     self:SetChecked(ns.db.whatsNew ~= false)
   end
@@ -1153,7 +1153,7 @@ local function BuildCodexWindow(body, width, section)
   stack.AddCheck(news, 10)
   section.Register(news)
   body.whatsNewCheck = news
-  local newsButton = UI.Button(body, 150, 24, "What's new")
+  local newsButton = UI.Button(body, 150, 24, L["What's new"])
   newsButton:SetScript("OnClick", function()
     ns.ShowWhatsNew()
   end)
@@ -1238,7 +1238,7 @@ end)
 local function BuildUIScale(body, width, section)
   local stack = Stack(body)
   local stepper = UI.Stepper(body, 52)
-  LabelRow(body, stack, "Interface scale", width, stepper, 104, 4)
+  LabelRow(body, stack, L["Interface scale"], width, stepper, 104, 4)
   local note = Wrapping(body, 12, "muted", width, "")
   local function Refresh()
     local value = ns.UIScale()
@@ -1246,9 +1246,9 @@ local function BuildUIScale(body, width, section)
     stepper.value:SetText(("%d%%"):format(math.floor(shown * 100 + 0.5)))
     stepper.less:SetEnabled(shown > UI_SCALE_MIN + 0.001)
     stepper.more:SetEnabled(shown < UI_SCALE_MAX - 0.001)
-    note:SetText(value and ("Codex keeps the game's interface at %d%%. From 50%% to 115%%; changes in a fight wait "
-      .. "until it ends."):format(math.floor(value * 100 + 0.5))
-      or "The game's own setting (Options > Graphics). Change it here to let Codex keep it, also below the game's 64%.")
+    note:SetText(value and L["Codex keeps the game's interface at %d%%. From 50%% to 115%%; changes in a fight wait until it ends."]
+      :format(math.floor(value * 100 + 0.5))
+      or L["The game's own setting (Options > Graphics). Change it here to let Codex keep it, also below the game's 64%."])
   end
   stepper.less:SetScript("OnClick", function()
     ns.SetUIScale((ns.UIScale() or UIParent:GetScale() or 1) - 0.05)
@@ -1258,8 +1258,8 @@ local function BuildUIScale(body, width, section)
     ns.SetUIScale((ns.UIScale() or UIParent:GetScale() or 1) + 0.05)
     Refresh()
   end)
-  local pixel = UI.Button(body, 130, 24, "Pixel perfect")
-  local game = UI.Button(body, 130, 24, "Game's own")
+  local pixel = UI.Button(body, 130, 24, L["Pixel perfect"])
+  local game = UI.Button(body, 130, 24, L["Game's own"])
   game:SetPoint("LEFT", pixel, "RIGHT", 8, 0)
   stack.Add(pixel, function() return 24 end, 0, 8)
   pixel:SetScript("OnClick", function()
@@ -1280,27 +1280,27 @@ local function BuildUIScale(body, width, section)
   return { Height = stack.Layout, Refresh = Refresh }
 end
 
-ns.AddSection("general", { id = "uiscale", title = "Interface scale", order = 85, build = BuildUIScale,
-  desc = "How large the whole game interface is drawn. Leave it on the game's own to keep the game's setting.",
-  keywords = { "ui scale size pixel perfect" } })
+ns.AddSection("general", { id = "uiscale", title = L["Interface scale"], order = 85, build = BuildUIScale,
+  desc = L["How large the whole game interface is drawn. Leave it on the game's own to keep the game's setting."],
+  keywords = { "ui scale size pixel perfect", L["ui scale size pixel perfect"] } })
 
-ns.AddSection("general", { id = "codexwindow", title = "Codex window", order = 80, build = BuildCodexWindow,
-  desc = "This window itself: its size, the minimap button that opens it and the What's new list.",
-  keywords = { "minimap button scale size" } })
+ns.AddSection("general", { id = "codexwindow", title = L["Codex window"], order = 80, build = BuildCodexWindow,
+  desc = L["This window itself: its size, the minimap button that opens it and the What's new list."],
+  keywords = { "minimap button scale size", L["minimap button scale size"] } })
 
 -- Tooltips: what the other features add to item tooltips (the same settings as on their own sections) ---------------
 
 local TOOLTIP_OPTIONS = {
-  { module = "auction", title = "Auction house", options = {
-    { key = "tooltip", name = "Auction price of the item (hold Shift for the whole stack)" },
-    { key = "tooltipHistory", name = "Price history: the week's average and trend (hold Shift for the last days)" },
-    { key = "vendor", name = "Vendor sell price (one item; hold Shift for the whole stack)" } } },
-  { module = "professions", title = "Professions", options = {
-    { key = "tooltip", name = "Craft cost and profit, for items your characters can make" },
-    { key = "tooltipValue", name = "Auction value, while the auction house's own price line is off" } } },
+  { module = "auction", title = L["Auction house"], options = {
+    { key = "tooltip", name = L["Auction price of the item (hold Shift for the whole stack)"] },
+    { key = "tooltipHistory", name = L["Price history: the week's average and trend (hold Shift for the last days)"] },
+    { key = "vendor", name = L["Vendor sell price (one item; hold Shift for the whole stack)"] } } },
+  { module = "professions", title = L["Professions"], options = {
+    { key = "tooltip", name = L["Craft cost and profit, for items your characters can make"] },
+    { key = "tooltipValue", name = L["Auction value, while the auction house's own price line is off"] } } },
   { module = "statdelta", title = "Stat Delta", options = {
-    { key = "enabled", name = "Stat changes against your gear (hold Shift)" },
-    { key = "showScore", name = "Upgrade score (hold Shift)" } } },
+    { key = "enabled", name = L["Stat changes against your gear (hold Shift)"] },
+    { key = "showScore", name = L["Upgrade score (hold Shift)"] } } },
 }
 
 -- The module's namespace: its DB() and SetOption(key, on) (each module's own page uses the same setter).
@@ -1310,8 +1310,8 @@ end
 
 local function BuildTooltipExtras(body, width, section)
   local stack = Stack(body)
-  stack.AddText(Wrapping(body, 12, "muted", width, "The lines other features add to item tooltips. They are the "
-    .. "same switches as in those features' own sections."), 10)
+  stack.AddText(Wrapping(body, 12, "muted", width,
+    L["The lines other features add to item tooltips. They are the same switches as in those features' own sections."]), 10)
   body.extraChecks = {}
   for groupIndex, group in ipairs(TOOLTIP_OPTIONS) do
     local module = ns.modules[group.module]
@@ -1321,7 +1321,7 @@ local function BuildTooltipExtras(body, width, section)
       local title = UI.Text(head, "body", 13, "bright")
       title:SetPoint("LEFT", 0, 0)
       title:SetText(group.title)
-      local open = UI.Button(head, 110, 20, "All its options")
+      local open = UI.Button(head, 110, 20, L["All its options"])
       open:SetPoint("RIGHT", 0, 0)
       open:SetScript("OnClick", function()
         ns.ShowPage(group.module)
@@ -1335,7 +1335,7 @@ local function BuildTooltipExtras(body, width, section)
         return 22
       end, 0, 4)
       section.Register({ refresh = function()
-        state:SetText(ns.ModuleState(group.module) == "on" and "" or "(this feature is off)")
+        state:SetText(ns.ModuleState(group.module) == "on" and "" or L["(this feature is off)"])
       end })
       for index, option in ipairs(group.options) do
         local check = WrapCheck(body, option.name, width - 12)
@@ -1362,9 +1362,10 @@ local function BuildTooltipExtras(body, width, section)
   return { Height = stack.Layout }
 end
 
-ns.AddSection("tooltips", { id = "tooltipextras", title = "Prices and stats in tooltips", order = 40,
-  desc = "The lines Codex adds to item tooltips: auction and vendor prices, crafting cost and profit, and stat changes.",
-  build = BuildTooltipExtras, keywords = { "auction price vendor sell craft cost profit stat delta score" } })
+ns.AddSection("tooltips", { id = "tooltipextras", title = L["Prices and stats in tooltips"], order = 40,
+  desc = L["The lines Codex adds to item tooltips: auction and vendor prices, crafting cost and profit, and stat changes."],
+  build = BuildTooltipExtras, keywords = { "auction price vendor sell craft cost profit stat delta score",
+    L["auction price vendor sell craft cost profit stat delta score"] } })
 
 -- Profiles ---------------------------------------------------------------------------------------------------------
 
@@ -1383,9 +1384,9 @@ end
 
 local function BuildSetupSection(body, width)
   local stack = Stack(body)
-  stack.AddText(Wrapping(body, 12, "muted", width, "The short setup from your first login: theme, the parts of "
-    .. "the game Codex restyles, and the features you use. It changes nothing until you finish it."), 8)
-  local setup = UI.Button(body, 150, 24, "Run setup again")
+  stack.AddText(Wrapping(body, 12, "muted", width,
+    L["The short setup from your first login: theme, the parts of the game Codex restyles, and the features you use. It changes nothing until you finish it."]), 8)
+  local setup = UI.Button(body, 150, 24, L["Run setup again"])
   setup:SetScript("OnClick", RunSetup)
   stack.Add(setup, function()
     return 24
@@ -1395,9 +1396,9 @@ local function BuildSetupSection(body, width)
   return { Height = stack.Layout }
 end
 
-ns.AddSection("profiles", { id = "profiles", title = "Profiles", order = 10, build = BuildProfilesSection,
-  desc = "Save your settings under a name, use them on another character, or share them as a text string.",
-  aliases = { "profile" }, keywords = { "export import share copy" } })
-ns.AddSection("profiles", { id = "setup", title = "First-run setup", order = 20, build = BuildSetupSection,
-  desc = "The short setup from your first login: the theme, the parts of the game Codex restyles, and the features you use.",
-  keywords = { "setup wizard run again" } })
+ns.AddSection("profiles", { id = "profiles", title = L["Profiles"], order = 10, build = BuildProfilesSection,
+  desc = L["Save your settings under a name, use them on another character, or share them as a text string."],
+  aliases = { "profile" }, keywords = { "export import share copy", L["export import share copy"] } })
+ns.AddSection("profiles", { id = "setup", title = L["First-run setup"], order = 20, build = BuildSetupSection,
+  desc = L["The short setup from your first login: the theme, the parts of the game Codex restyles, and the features you use."],
+  keywords = { "setup wizard run again", L["setup wizard run again"] } })

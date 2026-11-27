@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Auction house module, part 2b: items on sale for less than a vendor pays for them (2026-11-26). A full scan
 -- notes every auction whose price per item is under the item's vendor sell price; browsing and searching keep
@@ -262,7 +263,7 @@ function A.BelowRows()
     local total = entry.p or 0
     local one = math.max(0, (entry.s or 0) - (entry.l or 0))
     rows[#rows + 1] = {
-      key = key, below = entry, name = name or ("Item " .. key), icon = icon, quality = quality,
+      key = key, below = entry, name = name or L["Item %s"]:format(key), icon = icon, quality = quality,
       count = entry.u or 0, price = entry.l, profit = each and one or total, other = each and total or one,
       deal = true,
       result = not A.IsEquipment(key) and { itemKey = ItemKey(key), minPrice = math.floor(entry.l) } or nil,
@@ -289,9 +290,9 @@ function A.BelowText()
   end
   if count == 0 then
     local realm = A.Realm(false)
-    return realm and next(realm.items or {}) and "Nothing below the vendor price." or "Run a full scan to find them."
+    return realm and next(realm.items or {}) and L["Nothing below the vendor price."] or L["Run a full scan to find them."]
   end
-  return ("%d below vendor: +%s"):format(count, ns.Money(profit))
+  return L["%d below vendor: +%s"]:format(count, ns.Money(profit))
 end
 
 function A.BelowCount()

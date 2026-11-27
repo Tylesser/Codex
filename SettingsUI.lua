@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- The game's own interface: one section per interface part (ns.SKIN_PARTS) on the page of the part of the game it
 -- belongs to (ns.PART_SECTIONS; the action bars' look on Action bars, the chat on Chat, ...), and the
@@ -14,7 +15,7 @@ local addonName, ns = ...
 local UI = ns.UI
 local T = ns.T
 
-local GAME_FONT, NUMBER_FONT = "Fonts\\FRIZQT__.TTF", "Fonts\\ARIALN.TTF"
+local GAME_FONT, NUMBER_FONT = (STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"), "Fonts\\ARIALN.TTF"
 local CIRCLE = "Interface\\AddOns\\Codex\\Media\\Circle"
 local STATUSBAR = "Interface\\TargetingFrame\\UI-StatusBar"
 local GREY = { 0.32, 0.32, 0.34, 1 }
@@ -31,41 +32,24 @@ ns.UI_OPTION_PARTS = { barpanels = "actionbars", roundicons = "auras" }
 
 -- What each part changes, in plain words (from the skin files' own notes).
 ns.UI_PART_TEXT = {
-  actionbars = "Every action button gets the theme's slot: a dark square with thin theme lines, the icon trimmed "
-    .. "and clean white numbers. The gryphons and the bar art go.",
-  unitframes = "Codex draws its own player, target, target of target, pet and focus frames: a round portrait in "
-    .. "the theme's ring with a level badge and slim health and power bars.",
-  partyframes = "Party members get the same frames a size smaller, stacked on the left with their buffs under "
-    .. "each, faded while out of range.",
-  raidframes = "Raid frames (and raid-style party frames) get flat class-coloured bars on a dark slot with a thin "
-    .. "theme line. The game still handles colours, auras and range.",
-  nameplates = "Health bars become flat with a soft shade and a thin theme line, the target gets an accent ring, "
-    .. "the level a small dark disc, and the name sits centred above.",
-  auras = "Your buffs get a thin theme ring and white timers; debuffs keep their dispel-colour border. The game "
-    .. "still places and sorts them.",
-  cooldowns = "The cooldown manager's icons get the theme's slot and white countdowns; its tracked bars become "
-    .. "flat fills on a dark strip.",
-  minimap = "The map gets the theme's ring and the zone name a small plate. Pick a square shape below if you "
-    .. "prefer one.",
-  chat = "The chat box gets the theme's panel, the tabs the accent colour and the edit box a slim bar under the "
-    .. "window. Chat text and its colours stay as they are.",
-  tracker = "The quest tracker sits on a soft panel under an accent heading. Quest titles keep their difficulty "
-    .. "colours; objectives turn light grey.",
-  damagemeter = "The game's damage meter gets the theme's box, an accent title and flat class-coloured bars.",
-  questlog = "The world map and quest log lose the parchment: the theme's panel and title bar and light, readable "
-    .. "quest text. Quest levels in front of titles stay.",
-  tooltips = "Tooltips get the theme's panel and thin border. Item quality still shows in the name's colour.",
-  menus = "Dropdown and right-click menus get the theme's panel, the hover in the theme's select colour and "
-    .. "ticks in the accent.",
-  lootroll = "Need, greed and pass rolls get the theme's panel and buttons, the item's quality on a thin ring round "
-    .. "its icon and the time left as a slim bar.",
-  questpins = "On continent, world and flight maps every quest in your log gets a pin. The game shows quest "
-    .. "pins only on a zone's own map. On the flight map the pins only show their tooltip: clicks go to the "
-    .. "flight points.",
-  windows = "The character window, spellbook, bags, mail, merchants and the other game windows get the theme's "
-    .. "panel, title bar, buttons and tabs.",
-  floatingtext = "Damage numbers over enemies and the game's floating combat text use the theme's font. Takes "
-    .. "effect after a reload.",
+  actionbars = L["Every action button gets the theme's slot: a dark square with thin theme lines, the icon trimmed and clean white numbers. The gryphons and the bar art go."],
+  unitframes = L["Codex draws its own player, target, target of target, pet and focus frames: a round portrait in the theme's ring with a level badge and slim health and power bars."],
+  partyframes = L["Party members get the same frames a size smaller, stacked on the left with their buffs under each, faded while out of range."],
+  raidframes = L["Raid frames (and raid-style party frames) get flat class-coloured bars on a dark slot with a thin theme line. The game still handles colours, auras and range."],
+  nameplates = L["Health bars become flat with a soft shade and a thin theme line, the target gets an accent ring, the level a small dark disc, and the name sits centred above."],
+  auras = L["Your buffs get a thin theme ring and white timers; debuffs keep their dispel-colour border. The game still places and sorts them."],
+  cooldowns = L["The cooldown manager's icons get the theme's slot and white countdowns; its tracked bars become flat fills on a dark strip."],
+  minimap = L["The map gets the theme's ring and the zone name a small plate. Pick a square shape below if you prefer one."],
+  chat = L["The chat box gets the theme's panel, the tabs the accent colour and the edit box a slim bar under the window. Chat text and its colours stay as they are."],
+  tracker = L["The quest tracker sits on a soft panel under an accent heading. Quest titles keep their difficulty colours; objectives turn light grey."],
+  damagemeter = L["The game's damage meter gets the theme's box, an accent title and flat class-coloured bars."],
+  questlog = L["The world map and quest log lose the parchment: the theme's panel and title bar and light, readable quest text. Quest levels in front of titles stay."],
+  tooltips = L["Tooltips get the theme's panel and thin border. Item quality still shows in the name's colour."],
+  menus = L["Dropdown and right-click menus get the theme's panel, the hover in the theme's select colour and ticks in the accent."],
+  lootroll = L["Need, greed and pass rolls get the theme's panel and buttons, the item's quality on a thin ring round its icon and the time left as a slim bar."],
+  questpins = L["On continent, world and flight maps every quest in your log gets a pin. The game shows quest pins only on a zone's own map. On the flight map the pins only show their tooltip: clicks go to the flight points."],
+  windows = L["The character window, spellbook, bags, mail, merchants and the other game windows get the theme's panel, title bar, buttons and tabs."],
+  floatingtext = L["Damage numbers over enemies and the game's floating combat text use the theme's font. Takes effect after a reload."],
 }
 
 -- Drawing helpers ------------------------------------------------------------------------------------------------
@@ -996,7 +980,7 @@ local function Picture(card, id, width)
     label:SetWidth(sideWidth)
     label:SetJustifyH("CENTER")
     label:SetWordWrap(false)
-    label:SetText(index == 1 and "Game default" or "Codex")
+    label:SetText(index == 1 and L["Game default"] or "Codex")
     side.label = label
     sides[key] = side
   end
@@ -1098,7 +1082,7 @@ end
 
 -- the round icons option (the "roundicons" part), shown in two cards
 local function RoundIconsCheck(parent, stack, width)
-  local check = OptionCheck(parent, stack, "Round icons (buffs, debuffs and the cooldown manager)", width, function()
+  local check = OptionCheck(parent, stack, L["Round icons (buffs, debuffs and the cooldown manager)"], width, function()
     return ns.SkinPartWanted("roundicons")
   end, function(on)
     ns.db.skins.parts.roundicons = on
@@ -1112,7 +1096,7 @@ local OPTIONS = {}
 
 OPTIONS.actionbars = function(card, parent, width, stack)
   local options = card.options
-  options.panels = OptionCheck(parent, stack, "A panel behind each bar, fitted to its buttons", width, function()
+  options.panels = OptionCheck(parent, stack, L["A panel behind each bar, fitted to its buttons"], width, function()
     return ns.SkinPartWanted("barpanels")
   end, function(on)
     ns.db.skins.parts.barpanels = on
@@ -1123,7 +1107,7 @@ OPTIONS.actionbars = function(card, parent, width, stack)
   guide:SetSpacing(2)
   options.guide = guide
   AddText(stack, guide, 8)
-  local check = UI.Button(parent, 130, 24, "Check spacing")
+  local check = UI.Button(parent, 130, 24, L["Check spacing"])
   stack.Add(check, function()
     return 24
   end)
@@ -1135,7 +1119,7 @@ OPTIONS.actionbars = function(card, parent, width, stack)
     local text = ns.BarSpacingText()
     result:SetText(text)
     local theme = Theme()
-    result:SetTextColor(UI.Unpack(text:find("^All clear") and theme.good or theme.text))
+    result:SetTextColor(UI.Unpack(text == L["All clear: no panels overlap."] and theme.good or theme.text))
     if card.Relayout then
       card.Relayout()
     end
@@ -1145,7 +1129,7 @@ end
 
 OPTIONS.unitframes = function(card, parent, width, stack)
   local options = card.options
-  AddText(stack, Wrapping(parent, 12, "text", width, "Frame style"), 4)
+  AddText(stack, Wrapping(parent, 12, "text", width, L["Frame style"]), 4)
   local cards
   cards = ns.StyleCards(parent, width, function(key)
     ns.db.skins.frameStyle = key
@@ -1163,9 +1147,9 @@ OPTIONS.unitframes = function(card, parent, width, stack)
   stack.Add(cards, function()
     return cards:GetHeight() or 78
   end, 0, 10)
-  options.health = UnitTextRow(parent, stack, "Health text", "health", width)
-  options.power = UnitTextRow(parent, stack, "Power text", "power", width)
-  options.classHealth = OptionCheck(parent, stack, "Health bars in class colours (players; NPCs by reaction)", width,
+  options.health = UnitTextRow(parent, stack, L["Health text"], "health", width)
+  options.power = UnitTextRow(parent, stack, L["Power text"], "power", width)
+  options.classHealth = OptionCheck(parent, stack, L["Health bars in class colours (players; NPCs by reaction)"], width,
     ns.ClassHealth, function(on)
       ns.db.skins.healthColor = on and "class" or nil
       local refresh = ns.API.RefreshHealthColor
@@ -1182,7 +1166,7 @@ OPTIONS.unitframes = function(card, parent, width, stack)
         card.RedrawCodex()
       end
     end, 4)
-  options.gradient = PickerRow(parent, stack, "Bar gradient", width, function()
+  options.gradient = PickerRow(parent, stack, L["Bar gradient"], width, function()
     for _, choice in ipairs(ns.BAR_GRADIENTS) do
       if choice.key == ns.BarGradient() then
         return choice.name
@@ -1201,18 +1185,18 @@ OPTIONS.unitframes = function(card, parent, width, stack)
   end, function()
     return ns.BarGradient()
   end)
-  options.short = OptionCheck(parent, stack, "Short numbers (1.9K instead of 1,920)", width, ns.UnitTextShort, function(on)
+  options.short = OptionCheck(parent, stack, L["Short numbers (1.9K instead of 1,920)"], width, ns.UnitTextShort, function(on)
     ns.db.skins.unitText = ns.db.skins.unitText or {}
     ns.db.skins.unitText.short = on
     RedrawTexts(true, true)
   end, 4)
-  options.smooth = OptionCheck(parent, stack, "Smooth health and power bars (fill gradually, e.g. while eating)", width,
+  options.smooth = OptionCheck(parent, stack, L["Smooth health and power bars (fill gradually, e.g. while eating)"], width,
     ns.SmoothBars, function(on)
       ns.db.skins.smoothBars = on
     end)
   -- where each frame's auras go (Settings.lua ns.AURA_PLACES)
   options.auraPlaces = {}
-  for _, unit in ipairs({ { "target", "Target auras" }, { "focus", "Focus auras" }, { "party", "Party auras" } }) do
+  for _, unit in ipairs({ { "target", L["Target auras"] }, { "focus", L["Focus auras"] }, { "party", L["Party auras"] } }) do
     options.auraPlaces[#options.auraPlaces + 1] = PickerRow(parent, stack, unit[2], width, function()
       local place = ns.AuraPlace(unit[1])
       for _, choice in ipairs(ns.AURA_PLACES) do
@@ -1234,7 +1218,7 @@ OPTIONS.unitframes = function(card, parent, width, stack)
       return ns.AuraPlace(unit[1])
     end)
   end
-  options.firstName = OptionCheck(parent, stack, "Players by first name only (no surname)", width, ns.FirstNameOnly,
+  options.firstName = OptionCheck(parent, stack, L["Players by first name only (no surname)"], width, ns.FirstNameOnly,
     function(on)
       ns.db.skins.firstNameOnly = on and true or nil
       local refresh = ns.API.RefreshNames
@@ -1245,8 +1229,8 @@ OPTIONS.unitframes = function(card, parent, width, stack)
 end
 
 OPTIONS.nameplates = function(card, parent, width, stack)
-  card.options.health = UnitTextRow(parent, stack, "Health text", "nameplate", width)
-  card.options.glow = OptionCheck(parent, stack, "Glow round the target's nameplate", width, function()
+  card.options.health = UnitTextRow(parent, stack, L["Health text"], "nameplate", width)
+  card.options.glow = OptionCheck(parent, stack, L["Glow round the target's nameplate"], width, function()
     return not (ns.db.skins and ns.db.skins.nameplateGlow == false)
   end, function(on)
     ns.db.skins.nameplateGlow = (not on) and false or nil
@@ -1259,18 +1243,18 @@ OPTIONS.nameplates = function(card, parent, width, stack)
   local function SizeChoices(low, high)
     local list = {}
     for percent = low, high, 10 do
-      list[#list + 1] = { key = percent, name = percent == 100 and "100% (the game's)" or (percent .. "%") }
+      list[#list + 1] = { key = percent, name = percent == 100 and L["100% (the game's)"] or (percent .. "%") }
     end
     return list
   end
-  for _, size in ipairs({ { "width", "Bar width", "plateWidth", 50, 160 }, { "height", "Bar height", "plateHeight", 50, 250 } }) do
+  for _, size in ipairs({ { "width", L["Bar width"], "plateWidth", 50, 160 }, { "height", L["Bar height"], "plateHeight", 50, 250 } }) do
     local key, label, field = size[1], size[2], size[3]
     local function Current()
       return math.floor((tonumber(ns.db.skins and ns.db.skins[field]) or 1) * 100 + 0.5)
     end
     card.options[key] = PickerRow(parent, stack, label, width, function()
       local percent = Current()
-      return percent == 100 and "100% (the game's)" or (percent .. "%")
+      return percent == 100 and L["100% (the game's)"] or (percent .. "%")
     end, function()
       return SizeChoices(size[4], size[5])
     end, function(percent)
@@ -1283,7 +1267,7 @@ OPTIONS.nameplates = function(card, parent, width, stack)
     end, Current)
   end
   stack.AddText(Wrapping(parent, 11, "muted", width,
-    "Also in Edit Mode: the mouse wheel over the Nameplates box sets the width, Shift + wheel the height."), 4)
+    L["Also in Edit Mode: the mouse wheel over the Nameplates box sets the width, Shift + wheel the height."]), 4)
 end
 
 OPTIONS.auras = function(card, parent, width, stack)
@@ -1292,14 +1276,14 @@ OPTIONS.auras = function(card, parent, width, stack)
   -- icon spacing: label and stepper in one row, the note under them
   local row = CreateFrame("Frame", nil, parent)
   row:SetSize(width, 22)
-  local label = Wrapping(row, 12, "text", LABEL_WIDTH, "Icon spacing")
+  local label = Wrapping(row, 12, "text", LABEL_WIDTH, L["Icon spacing"])
   label:SetPoint("TOPLEFT", row, "TOPLEFT", 0, -4)
   local spacing = UI.Stepper(row, 48)
   spacing:SetPoint("TOPLEFT", row, "TOPLEFT", LABEL_WIDTH + 6, 0)
   stack.Add(row, function()
     return math.max(22, TextHeight(label, 12, LABEL_WIDTH) + 4)
   end, 0, 4)
-  local note = Wrapping(parent, 11, "muted", width, "The gap round each round icon, here and in the cooldown manager.")
+  local note = Wrapping(parent, 11, "muted", width, L["The gap round each round icon, here and in the cooldown manager."])
   AddText(stack, note)
   local function Show()
     spacing.value:SetText(("%d px"):format(ns.IconSpacing()))
@@ -1330,7 +1314,7 @@ end
 
 -- The quest tracker's background (CodexDB.skins.trackerPanel, nil = on); the skins folder shows or hides it at once.
 OPTIONS.tracker = function(card, parent, width, stack)
-  card.options.panel = OptionCheck(parent, stack, "A background behind the quest tracker", width, function()
+  card.options.panel = OptionCheck(parent, stack, L["A background behind the quest tracker"], width, function()
     return ns.TrackerPanelOn()
   end, function(on)
     ns.db.skins.trackerPanel = (not on) and false or nil
@@ -1344,11 +1328,11 @@ OPTIONS.tracker = function(card, parent, width, stack)
 end
 
 OPTIONS.minimap = function(card, parent, width, stack)
-  local choices = { { key = "theme", name = "Theme default" } }
+  local choices = { { key = "theme", name = L["Theme default"] } }
   for _, choice in ipairs(ns.MINIMAP_SHAPES) do
     choices[#choices + 1] = choice
   end
-  card.options.shape = PickerRow(parent, stack, "Shape", width, function()
+  card.options.shape = PickerRow(parent, stack, L["Shape"], width, function()
     return ns.MinimapShapeName(ns.db.skins.minimapShape)
   end, function()
     return choices
@@ -1376,24 +1360,24 @@ end
 -- Where each part's section goes (Areas.lua): page, place on it, the header's name, folded at first.
 -- Parts shown as an option inside another part's section (ns.UI_OPTION_PARTS) have none of their own.
 ns.PART_SECTIONS = {
-  actionbars = { area = "bars", order = 10, title = "Look" },
-  cooldowns = { area = "bars", order = 60, title = "Cooldown manager", folded = true },
-  unitframes = { area = "units", order = 10, title = "Player, target, pet and focus" },
-  partyframes = { area = "units", order = 20, title = "Party frames", folded = true },
-  raidframes = { area = "units", order = 30, title = "Raid frames", folded = true },
-  nameplates = { area = "units", order = 40, title = "Nameplates", folded = true },
-  auras = { area = "auras", order = 20, title = "Buffs and debuffs look" },
-  lootroll = { area = "items", order = 40, title = "Loot roll window", folded = true },
-  tracker = { area = "quests", order = 30, title = "Quest tracker", folded = true },
-  questlog = { area = "quests", order = 40, title = "Quest log and world map", folded = true },
-  minimap = { area = "map", order = 10, title = "Minimap" },
-  questpins = { area = "map", order = 50, title = "Quest pins on bigger maps", folded = true },
-  chat = { area = "chat", order = 10, title = "Chat" },
-  damagemeter = { area = "chat", order = 20, title = "Damage meter", folded = true },
-  tooltips = { area = "tooltips", order = 10, title = "Tooltip look" },
-  windows = { area = "general", order = 20, title = "Game windows" },
-  menus = { area = "general", order = 30, title = "Menus" },
-  floatingtext = { area = "general", order = 40, title = "Floating combat text" },
+  actionbars = { area = "bars", order = 10, title = L["Look"] },
+  cooldowns = { area = "bars", order = 60, title = L["Cooldown manager"], folded = true },
+  unitframes = { area = "units", order = 10, title = L["Player, target, pet and focus"] },
+  partyframes = { area = "units", order = 20, title = L["Party frames"], folded = true },
+  raidframes = { area = "units", order = 30, title = L["Raid frames"], folded = true },
+  nameplates = { area = "units", order = 40, title = L["Nameplates"], folded = true },
+  auras = { area = "auras", order = 20, title = L["Buffs and debuffs look"] },
+  lootroll = { area = "items", order = 40, title = L["Loot roll window"], folded = true },
+  tracker = { area = "quests", order = 30, title = L["Quest tracker"], folded = true },
+  questlog = { area = "quests", order = 40, title = L["Quest log and world map"], folded = true },
+  minimap = { area = "map", order = 10, title = L["Minimap"] },
+  questpins = { area = "map", order = 50, title = L["Quest pins on bigger maps"], folded = true },
+  chat = { area = "chat", order = 10, title = L["Chat"] },
+  damagemeter = { area = "chat", order = 20, title = L["Damage meter"], folded = true },
+  tooltips = { area = "tooltips", order = 10, title = L["Tooltip look"] },
+  windows = { area = "general", order = 20, title = L["Game windows"] },
+  menus = { area = "general", order = 30, title = L["Menus"] },
+  floatingtext = { area = "general", order = 40, title = L["Floating combat text"] },
 }
 
 -- A part's section id ("part-chat"): area and part ids would clash ("chat", "tooltips").
@@ -1545,12 +1529,12 @@ for _, part in ipairs(ns.SKIN_PARTS) do
         end,
       },
       tag = function()
-        return RestyleOff() and "restyle off" or ""
+        return RestyleOff() and L["restyle off"] or ""
       end,
       notice = function()
         if RestyleOff() then
-          return "The game's interface isn't restyled, so this part waits. The switch for all of it is in General.",
-            "Restyle it", SwitchRestyleOn
+          return L["The game's interface isn't restyled, so this part waits. The switch for all of it is in General."],
+            L["Restyle it"], SwitchRestyleOn
         end
         return nil
       end,
@@ -1575,10 +1559,8 @@ end
 
 local function BuildRestyle(body, width, section)
   local stack = Stack(body)
-  local intro = Wrapping(body, 12, "muted", width, "Codex redraws the game's own bars, frames, chat, minimap and "
-    .. "windows in your theme; Edit Mode still decides where everything sits. Each part has its own switch on its "
-    .. "page: action bars, unit frames, buffs, map and quests, chat, tooltips, and game windows and menus below. "
-    .. "Changes take effect after a reload.")
+  local intro = Wrapping(body, 12, "muted", width,
+    L["Codex redraws the game's own bars, frames, chat, minimap and windows in your theme; Edit Mode still decides where everything sits. Each part has its own switch on its page: action bars, unit frames, buffs, map and quests, chat, tooltips, and game windows and menus below. Changes take effect after a reload."])
   AddText(stack, intro, 6)
   local overlapName = ns.UIOverlap()
   local overlap = Wrapping(body, 12, "warn", width, overlapName and ns.OVERLAP_NOTE:format(overlapName) or "")
@@ -1594,10 +1576,10 @@ end
 
 ns.AddSection("general", {
   id = "restyle",
-  title = "Restyle the game's interface",
+  title = L["Restyle the game's interface"],
   order = 10,
   aliases = { "skins" },
-  keywords = { "skins theme game interface" },
+  keywords = { "skins theme game interface", L["skins theme game interface"] },
   switch = {
     get = function()
       return ns.db.skins.enabled and true or false

@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Stat Delta module, part 6: the module's page in the Codex window: the tooltip settings, the upgrade score
 -- presets for the player's class and the points per stat (saved per character).
@@ -12,22 +13,22 @@ local view = {}
 
 -- key, label, what to refresh
 local OPTIONS = {
-  { "enabled", "Show stat changes (hold Shift)" },
-  { "showScore", "Show the upgrade score (hold Shift)", true },
-  { "showPrimary", "Show Strength, Agility, Stamina, Intellect, Spirit" },
-  { "showArrows", "Show upgrade arrows on items", true },
+  { "enabled", L["Show stat changes (hold Shift)"] },
+  { "showScore", L["Show the upgrade score (hold Shift)"], true },
+  { "showPrimary", L["Show Strength, Agility, Stamina, Intellect, Spirit"] },
+  { "showArrows", L["Show upgrade arrows on items"], true },
 }
 
 function S.StatusText()
   local db = S.DB()
   if not (db and db.enabled) then
-    return "Stat changes in tooltips are off."
+    return L["Stat changes in tooltips are off."]
   end
   local name = S.PresetName()
   if name then
-    return "Hold Shift over an item to compare it with your gear. Upgrade score: " .. name .. "."
+    return L["Hold Shift over an item to compare it with your gear. Upgrade score: %s."]:format(name)
   end
-  return "Hold Shift over an item to compare it with your gear. Upgrade score off."
+  return L["Hold Shift over an item to compare it with your gear. Upgrade score off."]
 end
 
 local function FormatWeight(value)
@@ -44,11 +45,7 @@ S.FormatWeight = FormatWeight
 local function StatLabel(key)
   for _, stat in ipairs(S.STATS) do
     if stat.key == key then
-      local label = stat.label
-      if stat.fmt == "pct" then
-        label = label:gsub(" Chance$", "") .. " (1%)"
-      end
-      return label
+      return stat.weightLabel or stat.label -- percent stats: "Crit (1%)"
     end
   end
   return key
@@ -85,7 +82,7 @@ local function WeightBox(parent, key, index)
 end
 
 local function PresetButtons(page, anchor)
-  local entries = { { id = false, label = "Off" } }
+  local entries = { { id = false, label = L["Off"] } }
   for _, preset in ipairs(S.GetPresets()) do
     entries[#entries + 1] = preset
   end
@@ -106,7 +103,7 @@ local function PresetButtons(page, anchor)
       button:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine(entry.label)
-        GameTooltip:AddLine("Fills in rough starting values for this role. Your edited values are replaced.",
+        GameTooltip:AddLine(L["Fills in rough starting values for this role. Your edited values are replaced."],
           1, 1, 1, true)
         GameTooltip:Show()
       end)
@@ -120,7 +117,7 @@ local function PresetButtons(page, anchor)
   if #entries == 1 then
     local none = UI.Text(page, "body", 11, "muted")
     none:SetPoint("LEFT", previous, "RIGHT", 10, 0)
-    none:SetText("No presets for your class: type your own points below.")
+    none:SetText(L["No presets for your class: type your own points below."])
   end
   return view.presets[1]
 end
@@ -142,11 +139,13 @@ function S.RefreshPage()
   end
   local name = S.PresetName()
   if name then
-    local which = S.HasTwoTalentGroups()
-      and (S.ActiveTalentGroup() == 2 and " (your secondary talents)" or " (your primary talents)") or ""
-    view.presetStatus:SetText("Score" .. which .. ": " .. name)
+    local text = L["Score: %s"]
+    if S.HasTwoTalentGroups() then
+      text = S.ActiveTalentGroup() == 2 and L["Score (your secondary talents): %s"] or L["Score (your primary talents): %s"]
+    end
+    view.presetStatus:SetText(text:format(name))
   else
-    view.presetStatus:SetText("The score is off. Pick a preset (or type a number of points) to turn it on.")
+    view.presetStatus:SetText(L["The score is off. Pick a preset (or type a number of points) to turn it on."])
   end
   for _, box in ipairs(view.boxes) do
     if not box:HasFocus() then
@@ -198,15 +197,14 @@ function S.BuildPage(page)
 
   local score = UI.Text(page, "head", 12, "accent")
   score:SetPoint("TOPLEFT", view.status, "BOTTOMLEFT", 0, -78)
-  score:SetText("UPGRADE SCORE")
+  score:SetText(L["UPGRADE SCORE"])
   local help = UI.Text(page, "body", 12, "text")
   help:SetPoint("TOPLEFT", score, "BOTTOMLEFT", 0, -6)
   help:SetPoint("RIGHT", 0, 0)
   help:SetWordWrap(true)
-  help:SetText("Points per stat, saved for this character. The score of an item is the sum of its stats times "
-    .. "these points; with Shift, the tooltip shows it against your gear, and upgrades get a green arrow in "
-    .. "your bags and on quest rewards. The presets are rough starting values, not exact numbers: change them "
-    .. "as you like.")
+  help:SetText(L["Points per stat, saved for this character."] .. " "
+    .. L["The score of an item is the sum of its stats times these points; with Shift, the tooltip shows it against your gear, and upgrades get a green arrow in your bags and on quest rewards."]
+    .. " " .. L["The presets are rough starting values, not exact numbers: change them as you like."])
 
   local first = PresetButtons(page, help)
   view.presetStatus = UI.Text(page, "body", 12, "good")
@@ -217,8 +215,8 @@ function S.BuildPage(page)
   note:SetPoint("TOPLEFT", view.presetStatus, "BOTTOMLEFT", 0, -6)
   note:SetPoint("RIGHT", 0, 0)
   note:SetWordWrap(true)
-  note:SetText("Attack Power, Ranged Attack Power, Health, Mana and Armor include what Strength, Agility, "
-    .. "Stamina and Intellect give you. Give points to a stat or to what it turns into, not both.")
+  note:SetText(L["Attack Power, Ranged Attack Power, Health, Mana and Armor include what Strength, Agility, Stamina and Intellect give you."]
+    .. " " .. L["Give points to a stat or to what it turns into, not both."])
 
   local grid = CreateFrame("Frame", nil, page)
   grid:SetPoint("TOPLEFT", note, "BOTTOMLEFT", 0, -10)

@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Personal bars (module "resource", off by default), part 1: settings and the timers behind the bars, with no
 -- frames (Bars.lua draws them, Page.lua is the module's page). Under the character: health, power (mana, rage or
@@ -41,15 +42,15 @@ R.DEFAULT_POS_BESIDE = { "TOP", "CENTER", 0, 60 } -- the upright bars' tops, eit
 
 -- The text on the bars. Amount is the current value ("4,820", or "4.8K" with Settings' short numbers).
 R.TEXT_MODES = {
-  { key = "none", name = "None" },
-  { key = "value", name = "Amount" },
-  { key = "percent", name = "Percentage" },
-  { key = "both", name = "Amount and percentage" },
+  { key = "none", name = L["None"] },
+  { key = "value", name = L["Amount"] },
+  { key = "percent", name = L["Percentage"] },
+  { key = "both", name = L["Amount and percentage"] },
 }
 R.LAYOUTS = {
-  { key = "under", name = "Under the character" },
-  { key = "beside", name = "Beside the character" },
-  { key = "arc", name = "Arcs beside the character" },
+  { key = "under", name = L["Under the character"] },
+  { key = "beside", name = L["Beside the character"] },
+  { key = "arc", name = L["Arcs beside the character"] },
 }
 
 local FSR, PAIR, TICK, TICK_SLACK, TICK_QUIET = 5, 0.6, 2, 0.35, 4.5

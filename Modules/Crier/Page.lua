@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Trade Crier's section on the Chat page: the messages (each with its own time in seconds), the link buttons and the
 -- preview of the message being edited, the channel, the checks, the post key. The same choices as the standalone's
@@ -25,17 +26,19 @@ local function RowState(message)
   if state == "empty" then
     return "", "muted"
   elseif state == "off" then
-    return "off", "muted"
+    return L["off"], "muted"
   elseif state == "long" then
-    return "too long", "bad"
+    return L["too long"], "bad"
   elseif state == "elsewhere" then
-    return "elsewhere", "muted"
+    return L["elsewhere"], "muted"
+  elseif state == "later" then
+    return L["later"], "muted"
   end
   local wait = C.WaitFor(message)
   if wait > 0 then
-    return "in " .. C.Clock(wait), "muted"
+    return L["in %s"]:format(C.Clock(wait)), "muted"
   end
-  return "ready", "accent"
+  return L["ready##message"], "accent"
 end
 
 local function Refresh()
@@ -74,17 +77,17 @@ local function Refresh()
   view.add:SetShown(#messages < C.MAX_MESSAGES)
 
   local _, text, unknown = C.MessageState(messages[view.active])
-  view.previewLabel:SetText(#messages > 1 and ("Message %d in chat reads"):format(view.active) or "In chat it reads")
-  view.preview:SetText(text ~= "" and text or "(nothing yet)")
+  view.previewLabel:SetText(#messages > 1 and L["Message %d in chat reads"]:format(view.active) or L["In chat it reads"])
+  view.preview:SetText(text ~= "" and text or L["(nothing yet)"])
   view.count:SetText(("%d / %d"):format(#text, C.MAX_LENGTH))
   view.count:SetTextColor(UI.Unpack(#text > C.MAX_LENGTH and theme.bad or theme.muted))
-  view.unknown:SetText(#unknown > 0 and (table.concat(unknown, ", ") .. " matched none of your professions.") or "")
-  view.status:SetText(C.started and C.StatusText() or "Switch Trade Crier on to see the button.")
-  view.channel:SetText(C.ChannelDef(settings.channel).name)
+  view.unknown:SetText(#unknown > 0 and L["%s matched none of your professions."]:format(table.concat(unknown, ", ")) or "")
+  view.status:SetText(C.started and C.StatusText() or L["Switch Trade Crier on to see the button."])
+  view.channel:SetText(C.ChannelName(settings.channel))
   for _, check in ipairs(view.checks) do
     check:SetChecked((check.char and char or settings)[check.key] and true or false)
   end
-  view.key:SetText(view.capturing and "Press a key" or (settings.key or "Not set"))
+  view.key:SetText(view.capturing and L["Press a key"] or (settings.key or L["Not set"]))
   -- one insert button per profession that has a link, in rows that fit the page
   local professions = C.Linkable()
   for index, button in ipairs(view.inserts) do
@@ -150,7 +153,7 @@ local function MessageRow(parent, index, width)
   row.state:SetJustifyH("LEFT")
   local unit = UI.Text(row, "body", 12, "muted")
   unit:SetPoint("RIGHT", row.state, "LEFT", -8, 0)
-  unit:SetText("s")
+  unit:SetText(L["s"])
   row.every = UI.EditBox(row, 56, 24)
   row.every:SetPoint("RIGHT", unit, "LEFT", -4, 0)
   row.every:SetNumeric(true)
@@ -176,7 +179,7 @@ local function MessageRow(parent, index, width)
   end)
   local every = UI.Text(row, "body", 12, "muted")
   every:SetPoint("RIGHT", row.every, "LEFT", -6, 0)
-  every:SetText("every")
+  every:SetText(L["every"])
   row.box = UI.EditBox(row, 100, 24)
   -- its icon (the button shows the icon of the message that goes next): picked, or its profession's
   row.pick = CreateFrame("Button", nil, row)
@@ -227,13 +230,10 @@ function C.BuildPage(page)
 
   local messageLabel = UI.Text(page, "body", 13, "bright")
   messageLabel:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -10)
-  messageLabel:SetText("Your messages")
+  messageLabel:SetText(L["Your messages"])
   local messageHint = Wrapped(page, 11, "muted", width)
   messageHint:SetPoint("TOPLEFT", messageLabel, "BOTTOMLEFT", 0, -4)
-  messageHint:SetText(("Each message has its own button by your character, with its icon, its own countdown and "
-    .. "its own time in seconds (%d at least): it lights up when that message is ready, and a click posts it. The "
-    .. "post key posts the one that has waited longest. Click an icon here to pick another; until you do, a message "
-    .. "shows the profession it links. Untick a message to keep it without posting it."):format(C.MIN_EVERY))
+  messageHint:SetText(L["Each message has its own button by your character, with its icon, its own countdown and its own time in seconds (%d at least): it lights up when that message is ready, and a click posts it. The post key posts the one that has waited longest. Click an icon here to pick another; until you do, a message shows the profession it links. Untick a message to keep it without posting it."]:format(C.MIN_EVERY))
   view.rowHolder = CreateFrame("Frame", nil, page)
   view.rowHolder:SetPoint("TOPLEFT", messageHint, "BOTTOMLEFT", 0, -6)
   view.rowHolder:SetSize(width, ROW)
@@ -243,7 +243,7 @@ function C.BuildPage(page)
   end
   -- the first box is the one the pages and the tests know as the message box
   view.message = view.rows[1].box
-  view.add = UI.Button(page, 140, 22, "Add a message")
+  view.add = UI.Button(page, 140, 22, L["Add a message"])
   view.add:SetPoint("TOPLEFT", view.rowHolder, "BOTTOMLEFT", 0, -4)
   view.add:SetScript("OnClick", function()
     local index = C.AddMessage()
@@ -263,10 +263,10 @@ function C.BuildPage(page)
   view.insertRow:SetSize(width, 22)
   view.insertLabel = UI.Text(view.insertRow, "body", 12, "muted")
   view.insertLabel:SetPoint("TOPLEFT", 0, -4)
-  view.insertLabel:SetText("Put in a link:")
+  view.insertLabel:SetText(L["Put in a link:"])
   view.noProfessions = UI.Text(view.insertRow, "body", 12, "muted")
   view.noProfessions:SetPoint("TOPLEFT", INSERT_INDENT, -4)
-  view.noProfessions:SetText("(none of your professions has a link yet)")
+  view.noProfessions:SetText(L["(none of your professions has a link yet)"])
   view.inserts = {}
   for index = 1, 6 do
     local button = UI.Button(page, 96, 22, "")
@@ -277,7 +277,7 @@ function C.BuildPage(page)
     end)
     view.inserts[index] = button
   end
-  view.insertAll = UI.Button(page, 116, 22, "All professions")
+  view.insertAll = UI.Button(page, 116, 22, L["All professions"])
   view.insertAll:SetScript("OnClick", function()
     local box = ActiveBox()
     box:SetFocus()
@@ -285,13 +285,11 @@ function C.BuildPage(page)
   end)
   local hint = Wrapped(page, 11, "muted", width)
   hint:SetPoint("TOPLEFT", view.insertRow, "BOTTOMLEFT", 0, -12)
-  hint:SetText("<Tailoring> becomes your Tailoring link when it is posted, <professions> all of them. Professions you "
-    .. "gather with (and Fishing) have no link. The buttons put the link into the message you last clicked; "
-    .. "shift-click an item or a recipe while a box has the cursor to put its link in.")
+  hint:SetText(L["<Tailoring> becomes your Tailoring link when it is posted, <professions> all of them. Professions you gather with (and Fishing) have no link. The buttons put the link into the message you last clicked; shift-click an item or a recipe while a box has the cursor to put its link in."])
 
   view.previewLabel = UI.Text(page, "body", 13, "bright")
   view.previewLabel:SetPoint("TOPLEFT", hint, "BOTTOMLEFT", 0, -14)
-  view.previewLabel:SetText("In chat it reads")
+  view.previewLabel:SetText(L["In chat it reads"])
   view.count = UI.Text(page, "body", 11, "muted")
   view.count:SetPoint("LEFT", view.previewLabel, "RIGHT", 10, 0)
   view.preview = Wrapped(page, 12, "text", width)
@@ -301,31 +299,29 @@ function C.BuildPage(page)
 
   view.status = Wrapped(page, 12, "accent", width)
   view.status:SetPoint("TOPLEFT", view.unknown, "BOTTOMLEFT", 0, -12)
-  local post = UI.Button(page, 110, 24, "Post now")
+  local post = UI.Button(page, 110, 24, L["Post now"])
   post:SetPoint("TOPLEFT", view.status, "BOTTOMLEFT", 0, -8)
   post:SetScript("OnClick", function()
     if C.started then
       C.Post()
     else
-      C.Say("Switch Trade Crier on first (its switch above).")
+      C.Say(L["Switch Trade Crier on first (its switch above)."])
     end
     Refresh()
   end)
   local postNote = Wrapped(page, 11, "muted", width - 124)
   postNote:SetPoint("LEFT", post, "RIGHT", 12, 0)
-  postNote:SetText("The game sends a Trade chat message only when you click or press a key, so a message's button "
-    .. "by your character lights up when it's ready and you post it with one click. Post now sends the one that has "
-    .. "waited longest.")
+  postNote:SetText(L["The game sends a Trade chat message only when you click or press a key, so a message's button by your character lights up when it's ready and you post it with one click. Post now sends the one that has waited longest."])
 
   local channelLabel = UI.Text(page, "body", 13, "text")
   channelLabel:SetPoint("TOPLEFT", post, "BOTTOMLEFT", 0, -22)
-  channelLabel:SetText("Channel")
+  channelLabel:SetText(L["Channel"])
   view.channel = UI.Picker(page, 150, 24)
   view.channel:SetPoint("LEFT", channelLabel, "RIGHT", 10, 0)
   view.channel:SetScript("OnClick", function(self)
     local items = {}
     for _, def in ipairs(C.CHANNELS) do
-      items[#items + 1] = { text = def.name, checked = C.Settings().channel == def.key, func = function()
+      items[#items + 1] = { text = C.ChannelName(def.key), checked = C.Settings().channel == def.key, func = function()
         C.Settings().channel = def.key
         Changed()
       end }
@@ -336,12 +332,12 @@ function C.BuildPage(page)
   view.checks = {}
   local anchor = channelLabel
   for index, option in ipairs({
-    { "paused", "Pause on this character", true },
-    { "sound", "Play a sound when it's time to post" },
-    { "remind", "Say in chat when it's time to post" },
-    { "onlyCities", "Only show the button in cities" },
-    { "locked", "Lock the buttons in place" },
-    { "column", "Stack the buttons in a column" },
+    { "paused", L["Pause on this character"], true },
+    { "sound", L["Play a sound when it's time to post"] },
+    { "remind", L["Say in chat when it's time to post"] },
+    { "onlyCities", L["Only show the button in cities"] },
+    { "locked", L["Lock the buttons in place"] },
+    { "column", L["Stack the buttons in a column"] },
   }) do
     local check = UI.Check(page, option[2])
     check.key, check.char = option[1], option[3]
@@ -362,7 +358,7 @@ function C.BuildPage(page)
   local column = 330
   local keyLabel = UI.Text(page, "body", 13, "text")
   keyLabel:SetPoint("TOPLEFT", channelLabel, "BOTTOMLEFT", column, -16)
-  keyLabel:SetText("Post key")
+  keyLabel:SetText(L["Post key"])
   view.key = UI.Button(page, 110, 24, "")
   view.key:SetPoint("LEFT", keyLabel, "RIGHT", 10, 0)
   view.key:RegisterForClicks("LeftButtonUp", "RightButtonUp")
@@ -389,14 +385,14 @@ function C.BuildPage(page)
     self:EnableKeyboard(false)
     local before = C.SetKey(name or nil)
     if before then
-      C.Say(("%s did \"%s\"; while it posts, that comes back when you clear it here."):format(name, before))
+      C.Say(L["%s did \"%s\"; while it posts, that comes back when you clear it here."]:format(name, before))
     end
     Refresh()
   end)
   local keyHint = Wrapped(page, 11, "muted", width - column)
   keyHint:SetPoint("TOPLEFT", keyLabel, "BOTTOMLEFT", 0, -10)
-  keyHint:SetText("Click, then press a key. Escape or right-click clears it.")
-  local reset = UI.Button(page, 160, 24, "Put the buttons back")
+  keyHint:SetText(L["Click, then press a key. Escape or right-click clears it."])
+  local reset = UI.Button(page, 160, 24, L["Put the buttons back"])
   reset:SetPoint("TOPLEFT", keyHint, "BOTTOMLEFT", 0, -12)
   reset:SetScript("OnClick", C.ResetPlace)
 

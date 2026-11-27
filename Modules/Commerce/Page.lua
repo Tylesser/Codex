@@ -4,25 +4,29 @@ local addonName, ns = ...
 -- buttons and how it works. Ported from Tylesser - Commerce Authority's options page.
 
 local C = ns.commerce
+local L = ns.L
 local UI = ns.UI
 
 local view = {}
 
 local OPTIONS = {
-  { "writTooltips", "Writ tooltips", "The reputation a writ gives, what it asks for, its price and the cost per 100 reputation." },
-  { "crateTooltips", "Crate tooltips", "The Merchant's Favor and silver a crate gives, and the cheapest way to fill it." },
-  { "vendorMarks", "Marks at the Commerce Authority vendors", "\"Can buy\" or how much Favor you still need, and how many crates that is." },
+  { "writTooltips", L["Writ tooltips"], L["The reputation a writ gives, what it asks for, its price and the cost per 100 reputation."] },
+  { "crateTooltips", L["Crate tooltips"], L["The Merchant's Favor and silver a crate gives, and the cheapest way to fill it."] },
+  { "vendorMarks", L["Marks at the Commerce Authority vendors"],
+    L["\"%s\" or how much Favor you still need, and how many crates that is."]:format(L["Can buy"]) },
 }
 
-local HOW = "Craftsman's Writs and Waylaid Crates for the Azeroth Commerce Authority (Alliance, Three Corners in "
-  .. "Redridge) and Durotar Supply and Logistics (Horde, west of the Crossroads).\n\n"
-  .. "Writ tooltips show the reputation, what the writ asks for, its auction price and the cost per 100 "
-  .. "reputation, and who takes it. Crate tooltips show the Merchant's Favor and the cheapest way to fill them.\n\n"
-  .. "Prices come from Codex's own auction scans (Auction House module), craft costs from the Professions "
-  .. "module. The window ranks the cheapest reputation by writ, NPC or zone; Buy list writes the Codex shopping "
-  .. "list \"" .. C.SHOPPING_LIST .. "\", ready to search in the Codex auction panel.\n\n"
-  .. "Codex learns what your turn-ins really give, and who took each writ, so the guides' numbers are replaced "
-  .. "as you play."
+-- "How it works": the factions by the names the game gives them (the client's language), so built with the page.
+local function HowText()
+  return table.concat({
+    L["Craftsman's Writs and Waylaid Crates for the %s (Alliance, Three Corners in Redridge) and %s (Horde, west of the Crossroads)."]
+      :format(C.FactionNameOf("Alliance"), C.FactionNameOf("Horde")),
+    L["Writ tooltips show the reputation, what the writ asks for, its auction price and the cost per 100 reputation, and who takes it. Crate tooltips show the Merchant's Favor and the cheapest way to fill them."],
+    L["Prices come from Codex's own auction scans (Auction House module), craft costs from the Professions module. The window ranks the cheapest reputation by writ, NPC or zone; Buy list writes the Codex shopping list \"%s\", ready to search in the Codex auction panel."]
+      :format(C.SHOPPING_LIST),
+    L["Codex learns what your turn-ins really give, and who took each writ, so the guides' numbers are replaced as you play."],
+  }, "\n\n")
+end
 
 function C.StatusText()
   if not C.DB() then
@@ -32,7 +36,7 @@ function C.StatusText()
   local text = C.Tone(C.FactionText(faction))
   local favor = C.Favor()
   if favor then
-    text = text .. (". %s Merchant's Favor."):format(C.Number(favor))
+    text = text .. ". " .. L["%s Merchant's Favor."]:format(C.Number(favor))
   end
   return text
 end
@@ -51,12 +55,14 @@ local function LearnedText()
   end
   local names = C.PriceSourceNames()
   local talents = {}
-  for _, talent in ipairs({ { "Performance Bonus", C.HasPerformanceBonus() }, { "Diplomat", C.HasDiplomat() } }) do
-    talents[#talents + 1] = talent[1] .. (talent[2] and " (yours: counted in)" or " (not taken)")
+  for _, talent in ipairs({ { C.TalentName(C.PERFORMANCE_BONUS_SPELL, "Performance Bonus"), C.HasPerformanceBonus() },
+    { C.TalentName(C.DIPLOMAT_SPELL, "Diplomat"), C.HasDiplomat() } }) do
+    talents[#talents + 1] = talent[1] .. " " .. (talent[2] and L["(yours: counted in)"] or L["(not taken)"])
   end
-  return ("Legacy talents: %s.\nLearned from your turn-ins: %d crate kinds, %d writs, %d writ NPCs.\nPrices: %s.")
-    :format(table.concat(talents, ", "), crates, writs, customers, #names > 0 and table.concat(names, ", ")
-      or "the Auction House module is off, so writs have no prices")
+  return L["Legacy talents: %s."]:format(table.concat(talents, ", ")) .. "\n"
+    .. L["Learned from your turn-ins: %d crate kinds, %d writs, %d writ NPCs."]:format(crates, writs, customers) .. "\n"
+    .. L["Prices: %s."]:format(#names > 0 and table.concat(names, ", ")
+      or L["the Auction House module is off, so writs have no prices"])
 end
 
 function C.RefreshPage()
@@ -86,7 +92,7 @@ function C.ForgetLearned()
   local customers = db.learned.customers or {}
   db.learned = { crates = {}, writs = {}, customers = customers }
   C.InvalidateCheapest()
-  ns.Say("learned turn-in amounts cleared; the guides' numbers are used again.")
+  ns.Say(L["learned turn-in amounts cleared; the guides' numbers are used again."])
   C.RefreshWindow()
   C.RefreshPage()
 end
@@ -110,21 +116,21 @@ function C.BuildPage(page)
   view.status:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -4)
   view.status:SetPoint("RIGHT", 0, 0)
 
-  local open = UI.Button(page, 150, 24, "Open the window")
+  local open = UI.Button(page, 150, 24, L["Open the window"])
   open:SetPoint("TOPLEFT", view.status, "BOTTOMLEFT", 0, -12)
   open:SetScript("OnClick", C.ToggleWindow)
-  Tip(open, "Commerce Authority", "Reputation, Merchant's Favor, your writs by who takes them, the next standings "
-    .. "and the cheapest reputation (/codex commerce).")
-  local npcs = UI.Button(page, 110, 24, "Writ NPCs")
+  Tip(open, "Commerce Authority", L["Reputation, Merchant's Favor, your writs by who takes them, the next standings and the cheapest reputation (%s)."]
+    :format("/codex commerce"))
+  local npcs = UI.Button(page, 110, 24, L["Writ NPCs"])
   npcs:SetPoint("LEFT", open, "RIGHT", 8, 0)
   npcs:SetScript("OnClick", C.ToggleNPCWindow)
-  Tip(npcs, "Writ NPCs", "Every NPC who takes writs, with all its writs and which of them you have "
-    .. "(/codex commerce npcs).")
-  local buy = UI.Button(page, 100, 24, "Buy list")
+  Tip(npcs, L["Writ NPCs"], L["Every NPC who takes writs, with all its writs and which of them you have (%s)."]:format(
+    "/codex commerce npcs"))
+  local buy = UI.Button(page, 100, 24, L["Buy list"])
   buy:SetPoint("LEFT", npcs, "RIGHT", 8, 0)
   buy:SetScript("OnClick", C.CreateBuyList)
-  Tip(buy, "Buy list", "The cheapest writs to your next standing, and the items they ask for, in the Codex "
-    .. "shopping list \"" .. C.SHOPPING_LIST .. "\" (/codex commerce buy).")
+  Tip(buy, L["Buy list"], L["The cheapest writs to your next standing, and the items they ask for, in the Codex shopping list \"%s\" (%s)."]
+    :format(C.SHOPPING_LIST, "/codex commerce buy"))
 
   view.checks = {}
   local anchor
@@ -154,21 +160,20 @@ function C.BuildPage(page)
   view.learned:SetPoint("RIGHT", -170, 0)
   view.learned:SetJustifyH("LEFT")
   view.learned:SetWordWrap(true)
-  local forget = UI.Button(page, 160, 24, "Forget what was learned")
+  local forget = UI.Button(page, 160, 24, L["Forget what was learned"])
   forget:SetPoint("TOPLEFT", view.learned, "TOPRIGHT", 10, 2)
   forget:SetScript("OnClick", C.ForgetLearned)
-  Tip(forget, "Forget what was learned", "Codex remembers the Merchant's Favor and reputation each crate and writ "
-    .. "gave you. Clear them to go back to the guides' numbers. Who takes each writ is kept.")
+  Tip(forget, L["Forget what was learned"], L["Codex remembers the Merchant's Favor and reputation each crate and writ gave you. Clear them to go back to the guides' numbers. Who takes each writ is kept."])
 
   local how = UI.Text(page, "head", 12, "accent")
   how:SetPoint("TOPLEFT", view.learned, "BOTTOMLEFT", 0, -22)
-  how:SetText("How it works")
+  how:SetText(L["How it works"])
   local text = UI.Text(page, "body", 12, "text")
   text:SetPoint("TOPLEFT", how, "BOTTOMLEFT", 0, -6)
   text:SetPoint("RIGHT", 0, 0)
   text:SetJustifyH("LEFT")
   text:SetWordWrap(true)
-  text:SetText(HOW)
+  text:SetText(HowText())
 
   C.RefreshPage()
 end

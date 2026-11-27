@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Auction house module, part 6 (2026-11-25, the user's request to keep a history of prices): the price history
 -- window. One item at a time: a chart of its lowest price per day over the chosen range (a faint bar up to each
@@ -16,10 +17,10 @@ local LABEL_W = 74 -- the price labels left of the chart
 local PLOT_W = WIDTH - 2 * PAD - LABEL_W - 12
 local DAY = 86400
 local RANGES = {
-  { id = 7, text = "7 days" },
-  { id = 30, text = "30 days" },
-  { id = 90, text = "90 days" },
-  { id = 0, text = "All" },
+  { id = 7, text = L["7 days"] },
+  { id = 30, text = L["30 days"] },
+  { id = 90, text = L["90 days"] },
+  { id = 0, text = L["All"] },
 }
 
 local window
@@ -60,7 +61,7 @@ end
 local function DayText(point)
   local lastYear = date("%Y", point.time) ~= date("%Y")
   if point.week then
-    return "Week of " .. date(lastYear and "%d %b %Y" or "%d %b", point.time)
+    return L["Week of %s"]:format(date(lastYear and "%d %b %Y" or "%d %b", point.time))
   end
   return date(lastYear and "%a %d %b %Y" or "%a %d %b", point.time)
 end
@@ -94,12 +95,12 @@ local function ShowPointTooltip(hit)
   chart.marker:Show()
   GameTooltip:SetOwner(hit, "ANCHOR_RIGHT")
   GameTooltip:AddLine(DayText(point), 1, 1, 1)
-  GameTooltip:AddDoubleLine("Lowest", ns.Money(point.price), 0.8, 0.8, 0.8, 1, 1, 1)
+  GameTooltip:AddDoubleLine(L["Lowest"], ns.Money(point.price), 0.8, 0.8, 0.8, 1, 1, 1)
   if point.high and point.high > point.price then
-    GameTooltip:AddDoubleLine("Highest low", ns.Money(point.high), 0.8, 0.8, 0.8, 1, 1, 1)
+    GameTooltip:AddDoubleLine(L["Highest low"], ns.Money(point.high), 0.8, 0.8, 0.8, 1, 1, 1)
   end
   if point.count then
-    GameTooltip:AddDoubleLine("Up for sale", tostring(point.count), 0.8, 0.8, 0.8, 1, 1, 1)
+    GameTooltip:AddDoubleLine(L["Up for sale"], tostring(point.count), 0.8, 0.8, 0.8, 1, 1, 1)
   end
   GameTooltip:Show()
 end
@@ -171,7 +172,7 @@ local function DrawChart(points, low, high)
     most = math.max(most, point.count or 0)
   end
   chart.supplyLabel:SetShown(most > 0)
-  chart.supplyLabel:SetText("Up\n" .. most)
+  chart.supplyLabel:SetText(L["Up"] .. "\n" .. most)
 
   local slot = PLOT_W / math.max(1, count)
   local barWidth = math.max(2, math.min(10, slot - 2))
@@ -264,7 +265,7 @@ local function Draw()
     name = nil
   end
   window.icon:SetTexture(icon or 134400)
-  window.name:SetText(name or ("Item " .. tostring(key)))
+  window.name:SetText(name or L["Item %s"]:format(tostring(key)))
   window.name:SetTextColor(UI.Unpack(A.QualityColor(quality)))
   if not name and not window.nameQueued then
     window.nameQueued = true
@@ -277,10 +278,13 @@ local function Draw()
   end
   local rec = A.Record(key)
   if rec and rec.m then
-    local up = (rec.n and rec.n > 0) and (", " .. rec.n .. " up") or ""
-    window.now:SetText(("Now %s, seen %s ago%s"):format(ns.Money(rec.m), ns.Age(rec.t), up))
+    if rec.n and rec.n > 0 then
+      window.now:SetText(L["Now %s, seen %s ago, %s up"]:format(ns.Money(rec.m), ns.Age(rec.t), tostring(rec.n)))
+    else
+      window.now:SetText(L["Now %s, seen %s ago"]:format(ns.Money(rec.m), ns.Age(rec.t)))
+    end
   else
-    window.now:SetText("No price saved for this item yet.")
+    window.now:SetText(L["No price saved for this item yet."])
   end
   window.realm:SetText(A.RealmKey())
 
@@ -299,15 +303,15 @@ local function Draw()
   stats.change:SetTextColor(UI.Unpack(text ~= "" and color or Color("muted")))
   DrawChart(points, low or 0, high or 0)
   if #points == 0 then
-    window.chart.empty:SetText(#history == 0 and "No price history for this item on this realm yet. Prices are saved "
-      .. "when you scan or search the auction house." or "No prices saved in this range; try a longer one.")
+    window.chart.empty:SetText(#history == 0 and L["No price history for this item on this realm yet. Prices are saved when you scan or search the auction house."]
+      or L["No prices saved in this range; try a longer one."])
   end
   local rows = {}
   for index = #points, 1, -1 do
     rows[#rows + 1] = points[index]
   end
   window.list:SetItems(rows)
-  window.saved:SetText(("%d saved, kept %d days (Auction house options)"):format(#history, A.DB().days or 30))
+  window.saved:SetText(L["%d saved, kept %d days (Auction house options)"]:format(#history, A.DB().days or 30))
 end
 A.DrawHistory = Draw
 
@@ -323,7 +327,7 @@ local function Build()
   window:SetScript("OnDragStart", window.StartMoving)
   window:SetScript("OnDragStop", window.StopMovingOrSizing)
   UI.Panel(window, { cornerSize = 12 })
-  local title = UI.Heading(window, "Price history", 15)
+  local title = UI.Heading(window, L["Price history"], 15)
   title:SetPoint("TOPLEFT", PAD, -14)
   local close = UI.CloseButton(window)
   close:SetPoint("TOPRIGHT", -10, -10)
@@ -415,8 +419,8 @@ local function Build()
   local stats = {}
   window.stats = stats
   local cell = (WIDTH - 2 * PAD) / 4
-  for index, part in ipairs({ { "low", "Lowest" }, { "high", "Highest" }, { "average", "Average" },
-    { "change", "Change" } }) do
+  for index, part in ipairs({ { "low", L["Lowest"] }, { "high", L["Highest"] }, { "average", L["Average"] },
+    { "change", L["Change"] } }) do
     local label = UI.Text(window, "body", 11, "muted")
     label:SetPoint("TOPLEFT", chart, "BOTTOMLEFT", (index - 1) * cell, -10)
     label:SetText(part[2])
@@ -433,8 +437,8 @@ local function Build()
   head:SetPoint("RIGHT", -PAD, 0)
   head:SetHeight(16)
   local columns = {}
-  for _, column in ipairs({ { "day", "Day", "LEFT" }, { "low", "Lowest", "RIGHT" }, { "high", "Highest low", "RIGHT" },
-    { "up", "Up", "RIGHT" } }) do
+  for _, column in ipairs({ { "day", L["Day"], "LEFT" }, { "low", L["Lowest"], "RIGHT" }, { "high", L["Highest low"], "RIGHT" },
+    { "up", L["Up"], "RIGHT" } }) do
     local text = UI.Text(head, "body", 11, "muted")
     text:SetText(column[2])
     text:SetJustifyH(column[3])
@@ -535,7 +539,7 @@ end
 function A.HistoryCommand(rest)
   rest = (rest or ""):match("^%s*(.-)%s*$")
   if rest == "" then
-    ns.Say("Type /codex history and an item: Shift-click it into the line, or write its name.")
+    ns.Say(L["Type /codex history and an item: Shift-click it into the line, or write its name."])
     return
   end
   local key
@@ -546,7 +550,7 @@ function A.HistoryCommand(rest)
     key = FindByName(rest)
   end
   if not key then
-    ns.Say(("No saved auction price matches \"%s\" on this realm."):format(rest:gsub("|", "")))
+    ns.Say(L["No saved auction price matches \"%s\" on this realm."]:format(rest:gsub("|", "")))
     return
   end
   A.ShowHistory(key)

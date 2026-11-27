@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Move windows module, part 1: dragging the game's windows. Every window Blizzard registers as a panel
 -- (UIPanelWindows) plus the bags and a list of others gets an invisible drag strip of Codex's own over
@@ -199,7 +200,7 @@ local function StartDrag(window)
   if Locked(window) then
     if not warned then
       warned = true
-      ns.Say("This window can't be moved during a fight.")
+      ns.Say(L["This window can't be moved during a fight."])
     end
     return
   end
@@ -343,7 +344,7 @@ local function MakeHandle(window)
     local state = states[window]
     if state and positions[state.name] then
       GameTooltip:SetOwner(self, "ANCHOR_TOP")
-      GameTooltip:AddLine("Drag to move. Right-click: back to its usual place.")
+      GameTooltip:AddLine(L["Drag to move. Right-click: back to its usual place."])
       GameTooltip:Show()
     end
   end)

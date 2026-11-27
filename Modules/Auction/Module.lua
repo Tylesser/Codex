@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Auction house module: registration and start-up. Codex's own auction engine (no Auctionator, TSM or
 -- Auctioneer needed): full scans, a price history per realm, prices in tooltips and shopping lists.
@@ -8,7 +9,7 @@ local A = ns.auction
 -- One live line for Home and the page.
 function A.StatusText()
   if not A.IsModern() then
-    return "The old auction house of this game version isn't supported yet; only tooltips with saved prices work."
+    return L["The old auction house of this game version isn't supported yet; only tooltips with saved prices work."]
   end
   local count = A.ItemCount()
   local realm = A.Realm(false)
@@ -16,10 +17,12 @@ function A.StatusText()
     return A.ScanText()
   end
   if count == 0 then
-    return "No prices yet: open the auction house and run a full scan."
+    return L["No prices yet: open the auction house and run a full scan."]
   end
-  local last = realm and realm.scanDone and (", last full scan " .. ns.Age(realm.scanDone) .. " ago") or ""
-  return ("%d prices on this realm%s."):format(count, last)
+  if realm and realm.scanDone then
+    return L["%d prices on this realm, last full scan %s ago."]:format(count, ns.Age(realm.scanDone))
+  end
+  return L["%d prices on this realm."]:format(count)
 end
 
 function A.Enable()
@@ -36,11 +39,11 @@ end
 
 ns.RegisterModule({
   id = "auction",
-  name = "Auction House",
+  name = L["Auction House"],
   -- its section in the Codex window (Areas.lua)
-  area = "trade", sectionOrder = 10, sectionTitle = "Auction house", pageHeight = 400,
+  area = "trade", sectionOrder = 10, sectionTitle = L["Auction house"], pageHeight = 400,
   icon = "Interface\\Icons\\INV_Misc_Coin_01",
-  desc = "Scan the auction house, keep a price history, see prices in tooltips and shop from your own lists.",
+  desc = L["Scan the auction house, keep a price history, see prices in tooltips and shop from your own lists."],
   order = 20,
   Enable = function()
     A.Enable()

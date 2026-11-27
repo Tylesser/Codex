@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Quest keys: Space presses the quest window's main button. While the game's quest window (QuestFrame) shows
 -- a quest, Space is bound (an override binding of Codex's own) to the first shown, enabled one of: Complete
@@ -257,16 +258,16 @@ local view = {}
 
 function QK.StatusText()
   if not QK.running then
-    return "Off: Space jumps as usual."
+    return L["Off: Space jumps as usual."]
   end
   if QK.state == "bound" then
-    return "Space presses the quest button now."
+    return L["Space presses the quest button now."]
   elseif QK.state == "choose" then
-    return "Pick a reward first, then Space completes the quest."
+    return L["Pick a reward first, then Space completes the quest."]
   elseif QK.state == "codex" then
-    return "Space presses the main button of Codex's quest window now."
+    return L["Space presses the main button of Codex's quest window now."]
   end
-  return "On: Space picks quests from a quest giver's list and presses Complete Quest, Continue or Accept."
+  return L["On: Space picks quests from a quest giver's list and presses Complete Quest, Continue or Accept."]
 end
 
 function QK.RefreshPage()
@@ -280,7 +281,7 @@ end
 function QK.BuildPage(page)
   QK.DB()
   view.page = page
-  local heading = UI.Heading(page, "Quest keys", 20)
+  local heading = UI.Heading(page, L["Quest keys"], 20)
   heading:SetPoint("TOPLEFT")
   view.status = UI.Text(page, "body", 12, "muted")
   view.status:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -4)
@@ -290,15 +291,9 @@ function QK.BuildPage(page)
   about:SetPoint("TOPLEFT", view.status, "BOTTOMLEFT", 0, -14)
   about:SetPoint("RIGHT", 0, 0)
   about:SetJustifyH("LEFT")
-  about:SetText("While a quest giver's quest window is open, Space presses its main button, in this order: "
-    .. "Complete Quest, Continue, Accept. When a quest giver lists quests (greeting or gossip window), Space "
-    .. "picks one: a quest ready to turn in first, then the first new quest, then your other quests, in the "
-    .. "order shown; press Space again to go on. "
-    .. "When a quest offers several rewards, pick one first: Space waits until you do. During a fight Space "
-    .. "jumps as usual, and typing in chat is never affected. Codex's own quest windows (the Quest windows "
-    .. "module) follow these settings too.")
+  about:SetText(L["While a quest giver's quest window is open, Space presses its main button, in this order: Complete Quest, Continue, Accept. When a quest giver lists quests (greeting or gossip window), Space picks one: a quest ready to turn in first, then the first new quest, then your other quests, in the order shown; press Space again to go on. When a quest offers several rewards, pick one first: Space waits until you do. During a fight Space jumps as usual, and typing in chat is never affected. Codex's own quest windows (the Quest windows module) follow these settings too."])
 
-  view.gossip = UI.Check(page, "Pick quests from greeting and gossip lists with Space")
+  view.gossip = UI.Check(page, L["Pick quests from greeting and gossip lists with Space"])
   view.gossip:SetPoint("TOPLEFT", about, "BOTTOMLEFT", 0, -16)
   view.gossip:SetScript("OnClick", function(self)
     QK.SetPickQuests(self:GetChecked())
@@ -309,19 +304,18 @@ function QK.BuildPage(page)
     note:SetPoint("TOPLEFT", view.gossip, "BOTTOMLEFT", 0, -14)
     note:SetPoint("RIGHT", 0, 0)
     note:SetJustifyH("LEFT")
-    note:SetText("DialogueUI is loaded: it shows quests in its own window with its own keys, which may also use "
-      .. "Space. Quest keys only works with the game's own quest window and Codex's.")
+    note:SetText(L["DialogueUI is loaded: it shows quests in its own window with its own keys, which may also use Space. Quest keys only works with the game's own quest window and Codex's."])
   end
   QK.RefreshPage()
 end
 
 ns.RegisterModule({
   id = "questkeys",
-  name = "Quest keys",
+  name = L["Quest keys"],
   -- its section in the Codex window (Areas.lua)
   area = "quests", sectionOrder = 20, folded = true, pageEstimate = 220,
   icon = "Interface\\Icons\\INV_Misc_Note_01",
-  desc = "Space presses Complete Quest, Continue or Accept in the quest window.",
+  desc = L["Space presses Complete Quest, Continue or Accept in the quest window."],
   order = 95,
   Enable = function()
     QK.Enable()

@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Personal bars, part 2: the frames (board R3-Polish, "personal bars under the player"). One plain holder
 -- under the character, rows stacked from the top: health (8 px), power (6 px, mana with the five-second rule
@@ -198,7 +199,7 @@ R.ArcX = ArcX
 
 local function SetFont(text, size, flags)
   if not text:SetFont(BAR_FONT, size, flags or "") then
-    text:SetFont("Fonts\\FRIZQT__.TTF", size, flags or "")
+    text:SetFont((STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"), size, flags or "")
   end
   ns.RestyleFont(text, "personal.text") -- Unit frames > Fonts (FontStyles.lua)
 end
@@ -1215,7 +1216,7 @@ local function BuildMover()
   local label = mover:CreateFontString(nil, "OVERLAY")
   ns.UI.Font(label, "body", 12, "bright")
   label:SetPoint("BOTTOM", mover, "TOP", 0, 3)
-  label:SetText("Personal bars")
+  label:SetText(L["Personal bars"])
   mover:SetScript("OnDragStart", function()
     holder:StartMoving()
   end)

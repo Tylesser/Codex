@@ -4,6 +4,7 @@ local addonName, ns = ...
 -- Ported from Tylesser - Commerce Authority (same author, MIT); see Modules/Commerce/Settings.lua.
 
 local C = ns.commerce
+local L = ns.L
 
 -- Tooltip lines for Craftsman's Writs, sealed writs and Waylaid Crates. Hooked with TooltipDataProcessor
 -- where it exists (every item tooltip), otherwise OnTooltipSetItem on GameTooltip and ItemRefTooltip.
@@ -23,7 +24,7 @@ local function Price(each, count)
   if count == 1 then
     return C.Money(each)
   end
-  return ("%s each, %s for %d"):format(C.Money(each), C.Money(each * count), count)
+  return L["%s each, %s for %d"]:format(C.Money(each), C.Money(each * count), count)
 end
 
 -- "50s (3h ago)": Codex's own auction price and when it was seen.
@@ -48,14 +49,11 @@ local function Lines()
 end
 
 local function RepText(rep, learned, tier)
-  local text = C.Number(rep) .. " reputation"
-  if tier then
-    text = tier.name .. " writ, " .. text
+  local level = C.TierName(tier and tier.name)
+  if learned then
+    return L["%s writ, %s reputation"]:format(level, C.Number(rep))
   end
-  if not learned then
-    text = text .. " (guide)"
-  end
-  return text
+  return L["%s writ, %s reputation (guide)"]:format(level, C.Number(rep))
 end
 
 -- Lines for a Craftsman's Writ, or nil.
@@ -74,18 +72,19 @@ function C.WritTooltipLines(writID)
   local itemID = C.WantedItem(writ)
   local count = C.WritCount(writID, writ)
   local name = (itemID and C.ItemName(itemID)) or writ[3]
-  local needs = ("  Needs %d %s"):format(count, name)
+  local needs = L["Needs %d %s"]:format(count, name)
   local profession = C.WritProfession(writID)
   if profession then
     local skill = C.PlayerProfessions()[profession]
-    needs = needs .. (skill and (" (%s, yours)"):format(profession) or (" (%s)"):format(profession))
+    needs = (skill and L["Needs %d %s (%s, yours)"] or L["Needs %d %s (%s)"]):format(count, name,
+      C.ProfessionName(profession))
   end
-  Add(needs, WHITE)
+  Add("  " .. needs, WHITE)
   local prices = C.Prices(itemID)
   if #prices > 0 then
-    Add("  AH: " .. PriceList(prices, count), WHITE)
+    Add("  " .. L["AH: %s"]:format(PriceList(prices, count)), WHITE)
   else
-    Add("  No AH price yet: scan or search at the auction house.", GREY)
+    Add("  " .. L["No AH price yet: scan or search at the auction house."], GREY)
   end
   local craft, info = nil, nil
   if itemID then
@@ -93,12 +92,12 @@ function C.WritTooltipLines(writID)
   end
   if craft then
     local who = info and not info.mine and info.name and (" |cff999999(" .. info.name .. ")|r") or ""
-    Add("  Crafting: " .. Price(craft, count) .. who, WHITE)
+    Add("  " .. L["Crafting: %s"]:format(Price(craft, count)) .. who, WHITE)
   end
   local total, per100 = C.WritCost(writID)
   if total then
     local writPrice = C.Price(writID)
-    Add(("  With the writ (%s): %s, %s per 100 reputation"):format(C.Money(writPrice), C.Money(total),
+    Add("  " .. L["With the writ (%s): %s, %s per 100 reputation"]:format(C.Money(writPrice), C.Money(total),
       C.Money(per100)), GREEN)
   end
   C.CustomerTooltipLines(writID, Add)
@@ -112,21 +111,21 @@ function C.CustomerTooltipLines(writID, Add)
   end
   local customer = C.WritCustomer(writID)
   if not customer then
-    Add("  Deliver to: not known yet. Use the writ and the game marks the spot on your map.", GREY, true)
+    Add("  " .. L["Deliver to: not known yet. Use the writ and the game marks the spot on your map."], GREY, true)
     return
   end
-  Add("  Deliver to " .. C.CustomerText(customer), WHITE)
+  Add("  " .. L["Deliver to %s"]:format(C.CustomerText(customer)), WHITE)
   local others = {}
   local counts
   for _, otherID in ipairs(C.CustomerWrits(customer)) do
     if otherID ~= writID then
       counts = counts or C.BagCounts()
       local name = C.Writ(otherID)[3]
-      others[#others + 1] = (counts[otherID] or 0) > 0 and (name .. " |cff40ff40(you have it)|r") or name
+      others[#others + 1] = (counts[otherID] or 0) > 0 and (name .. " |cff40ff40" .. L["(you have it)"] .. "|r") or name
     end
   end
   if #others > 0 then
-    Add(("  %s also takes: %s"):format(customer.name, table.concat(others, ", ")), GREY, true)
+    Add("  " .. L["%s also takes: %s"]:format(customer.name, table.concat(others, ", ")), GREY, true)
   end
 end
 
@@ -139,45 +138,82 @@ function C.SealedWritTooltipLines(name)
   local tier = C.WRIT_TIERS[tierIndex]
   local rep = C.TierRep(tier)
   local lines, Add = Lines()
-  Add(TITLE .. ("opens into a %s writ, %s reputation"):format(tier.name, C.Number(rep)), GOLD)
+  Add(TITLE .. L["opens into a %s writ, %s reputation"]:format(C.TierName(tier.name), C.Number(rep)), GOLD)
+  return lines
+end
+
+-- Lines for a crate that doesn't say its kind yet (UNREAD_CRATES), or nil.
+local function UnreadCrateLines(itemID)
+  local kind = itemID and C.UNREAD_CRATES[itemID]
+  if not kind then
+    return nil
+  end
+  local lines, Add = Lines()
+  if kind == "label" then
+    Add(TITLE .. L["use it to read the label."], GOLD)
+    Add("  " .. L["It becomes a Waylaid Crate of one kind, which then shows its Favor and what fills it."], GREY, true)
+    return lines
+  end
+  local data = C.Collected and C.Collected()
+  local ok, text = false, nil
+  if data and type(data.Text) == "function" then
+    ok, text = pcall(data.Text, "item", itemID)
+  end
+  local page = ok and type(text) == "table" and type(text.pages) == "table" and text.pages[1]
+  if type(page) == "string" and page ~= "" then
+    page = page:gsub("%s+", " ")
+    if #page > 160 then
+      page = page:sub(1, 157) .. "..."
+    end
+    Add(TITLE .. L["its shipping bill (players' data):"], GOLD)
+    Add("  " .. page, WHITE, true)
+  else
+    Add(TITLE .. L["use it to read its shipping bill."], GOLD)
+    Add("  " .. L["What it asks for isn't known yet."], GREY)
+  end
   return lines
 end
 
 -- Lines for a Waylaid Crate (to fill) or a sealed crate (filled), or nil.
 function C.CrateTooltipLines(itemID, name)
+  local unread = UnreadCrateLines(itemID)
+  if unread then
+    return unread
+  end
   local favor, learned, info = C.CrateFavor(itemID, name)
   if not favor then
     return nil
   end
   local lines, Add = Lines()
-  local text = ("about %s Merchant's Favor + %s"):format(C.Number(favor),
-    C.Money(favor * C.COPPER_PER_FAVOR))
+  local text
+  local amount, silver = C.Number(favor), C.Money(favor * C.COPPER_PER_FAVOR)
   if learned then
-    text = ("%s Merchant's Favor + %s"):format(C.Number(favor), C.Money(favor * C.COPPER_PER_FAVOR))
+    text = L["%s Merchant's Favor + %s"]:format(amount, silver)
   elseif info.guess then
-    text = text .. " (a guess)"
+    text = L["about %s Merchant's Favor + %s (a guess)"]:format(amount, silver)
   else
-    text = text .. " (guide)"
+    text = L["about %s Merchant's Favor + %s (guide)"]:format(amount, silver)
   end
   Add(TITLE .. text, GOLD)
   if not info.filled and not (info.contents and #info.contents > 0) then
-    Add("  Fill it with one item from its list, then turn it in at the trade hub.", GREY)
+    Add("  " .. L["Fill it with one item from its list, then turn it in at the trade hub."], GREY)
   end
   if C.HasPerformanceBonus() then
-    Add(("  Performance Bonus: %d%% chance of %s"):format(C.PERFORMANCE_BONUS_CHANCE * 100,
+    Add("  " .. L["%s: %d%% chance of %s"]:format(C.TalentName(C.PERFORMANCE_BONUS_SPELL, "Performance Bonus"),
+      C.PERFORMANCE_BONUS_CHANCE * 100,
       C.Number(favor * 2)), GREY)
   end
   if not info.filled then
     local crateCost = C.Price(itemID)
     if crateCost then
-      Add("  Crate: " .. PriceList(C.Prices(itemID), 1), WHITE)
+      Add("  " .. L["Crate: %s"]:format(PriceList(C.Prices(itemID), 1)), WHITE)
     end
     local counts = C.BagCounts()
     local options = C.CrateFillOptions(info, counts)
     local shown = 0
     for _, option in ipairs(options) do
       if option.owned >= option.count then
-        Add(("  You have %d %s: enough to fill it"):format(option.owned, option.name), GREEN)
+        Add("  " .. L["You have %d %s: enough to fill it"]:format(option.owned, option.name), GREEN)
         break
       end
     end
@@ -186,15 +222,15 @@ function C.CrateTooltipLines(itemID, name)
         break
       end
       shown = shown + 1
-      local text = ("  Fill: %d %s"):format(option.count, option.name)
+      local text = L["Fill: %d %s"]:format(option.count, option.name)
       if option.cost then
-        text = text .. ", " .. C.Money(option.cost)
+        text = L["Fill: %d %s, %s"]:format(option.count, option.name, C.Money(option.cost))
       end
-      Add(text, shown == 1 and WHITE or GREY)
+      Add("  " .. text, shown == 1 and WHITE or GREY)
     end
     local cheapest = options[1] and options[1].cost
     if cheapest and crateCost then
-      Add(("  Crate + fill: %s, %s per Favor"):format(C.Money(crateCost + cheapest),
+      Add("  " .. L["Crate + fill: %s, %s per Favor"]:format(C.Money(crateCost + cheapest),
         C.Money((crateCost + cheapest) / favor)), GREEN)
     end
   end

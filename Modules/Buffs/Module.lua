@@ -1,4 +1,5 @@
 local addonName, codex = ...
+local L = codex.L
 local ns = codex.buffs
 
 -- Start-up, events, the 0.2 second tick and the /codex buffs commands, and the module's registration.
@@ -49,7 +50,7 @@ local function OnEvent(self, event, arg)
     ns.db.welcomed = true
     -- a few seconds later, after the login messages (Codex's own come right after PLAYER_LOGIN)
     local function Welcome()
-      print(ns.PREFIX .. "type /codex buffs to choose the buffs to track.")
+      print(ns.PREFIX .. L["type %s to choose the buffs to track."]:format("/codex buffs"))
     end
     if C_Timer and C_Timer.After then
       C_Timer.After(4, Welcome)
@@ -100,29 +101,29 @@ end
 
 local function PrintList()
   if #ns.db.tracked == 0 then
-    print(ns.PREFIX .. "nothing tracked yet.")
+    print(ns.PREFIX .. L["nothing tracked yet."])
     return
   end
-  print(ns.PREFIX .. "tracked buffs:")
+  print(ns.PREFIX .. L["tracked buffs:"])
   for _, entry in ipairs(ns.db.tracked) do
     local state = ns.StateOf(entry)
-    local current = "|cffaaaaaaunknown|r"
+    local current = "|cffaaaaaa" .. L["unknown"] .. "|r"
     if state and state.active then
-      current = "|cff20ff20on|r"
+      current = "|cff20ff20" .. L["active"] .. "|r"
     elseif state and state.known then
-      current = "|cffff4040missing|r"
+      current = "|cffff4040" .. L["missing"] .. "|r"
     end
-    print("  " .. entry.name .. ": " .. current .. " (show: " .. ns.MODE_LABELS[entry.mode] .. ")")
+    print("  " .. L["%s: %s (show: %s)"]:format(ns.EntryName(entry), current, ns.MODE_LABELS[entry.mode]))
   end
   if not ns.scanComplete then
-    print("  The game is hiding your buffs right now, so these may be out of date.")
+    print("  " .. L["The game is hiding your buffs right now, so these may be out of date."])
   end
 end
 
 -- /codex buffs <msg> (Codex's Events.lua opens the Buffs page first).
 function ns.Slash(msg)
   if not ns.db then
-    codex.Say("the buff tracker isn't running: switch it on in Codex (Buffs > Buff tracker) and reload.")
+    codex.Say(L["the buff tracker isn't running: switch it on in Codex (Buffs > Buff tracker) and reload."])
     return
   end
   msg = strtrim(msg or "")
@@ -134,15 +135,15 @@ function ns.Slash(msg)
   elseif command == "add" then
     local entry, reason = ns.AddBuff(rest)
     if entry then
-      print(ns.PREFIX .. "now tracking " .. entry.name .. ".")
+      print(ns.PREFIX .. L["now tracking %s."]:format(ns.EntryName(entry)))
     else
       print(ns.PREFIX .. reason)
     end
   elseif command == "remove" then
     if ns.RemoveBuff(rest) then
-      print(ns.PREFIX .. "stopped tracking " .. rest .. ".")
+      print(ns.PREFIX .. L["stopped tracking %s."]:format(rest))
     else
-      print(ns.PREFIX .. rest .. " is not tracked.")
+      print(ns.PREFIX .. L["%s is not tracked."]:format(rest))
     end
   elseif command == "basics" then
     ns.AddPreset()
@@ -152,19 +153,19 @@ function ns.Slash(msg)
     name = strtrim(name or rest)
     local entry = ns.FindTracked(name)
     if not entry then
-      print(ns.PREFIX .. (name ~= "" and name or "that buff") .. " is not tracked.")
+      print(ns.PREFIX .. L["%s is not tracked."]:format(name ~= "" and name or L["that buff"]))
     elseif not item or item == "" then
       ns.SetItem(entry, nil)
-      print(ns.PREFIX .. entry.name .. " no longer uses an item.")
+      print(ns.PREFIX .. L["%s no longer uses an item."]:format(ns.EntryName(entry)))
     else
       local id = ns.ResolveItem(item)
       if id and ns.IsEquippable(id) then
-        print(ns.PREFIX .. "that item is worn, not used: clicking it would equip it.")
+        print(ns.PREFIX .. L["that item is worn, not used: clicking it would equip it."])
       elseif id then
         ns.SetItem(entry, id)
-        print(ns.PREFIX .. "clicking " .. entry.name .. " now uses " .. (ns.ItemName(id) or ("item " .. id)) .. ".")
+        print(ns.PREFIX .. L["clicking %s now uses %s."]:format(ns.EntryName(entry), ns.ItemName(id) or L["item %s"]:format(id)))
       else
-        print(ns.PREFIX .. "no item called " .. item .. " found. Try its item ID, or shift-click it into the line.")
+        print(ns.PREFIX .. L["no item called %s found. Try its item ID, or shift-click it into the line."]:format(item))
       end
     end
   elseif command == "party" then
@@ -183,15 +184,15 @@ function ns.Slash(msg)
   elseif command == "reset" then
     ns.ResetPosition()
   else
-    print(ns.PREFIX .. "commands:")
-    print("  /codex buffs: open the options, /codex buffs party: party buff buttons and blessings")
-    print("  /codex buffs dispel: dispel buttons for your party and yourself")
-    print("  /codex buffs add <name or spell ID>, /codex buffs remove <name>, /codex buffs list")
-    print("  /codex buffs basics: track the basic buffs of your class")
-    print("  /codex buffs item <buff> = <item>: the item a click on that icon uses")
-    print("  /codex buffs lock, /codex buffs unlock, /codex buffs reset (put the icons back in place)")
-    print("  /codex buffs debug: show what the party buttons see")
-    print("  /codex buffs feedback: report a bug or suggest an idea")
+    print(ns.PREFIX .. L["commands:"])
+    print("  " .. L["%s: open the options, %s: party buff buttons and blessings"]:format("/codex buffs", "/codex buffs party"))
+    print("  /codex buffs dispel: " .. L["dispel buttons for your party and yourself"])
+    print("  " .. L["%s <name or spell ID>, %s <name>, %s"]:format("/codex buffs add", "/codex buffs remove", "/codex buffs list"))
+    print("  /codex buffs basics: " .. L["track the basic buffs of your class"])
+    print("  " .. L["%s <buff> = <item>: the item a click on that icon uses"]:format("/codex buffs item"))
+    print("  /codex buffs lock, /codex buffs unlock, /codex buffs reset (" .. L["put the icons back in place"] .. ")")
+    print("  /codex buffs debug: " .. L["show what the party buttons see"])
+    print("  /codex buffs feedback: " .. L["report a bug or suggest an idea"])
   end
 end
 
@@ -202,7 +203,7 @@ local function Status()
   end
   local tracked, missing = #ns.db.tracked, 0
   if tracked == 0 then
-    return "Nothing tracked yet: pick your buffs on the Buffs page."
+    return L["Nothing tracked yet: pick your buffs on the Buffs page."]
   end
   for _, entry in ipairs(ns.db.tracked) do
     local state = ns.StateOf(entry)
@@ -210,16 +211,16 @@ local function Status()
       missing = missing + 1
     end
   end
-  return ("%d tracked, %d missing now."):format(tracked, missing)
+  return L["%d tracked, %d missing now."]:format(tracked, missing)
 end
 
 codex.RegisterModule({
   id = "buffs",
-  name = "Buffs",
+  name = L["Buffs"],
   -- its section in the Codex window (Areas.lua)
-  area = "auras", sectionOrder = 10, sectionTitle = "Buff tracker", pageHeight = function() return ns.db and 460 or nil end, -- the off text is short
+  area = "auras", sectionOrder = 10, sectionTitle = L["Buff tracker"], pageHeight = function() return ns.db and 460 or nil end, -- the off text is short
   icon = "Interface\\Icons\\Spell_Holy_WordFortitude",
-  desc = "A row of the buffs you choose, and click-to-buff and dispel buttons by your party frames.",
+  desc = L["A row of the buffs you choose, and click-to-buff and dispel buttons by your party frames."],
   standalone = "BuffTracker",
   standaloneName = "Buff Tracker",
   order = 30,

@@ -188,7 +188,7 @@ local function SectionFont()
   end
   local object = S.Get("GameFontNormal")
   local path = object and object.GetFont and object:GetFont()
-  return type(path) == "string" and path or "Fonts\\FRIZQT__.TTF"
+  return type(path) == "string" and path or (STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF")
 end
 
 local function ClearSections(tooltip)

@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Highlights (off by default): marks the things worth walking to. Settings in CodexDB.highlight, each part
 -- with its own switch (all on when the module is turned on):
@@ -27,7 +28,7 @@ local DEFAULTS = {
   range = 15,
 }
 
-H.SIZES = { { value = 0.8, text = "Small" }, { value = 1, text = "Normal" }, { value = 1.3, text = "Large" } }
+H.SIZES = { { value = 0.8, text = L["Small"] }, { value = 1, text = L["Normal"] }, { value = 1.3, text = L["Large"] } }
 H.RANGES = { 10, 15, 20, 25, 30 }
 
 -- Values that can be secret on Forever are only used when readable.
@@ -180,7 +181,7 @@ local PARTS = { "nodes", "chests", "fish", "questPlates", "questBags" }
 
 function H.StatusText()
   if not H.running then
-    return "Off."
+    return L["Off."]
   end
   local on = 0
   for _, key in ipairs(PARTS) do
@@ -188,7 +189,7 @@ function H.StatusText()
       on = on + 1
     end
   end
-  return ("%d of %d highlights on."):format(on, #PARTS)
+  return (L["%d of %d highlights on."]):format(on, #PARTS)
 end
 
 function H.Enable()
@@ -201,11 +202,11 @@ end
 
 ns.RegisterModule({
   id = "highlight",
-  name = "Highlights",
+  name = L["Highlights"],
   -- its section in the Codex window (Areas.lua)
-  area = "map", sectionOrder = 60, sectionTitle = "Highlights", folded = true, pageEstimate = 400,
+  area = "map", sectionOrder = 60, sectionTitle = L["Highlights"], folded = true, pageEstimate = 400,
   icon = "Interface\\Icons\\INV_Misc_Herb_07",
-  desc = "Rings on herbs, ore, chests and quest objects near you, \"!\" on quest mobs, glowing quest items in your bags.",
+  desc = L["Rings on herbs, ore, chests and quest objects near you, \"!\" on quest mobs, glowing quest items in your bags."],
   standalone = "NodeSight",
   standaloneName = "NodeSight",
   default = false,

@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- The "Fonts" sections (FontStyles.lua has the elements): one per group, on that group's page. Each element is a
 -- row with its name, Reset and a fold button; open, it shows Font and Size, Outline and Shadow (the user's FlareUI
@@ -39,7 +40,7 @@ end
 ns.FontElementsOf = Elements
 
 local function SizeChoices(element)
-  local list = { { key = "own", name = ("Own (%d)"):format(math.floor(element.base + 0.5)) } }
+  local list = { { key = "own", name = L["Own (%d)"]:format(math.floor(element.base + 0.5)) } }
   for size = ns.FONT_SIZE_MIN, ns.FONT_SIZE_MAX do
     list[#list + 1] = { key = size, name = tostring(size) }
   end
@@ -47,7 +48,7 @@ local function SizeChoices(element)
 end
 
 local function FontChoices()
-  local list = { { key = "own", name = "Element's own" } }
+  local list = { { key = "own", name = L["Element's own"] } }
   for _, info in ipairs(ns.FONTS) do
     if info.key ~= "theme" then
       list[#list + 1] = { key = info.key, name = info.name }
@@ -57,7 +58,7 @@ local function FontChoices()
 end
 
 local function Choices(list)
-  local out = { { key = "own", name = "Own" } }
+  local out = { { key = "own", name = L["Own"] } }
   for _, entry in ipairs(list) do
     out[#out + 1] = { key = entry.key, name = entry.name }
   end
@@ -124,8 +125,8 @@ local function ElementRow(body, element, width)
   row.reset:SetPoint("RIGHT", row.fold, "LEFT", -12, 0)
   row.reset.label = UI.Text(row.reset, "body", 11, "muted")
   row.reset.label:SetPoint("RIGHT")
-  row.reset.label:SetText("Reset")
-  row.reset.codexLabel = element.label .. ": Reset"
+  row.reset.label:SetText(L["Reset"])
+  row.reset.codexLabel = ("%s: %s"):format(element.label, L["Reset"])
   row.reset:SetScript("OnClick", function()
     ns.ResetFontStyle(element.key)
   end)
@@ -141,10 +142,10 @@ local function ElementRow(body, element, width)
   head.codexLabel = element.label
   local half = math.floor((width - 24) / 2)
   row.fields = {
-    Field(row, "Font", half, "font", element),
-    Field(row, "Size", half, "size", element),
-    Field(row, "Outline", half, "outline", element),
-    Field(row, "Shadow", half, "shadow", element),
+    Field(row, L["Font"], half, "font", element),
+    Field(row, L["Size"], half, "size", element),
+    Field(row, L["Outline"], half, "outline", element),
+    Field(row, L["Shadow"], half, "shadow", element),
   }
   for index, field in ipairs(row.fields) do
     local column = (index - 1) % 2
@@ -177,7 +178,7 @@ local function BuildGroup(group)
     note:SetWidth(width)
     note:SetJustifyH("LEFT")
     note:SetWordWrap(true)
-    note:SetText("Anything left on \"Own\" stays as Codex draws it: the theme's font at the element's size.")
+    note:SetText(L["Anything left on \"Own\" stays as Codex draws it: the theme's font at the element's size."])
     note.size = 11
     body.fontRows = rows
     function body.Relayout()
@@ -244,9 +245,8 @@ for _, group in ipairs(ns.FONT_GROUPS) do
     id = "fonts-" .. group.id,
     title = group.title,
     order = group.order,
-    desc = "Font, size, outline and shadow for each kind of text on this page. Hover a field to see its name here; "
-      .. "the samples below follow your choices.",
-    keywords = { "font size outline shadow text" },
+    desc = L["Font, size, outline and shadow for each kind of text on this page. Hover a field to see its name here; the samples below follow your choices."],
+    keywords = { "font size outline shadow text", L["font size outline shadow text"] },
     build = BuildGroup(group),
     preview = Preview(group),
   })

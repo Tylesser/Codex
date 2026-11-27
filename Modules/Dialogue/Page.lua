@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- The Quest windows page (board R4-Options, the "Quest and gossip windows" card): the switch, three style cards with
 -- a small picture each (the theme's own colours), then two columns: Text (levels, written-in text = the game's
@@ -11,28 +12,28 @@ local T = ns.T
 local view = { checks = {} }
 
 local TEXT_OPTIONS = {
-  { key = "levels", name = "Show quest levels", desc = "[48] before each quest name, in its difficulty colour." },
-  { key = "reveal", name = "Write the text in as the game does",
-    desc = "Off shows the whole text at once (the game's Instant Quest Text)." },
+  { key = "levels", name = L["Show quest levels"], desc = L["[48] before each quest name, in its difficulty colour."] },
+  { key = "reveal", name = L["Write the text in as the game does"],
+    desc = L["Off shows the whole text at once (the game's Instant Quest Text)."] },
 }
 local TEXT_OPTIONS_AFTER = {
-  { key = "statArrows", name = "Stat Delta on rewards",
-    desc = "Stat changes and the upgrade arrow on reward items, while the Stat Delta module is on." },
+  { key = "statArrows", name = L["Stat Delta on rewards"],
+    desc = L["Stat changes and the upgrade arrow on reward items, while the Stat Delta module is on."] },
 }
 local TALK_OPTIONS = {
-  { key = "numbers", name = "Number keys pick choices",
-    desc = "1 to 9 pick the rows in order, shown as small keys beside them. Space still accepts (Quest keys)." },
-  { key = "escapeBack", name = "Escape goes back to the list",
-    desc = "On a quest you opened from an NPC's list, Escape takes you back to the list instead of closing." },
-  { key = "tabRewards", name = "Tab picks the next reward", desc = "When a quest lets you choose a reward." },
-  { key = "service", name = "Open the only service at once",
-    desc = "A banker, vendor, trainer or flight master with nothing else to say opens at once." },
-  { key = "fade", name = "Fade the game's interface",
-    desc = "Styles B and C: bars, frames and chat fade out and come back when you walk away; never in a fight." },
-  { key = "autoAccept", name = "Accept quests by themselves",
-    desc = "Not repeatable or grey (low level) quests, and not quests that ask first." },
-  { key = "autoTurnIn", name = "Hand in quests by themselves",
-    desc = "Not repeatables, quests that take gold or marks, or when a reward must be chosen." },
+  { key = "numbers", name = L["Number keys pick choices"],
+    desc = L["1 to 9 pick the rows in order, shown as small keys beside them. Space still accepts (Quest keys)."] },
+  { key = "escapeBack", name = L["Escape goes back to the list"],
+    desc = L["On a quest you opened from an NPC's list, Escape takes you back to the list instead of closing."] },
+  { key = "tabRewards", name = L["Tab picks the next reward"], desc = L["When a quest lets you choose a reward."] },
+  { key = "service", name = L["Open the only service at once"],
+    desc = L["A banker, vendor, trainer or flight master with nothing else to say opens at once."] },
+  { key = "fade", name = L["Fade the game's interface"],
+    desc = L["Styles B and C: bars, frames and chat fade out and come back when you walk away; never in a fight."] },
+  { key = "autoAccept", name = L["Accept quests by themselves"],
+    desc = L["Not repeatable or grey (low level) quests, and not quests that ask first."] },
+  { key = "autoTurnIn", name = L["Hand in quests by themselves"],
+    desc = L["Not repeatables, quests that take gold or marks, or when a reward must be chosen."] },
 }
 
 local function Wrap(text, width)
@@ -427,7 +428,7 @@ local function FontRow(parent)
   row.label = UI.Text(row, "body", 14, "bright")
   row.label:SetPoint("LEFT")
   row.label:SetWordWrap(false)
-  row.label:SetText("Font size")
+  row.label:SetText(L["Font size"])
   row.stepper = UI.Stepper(row, 34)
   row.stepper:SetPoint("LEFT", row, "LEFT", LABEL_WIDTH, 0)
   row.stepper.less:SetScript("OnClick", function()
@@ -444,7 +445,7 @@ local function FontRow(parent)
   return row
 end
 
-local SIZE_NAMES = { s = "Small", m = "Medium", l = "Large" }
+local SIZE_NAMES = { s = L["Small"], m = L["Medium##size"], l = L["Large"] }
 
 -- "Window size  [Medium]": a picker (its menu lists the three) that fits the column; its note under it.
 local function SizeRow(parent)
@@ -452,7 +453,7 @@ local function SizeRow(parent)
   row.label = UI.Text(row, "body", 14, "bright")
   row.label:SetPoint("LEFT")
   row.label:SetWordWrap(false)
-  row.label:SetText("Window size")
+  row.label:SetText(L["Window size"])
   row.picker = UI.Picker(row, 140, 24)
   row.picker:SetPoint("LEFT", row, "LEFT", LABEL_WIDTH, 0)
   row.picker:SetScript("OnClick", function(self)
@@ -497,10 +498,10 @@ function D.RefreshPage()
   local note = ""
   if ns.IsAddOnLoaded and ns.IsAddOnLoaded("DialogueUI") then
     note = ns.ModuleState("dialogue") == "standalone"
-      and "DialogueUI is loaded, so Codex leaves the NPC windows to it (the switch at the top of this section can use Codex's instead)."
-      or "DialogueUI is loaded too: both want to draw the NPC windows. Turn one of them off."
+      and L["DialogueUI is loaded, so Codex leaves the NPC windows to it (the switch at the top of this section can use Codex's instead)."]
+      or L["DialogueUI is loaded too: both want to draw the NPC windows. Turn one of them off."]
   elseif not D.running then
-    note = "Quest windows are off: switch them on at the top of this section (then reload)."
+    note = L["Quest windows are off: switch them on at the top of this section (then reload)."]
   end
   view.note:SetText(note)
   view.note:SetShown(note ~= "")
@@ -519,7 +520,7 @@ function D.BuildPage(page)
   D.pageView = view
 
   -- header: name, live status, a note when DialogueUI is there or the module is off
-  local heading = UI.Heading(body, "Quest windows", 20)
+  local heading = UI.Heading(body, L["Quest windows"], 20)
   heading:SetWordWrap(false)
   heading.lineHeight = 24
   view.status = Text(body, 12, "muted")
@@ -529,15 +530,14 @@ function D.BuildPage(page)
   -- the card (its texts on the card's own frame, above its fill)
   local card = UI.Inset(body)
   view.card = card
-  view.windows = UI.Check(card, "Quest and gossip windows")
+  view.windows = UI.Check(card, L["Quest and gossip windows"])
   UI.Font(view.windows.label, "body", 16, "bright")
   view.windows.label.lineHeight = 20
   view.windows:SetScript("OnClick", function(self)
     D.Set("windows", self:GetChecked() and true or false)
   end)
   local about = Text(card, 12, "muted")
-  about:SetText("Codex draws the windows you get when you talk to an NPC: greeting, quests, rewards. Off keeps the "
-    .. "game's own windows (the quest options below still work).")
+  about:SetText(L["Codex draws the windows you get when you talk to an NPC: greeting, quests, rewards. Off keeps the game's own windows (the quest options below still work)."])
   view.styles = StyleCards(card)
   view.top = { Item("check", view.windows, 1), Item("text", about, 12, INDENT), Item("row", view.styles, 0, INDENT) }
 
@@ -545,7 +545,7 @@ function D.BuildPage(page)
   local left = {}
   local leftHead = UI.Text(card, "head", 12, "accent")
   leftHead:SetWordWrap(false)
-  leftHead:SetText("Text")
+  leftHead:SetText(L["Text"])
   left[#left + 1] = Item("text", leftHead, 8)
   for _, option in ipairs(TEXT_OPTIONS) do
     Option(card, option, left)
@@ -553,12 +553,12 @@ function D.BuildPage(page)
   view.fontRow = FontRow(card)
   left[#left + 1] = Item("row", view.fontRow, 3)
   local fontNote = Text(card, 12, "muted")
-  fontNote:SetText("The game's own is 13.")
+  fontNote:SetText(L["The game's own is 13."])
   left[#left + 1] = Item("text", fontNote, 12)
   view.sizeRow = SizeRow(card)
   left[#left + 1] = Item("row", view.sizeRow, 3)
   local sizeNote = Text(card, 12, "muted")
-  sizeNote:SetText("Styles A and C; the subtitle bar keeps its own width.")
+  sizeNote:SetText(L["Styles A and C; the subtitle bar keeps its own width."])
   left[#left + 1] = Item("text", sizeNote, 12)
   for _, option in ipairs(TEXT_OPTIONS_AFTER) do
     Option(card, option, left)
@@ -569,13 +569,13 @@ function D.BuildPage(page)
   local right = {}
   local rightHead = UI.Text(card, "head", 12, "accent")
   rightHead:SetWordWrap(false)
-  rightHead:SetText("While talking")
+  rightHead:SetText(L["While talking"])
   right[#right + 1] = Item("text", rightHead, 8)
   for _, option in ipairs(TALK_OPTIONS) do
     Option(card, option, right)
   end
   local shift = Text(card, 12, "text")
-  shift:SetText("Hold Shift while you talk to an NPC to talk normally: nothing is accepted, handed in or opened by itself.")
+  shift:SetText(L["Hold Shift while you talk to an NPC to talk normally: nothing is accepted, handed in or opened by itself."])
   right[#right + 1] = Item("text", shift, 0)
   view.right = right
 

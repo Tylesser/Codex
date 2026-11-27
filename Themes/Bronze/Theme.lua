@@ -8,7 +8,7 @@
 --   * colour is rare, so the gold accent and the status colours stand out where they are used.
 -- No media of its own: the game's font, Codex's shared textures.
 
-local FRIZ = "Fonts\\FRIZQT__.TTF"
+local FRIZ = (STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF")
 local WINDOW = { 0.098, 0.082, 0.067 } -- #191511 windows
 local RAISED = { 0.157, 0.129, 0.098 } -- #282119 buttons
 local CARD = { 0.071, 0.059, 0.047 } -- #12100C boxes inside a window

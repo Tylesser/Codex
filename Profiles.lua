@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Profiles (board R3-Setup): named copies of Codex's settings - modules on or off, theme, fonts, look, the
 -- interface parts and every module's options. Never the data: auction prices and scans, shopping lists, bag
@@ -271,11 +272,11 @@ end
 -- A name a player typed: trimmed, short, no escape codes. Returns the name or nil, why.
 function P.CleanName(text)
   if type(text) ~= "string" then
-    return nil, "Type a name first."
+    return nil, L["Type a name first."]
   end
   text = text:gsub("|", ""):gsub("[%c]", ""):gsub("^%s+", ""):gsub("%s+$", "")
   if text == "" then
-    return nil, "Type a name first."
+    return nil, L["Type a name first."]
   end
   if #text > MAX_NAME then
     text = text:sub(1, MAX_NAME):gsub("[\128-\191]+$", ""):gsub("[\192-\255]$", ""):gsub("%s+$", "")
@@ -354,7 +355,7 @@ function P.Create(text, copy)
     return nil, why
   end
   if List()[name] then
-    return nil, ("There is already a profile called %s."):format(name)
+    return nil, L["There is already a profile called %s."]:format(name)
   end
   P.Save()
   List()[name] = { settings = copy and P.Snapshot() or {}, time = time() }
@@ -618,26 +619,26 @@ function P.Encode(value)
   return P.PREFIX .. Encode64(raw) .. ":" .. Checksum(raw)
 end
 
-local DAMAGED = "The string is damaged: copy the whole string again."
+local DAMAGED = L["The string is damaged: copy the whole string again."]
 
 -- An export string back to its value, or nil, why.
 function P.Decode(text)
   if type(text) ~= "string" then
-    return nil, "Paste a Codex profile string first."
+    return nil, L["Paste a Codex profile string first."]
   end
   text = text:gsub("%s+", "") -- line breaks and spaces from pasting
   if text == "" then
-    return nil, "Paste a Codex profile string first."
+    return nil, L["Paste a Codex profile string first."]
   end
   if #text > MAX_TEXT then
-    return nil, "That is too long to be a Codex profile."
+    return nil, L["That is too long to be a Codex profile."]
   end
   local version = text:match("^CDX(%d+):")
   if not version then
-    return nil, "That isn't a Codex profile string (they start with CDX1:)."
+    return nil, L["That isn't a Codex profile string (they start with CDX1:)."]
   end
   if tonumber(version) ~= P.VERSION then
-    return nil, "That profile comes from a newer Codex. Update Codex and try again."
+    return nil, L["That profile comes from a newer Codex. Update Codex and try again."]
   end
   local body, sum = text:sub(#P.PREFIX + 1):match("^([A-Za-z0-9%+/=]+):(%x%x%x%x%x%x%x%x)$")
   if not body then
@@ -793,10 +794,10 @@ function P.Import(text)
     return nil, why
   end
   if type(data) ~= "table" or data.v ~= P.VERSION or type(data.settings) ~= "table" then
-    return nil, "That isn't a Codex profile string."
+    return nil, L["That isn't a Codex profile string."]
   end
   P.Init()
-  local name = UniqueName(P.CleanName(data.name) or "Imported")
+  local name = UniqueName(P.CleanName(data.name) or L["Imported"])
   List()[name] = { settings = P.Sanitize(data.settings), time = time(), imported = true }
   ns.Fire("PROFILE_CHANGED")
   return name
@@ -870,7 +871,7 @@ local function Confirming(button, label, action)
       action()
     else
       self.armed = GetTime()
-      self:SetText("Sure?")
+      self:SetText(L["Sure?"])
       C_Timer.After(4, function()
         if self.armed and GetTime() - self.armed >= 3.9 then
           self.armed = nil
@@ -883,6 +884,10 @@ end
 
 function ns.BuildProfiles(body, width, register)
   P.Init()
+  -- the default profile keeps its English name in the saved data; it shows in the client's language
+  local function Shown(name)
+    return name == P.DEFAULT and L["Default"] or name
+  end
   local leftWidth = math.floor((width - 28) * 0.48)
   local rightX = leftWidth + 28
   local rightWidth = width - rightX
@@ -894,9 +899,9 @@ function ns.BuildProfiles(body, width, register)
   end
 
   -- who uses the profile
-  local useLabel = UI.Section(body, "Who uses it")
+  local useLabel = UI.Section(body, L["Who uses it"])
   useLabel:SetPoint("TOPLEFT")
-  local scope = ns.Segmented(body, { { key = "character", name = "This character" }, { key = "shared", name = "All characters" } },
+  local scope = ns.Segmented(body, { { key = "character", name = L["This character"] }, { key = "shared", name = L["All characters"] } },
     P.Scope, function(key)
       P.SetScope(key)
       RefreshAll()
@@ -909,14 +914,14 @@ function ns.BuildProfiles(body, width, register)
   refreshers[#refreshers + 1] = function()
     scope:Refresh()
     if P.Scope() == "character" then
-      scopeText:SetText(("%s keeps its own settings."):format((UnitName and UnitName("player")) or "This character"))
+      scopeText:SetText(L["%s keeps its own settings."]:format((UnitName and UnitName("player")) or L["This character"]))
     else
-      scopeText:SetText("Every character without its own profile uses the one picked below.")
+      scopeText:SetText(L["Every character without its own profile uses the one picked below."])
     end
   end
 
   -- the profiles
-  local listLabel = UI.Section(body, "Profile")
+  local listLabel = UI.Section(body, L["Profile"])
   listLabel:SetPoint("TOPLEFT", scope, "BOTTOMLEFT", 0, -46)
   local list = UI.List(body, {
     rowHeight = 28,
@@ -950,15 +955,15 @@ function ns.BuildProfiles(body, width, register)
       row.selected:SetShown(inUse)
       row.dot:SetVertexColor(UI.Unpack(inUse and theme.accent or { 0, 0, 0, 0.7 }))
       row.ring:SetVertexColor(UI.Unpack(theme.button.line))
-      row.name:SetText(name)
+      row.name:SetText(Shown(name))
       row.name:SetTextColor(UI.Unpack(inUse and theme.bright or theme.text))
       local note = ""
       if ns.char.profile == name then
-        note = "this character"
+        note = L["this character"]
       elseif ns.db.sharedProfile == name then
-        note = "shared"
+        note = L["shared"]
       elseif List()[name] then
-        note = List()[name].class or (List()[name].imported and "imported") or ""
+        note = List()[name].class or (List()[name].imported and L["imported"]) or ""
       end
       row.note:SetText(note)
     end,
@@ -971,8 +976,9 @@ function ns.BuildProfiles(body, width, register)
 
   local buttons = {}
   local buttonWidth = math.floor((leftWidth - 18) / 4)
+  local SHOWN = { New = L["New"], Copy = L["Copy"], Reset = L["Reset"], Delete = L["Delete"] }
   for index, label in ipairs({ "New", "Copy", "Reset", "Delete" }) do
-    local button = UI.Button(body, buttonWidth, 24, label)
+    local button = UI.Button(body, buttonWidth, 24, SHOWN[label])
     button:SetPoint("TOPLEFT", list, "BOTTOMLEFT", (index - 1) * (buttonWidth + 6), -8)
     buttons[label] = button
   end
@@ -993,9 +999,9 @@ function ns.BuildProfiles(body, width, register)
   local nameBox = UI.EditBox(nameRow, leftWidth - 2 * (buttonWidth + 6), 24)
   nameBox:SetPoint("LEFT")
   nameBox:SetMaxLetters(MAX_NAME)
-  local create = UI.Button(nameRow, buttonWidth, 24, "Create")
+  local create = UI.Button(nameRow, buttonWidth, 24, L["Create"])
   create:SetPoint("LEFT", nameBox, "RIGHT", 6, 0)
-  local cancel = UI.Button(nameRow, buttonWidth, 24, "Cancel")
+  local cancel = UI.Button(nameRow, buttonWidth, 24, L["Cancel"])
   cancel:SetPoint("LEFT", create, "RIGHT", 6, 0)
   nameRow:Hide()
   status:SetPoint("TOPLEFT", nameRow, "BOTTOMLEFT", 0, -6)
@@ -1003,10 +1009,10 @@ function ns.BuildProfiles(body, width, register)
   local function AskName(how)
     mode = how
     nameRow:Show()
-    nameBox:SetText(how == "copy" and (P.Active() .. " copy") or "")
+    nameBox:SetText(how == "copy" and L["%s copy"]:format(Shown(P.Active())) or "")
     nameBox:SetFocus()
     nameBox:HighlightText()
-    Say(how == "copy" and "A copy of the settings you use now." or "A new profile starts with the default settings.")
+    Say(how == "copy" and L["A copy of the settings you use now."] or L["A new profile starts with the default settings."])
   end
   local function Create()
     local name, why = P.Create(nameBox:GetText(), mode == "copy")
@@ -1016,7 +1022,7 @@ function ns.BuildProfiles(body, width, register)
     end
     nameRow:Hide()
     nameBox:ClearFocus()
-    Say(mode == "copy" and ("%s made and in use."):format(name) or ("%s made. It takes effect after a reload."):format(name))
+    Say(mode == "copy" and L["%s made and in use."]:format(name) or L["%s made. It takes effect after a reload."]:format(name))
     RefreshAll()
   end
   create:SetScript("OnClick", Create)
@@ -1032,15 +1038,15 @@ function ns.BuildProfiles(body, width, register)
   buttons.Copy:SetScript("OnClick", function()
     AskName("copy")
   end)
-  Confirming(buttons.Reset, "Reset", function()
+  Confirming(buttons.Reset, L["Reset"], function()
     P.Reset()
-    Say(("%s is back to the default settings after a reload."):format(P.Active()))
+    Say(L["%s is back to the default settings after a reload."]:format(Shown(P.Active())))
     RefreshAll()
   end)
-  Confirming(buttons.Delete, "Delete", function()
+  Confirming(buttons.Delete, L["Delete"], function()
     local name = P.Active()
     if P.Delete() then
-      Say(("%s deleted. %s takes over after a reload."):format(name, P.Active()))
+      Say(L["%s deleted. %s takes over after a reload."]:format(name, Shown(P.Active())))
     end
     RefreshAll()
   end)
@@ -1049,7 +1055,7 @@ function ns.BuildProfiles(body, width, register)
   end
 
   -- export
-  local exportLabel = UI.Section(body, "Export")
+  local exportLabel = UI.Section(body, L["Export"])
   exportLabel:SetPoint("TOPLEFT", body, "TOPLEFT", rightX, 0)
   local export = TextArea(body, rightWidth, 96)
   export:SetPoint("TOPLEFT", exportLabel, "BOTTOMLEFT", 0, -8)
@@ -1063,7 +1069,7 @@ function ns.BuildProfiles(body, width, register)
   export.box:SetScript("OnEditFocusGained", function(self)
     self:HighlightText()
   end)
-  local selectAll = UI.Button(body, 100, 24, "Select all")
+  local selectAll = UI.Button(body, 100, 24, L["Select all"])
   selectAll:SetPoint("TOPLEFT", export, "BOTTOMLEFT", 0, -6)
   selectAll:SetScript("OnClick", function()
     export.box:SetFocus()
@@ -1071,7 +1077,7 @@ function ns.BuildProfiles(body, width, register)
   end)
   local copyHint = UI.Text(body, "body", 12, "muted")
   copyHint:SetPoint("LEFT", selectAll, "RIGHT", 8, 0)
-  copyHint:SetText("then press Ctrl+C to copy it.")
+  copyHint:SetText(L["then press Ctrl+C to copy it."])
   body.exportBox = export.box
   refreshers[#refreshers + 1] = function()
     exportText = P.Export() or ""
@@ -1080,24 +1086,24 @@ function ns.BuildProfiles(body, width, register)
   end
 
   -- import
-  local importLabel = UI.Section(body, "Import")
+  local importLabel = UI.Section(body, L["Import"])
   importLabel:SetPoint("TOPLEFT", selectAll, "BOTTOMLEFT", 0, -18)
   local import = TextArea(body, rightWidth, 72)
   import:SetPoint("TOPLEFT", importLabel, "BOTTOMLEFT", 0, -8)
   local placeholder = UI.Text(import, "body", 11, "muted")
   placeholder:SetPoint("TOPLEFT", 8, -6)
-  placeholder:SetText("Paste a Codex profile string")
+  placeholder:SetText(L["Paste a Codex profile string"])
   import.box:SetScript("OnTextChanged", function(self)
     placeholder:SetShown((self:GetText() or "") == "")
   end)
-  local importButton = UI.Button(body, 170, 26, "Import as new profile")
+  local importButton = UI.Button(body, 170, 26, L["Import as new profile"])
   importButton:SetPoint("TOPLEFT", import, "BOTTOMLEFT", 0, -6)
   local importNote = UI.Text(body, "body", 12, "muted")
   importNote:SetPoint("LEFT", importButton, "RIGHT", 8, 0)
   importNote:SetPoint("RIGHT", body, "RIGHT", 0, 0)
   importNote:SetJustifyH("LEFT")
   importNote:SetWordWrap(true)
-  importNote:SetText("Edit Mode layouts are not included.")
+  importNote:SetText(L["Edit Mode layouts are not included."])
   local importStatus = UI.Text(body, "body", 12, "muted")
   importStatus:SetPoint("TOPLEFT", importButton, "BOTTOMLEFT", 0, -6)
   importStatus:SetWidth(rightWidth)
@@ -1108,7 +1114,7 @@ function ns.BuildProfiles(body, width, register)
     if name then
       import.box:SetText("")
       import.box:ClearFocus()
-      importStatus:SetText(("Imported as %s. Pick it in the list to use it."):format(name))
+      importStatus:SetText(L["Imported as %s. Pick it in the list to use it."]:format(name))
       importStatus:SetTextColor(UI.Unpack(theme.good))
       RefreshAll()
     else
@@ -1125,9 +1131,7 @@ function ns.BuildProfiles(body, width, register)
   about:SetWidth(rightWidth)
   about:SetJustifyH("LEFT")
   about:SetSpacing(2)
-  about:SetText("A profile holds Codex's settings: modules on or off, theme, fonts, look, interface parts and "
-    .. "module options. Prices, scans, shopping lists, bag contents and window positions are not part of it, "
-    .. "so switching never loses them.")
+  about:SetText(L["A profile holds Codex's settings: modules on or off, theme, fonts, look, interface parts and module options. Prices, scans, shopping lists, bag contents and window positions are not part of it, so switching never loses them."])
 
   body.RefreshProfiles = RefreshAll
   if register then

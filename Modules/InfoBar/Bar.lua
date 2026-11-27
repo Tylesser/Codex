@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Info bars, part 2: the frames (board R3-InfoBars).
 --   Screen bar: a slim 24-unit strip along the top (or bottom) edge: the Codex emblem, two slots on the left,
@@ -449,14 +450,14 @@ local function OpenSlotMenu(slot)
   I.HideTip()
   local key = slot.info.key
   local current = I.DB().slots[key]
-  local items = { { text = "Show in this slot", title = true } }
+  local items = { { text = L["Show in this slot"], title = true } }
   for _, id in ipairs(I.MENU_ORDER) do
     local text = I.TEXTS[id]
     items[#items + 1] = { text = text.name, checked = current == id, func = function()
       I.SetSlot(key, id)
     end }
   end
-  items[#items + 1] = { text = "Nothing", checked = current == "none", func = function()
+  items[#items + 1] = { text = L["Nothing"], checked = current == "none", func = function()
     I.SetSlot(key, "none")
   end }
   UI.ShowMenu(slot, items)
@@ -570,8 +571,8 @@ local function CreateEmblem(bar)
   button:SetScript("OnEnter", function(self)
     I.OpenTip(self, function(tooltip)
       tooltip:Title("Codex")
-      tooltip:Line("Click to open Codex.", nil, "text")
-      tooltip:Line("Right-click for the info bar options.", nil, "text")
+      tooltip:Line(L["Click to open Codex."], nil, "text")
+      tooltip:Line(L["Right-click for the info bar options."], nil, "text")
     end, I.AtTop())
   end)
   button:SetScript("OnLeave", function()
@@ -608,17 +609,17 @@ local DROP_ORDER = { "prof", "rep", "ammo", "durability", "guild", "friends", "f
 
 -- Blizzard frames the bar makes room for (read only; Edit Mode puts them where the player likes).
 local WATCH = {
-  { "MinimapCluster", "the minimap" }, { "BuffFrame", "your buffs" }, { "DebuffFrame", "your debuffs" },
-  { "ObjectiveTrackerFrame", "the quest tracker" }, { "MicroMenuContainer", "the menu buttons" },
-  { "MicroButtonAndBagsBar", "the menu buttons" }, { "BagsBar", "the bag buttons" },
-  { "MainActionBar", "action bar 1" }, { "MainMenuBar", "action bar 1" }, { "MultiBarBottomLeft", "action bar 2" },
-  { "MultiBarBottomRight", "action bar 3" }, { "MultiBarRight", "action bar 4" }, { "MultiBarLeft", "action bar 5" },
-  { "MultiBar5", "action bar 6" }, { "MultiBar6", "action bar 7" }, { "MultiBar7", "action bar 8" },
-  { "StanceBar", "the stance bar" }, { "PetActionBar", "the pet bar" }, { "PossessActionBar", "the possess bar" },
-  { "MainStatusTrackingBarContainer", "the experience bar" },
-  { "SecondaryStatusTrackingBarContainer", "the reputation bar" },
-  { "PlayerFrame", "the player frame" }, { "TargetFrame", "the target frame" },
-  { "ChatFrame1", "the chat" }, { "GeneralDockManager", "the chat tabs" }, { "CodexChatDataPanel", "the chat panel" },
+  { "MinimapCluster", L["the minimap"] }, { "BuffFrame", L["your buffs"] }, { "DebuffFrame", L["your debuffs"] },
+  { "ObjectiveTrackerFrame", L["the quest tracker"] }, { "MicroMenuContainer", L["the menu buttons"] },
+  { "MicroButtonAndBagsBar", L["the menu buttons"] }, { "BagsBar", L["the bag buttons"] },
+  { "MainActionBar", L["action bar 1"] }, { "MainMenuBar", L["action bar 1"] }, { "MultiBarBottomLeft", L["action bar 2"] },
+  { "MultiBarBottomRight", L["action bar 3"] }, { "MultiBarRight", L["action bar 4"] }, { "MultiBarLeft", L["action bar 5"] },
+  { "MultiBar5", L["action bar 6"] }, { "MultiBar6", L["action bar 7"] }, { "MultiBar7", L["action bar 8"] },
+  { "StanceBar", L["the stance bar"] }, { "PetActionBar", L["the pet bar"] }, { "PossessActionBar", L["the possess bar"] },
+  { "MainStatusTrackingBarContainer", L["the experience bar"] },
+  { "SecondaryStatusTrackingBarContainer", L["the reputation bar"] },
+  { "PlayerFrame", L["the player frame"] }, { "TargetFrame", L["the target frame"] },
+  { "ChatFrame1", L["the chat"] }, { "GeneralDockManager", L["the chat tabs"] }, { "CodexChatDataPanel", L["the chat panel"] },
 }
 
 function I.AtTop()
@@ -1307,8 +1308,8 @@ local function CreatePanel()
   panel.hide:SetScript("OnClick", function()
     I.ToggleChat()
   end)
-  SimpleTip(panel.hide, "Chat", function()
-    return I.chatHidden and "Click to show the chat again." or "Click to hide the chat."
+  SimpleTip(panel.hide, L["Chat"], function()
+    return I.chatHidden and L["Click to show the chat again."] or L["Click to hide the chat."]
   end)
 
   panel.copy = CornerButton(panel, "Copy", 12)
@@ -1316,8 +1317,8 @@ local function CreatePanel()
   panel.copy:SetScript("OnClick", function()
     I.ShowCopy()
   end)
-  SimpleTip(panel.copy, "Copy chat", function()
-    return "Click to copy the chat's recent lines."
+  SimpleTip(panel.copy, L["Copy chat"], function()
+    return L["Click to copy the chat's recent lines."]
   end)
 
   panel.slots = {}

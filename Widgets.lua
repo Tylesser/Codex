@@ -89,7 +89,7 @@ function UI.Ink(frame)
   return frame
 end
 
-local GAME_FONT = "Fonts\\FRIZQT__.TTF"
+local GAME_FONT = (STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF")
 
 function UI.Unpack(color, alpha)
   return color[1], color[2], color[3], alpha or color[4] or 1

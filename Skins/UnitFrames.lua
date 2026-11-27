@@ -35,7 +35,7 @@ local S = ns.S
 
 local WHITE = "Interface\\Buttons\\WHITE8X8"
 local CIRCLE = "Interface\\AddOns\\Codex\\Media\\Circle" -- smooth 256px circle (TempPortraitAlphaMask looked jagged)
-local GAME_FONT = "Fonts\\FRIZQT__.TTF"
+local GAME_FONT = (STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF")
 local BAR_FONT = "Fonts\\ARIALN.TTF"
 local PARTY_STEP, PARTY_STEP_COMPACT, PARTY_STEP_BARS, PARTY_GAP, PARTY_FADE, RANGE_POLL = 88, 70, 64, 8, 0.45, 0.5
 -- (party: member to member in the panel / compact / bars style, the gap; alpha out of range; how often)
@@ -89,7 +89,7 @@ do
 end
 local HOSTILE_RING = { 0.69, 0.19, 0.19 } -- the design's target ring
 local DISC = { 0.055, 0.047, 0.063, 1 } -- behind the portrait
-local CLASSIFICATION = { elite = "Elite", rareelite = "Rare elite", rare = "Rare", worldboss = "Boss" }
+local CLASSIFICATION = { elite = S.L["Elite"], rareelite = S.L["Rare elite"], rare = S.L["Rare"], worldboss = S.L["Boss"] }
 local CAST_LOCKED = { 0.55, 0.55, 0.55 } -- a cast that can't be interrupted (others: the theme's accent)
 local AURA_MAX, AURA_ROW, AURA_SPACING = 16, 8, 3 -- per group (debuffs, then buffs); icons per row
 local PREFIX = "|TInterface\\AddOns\\Codex\\Media\\Stud:12|t |cfff0c24eCodex:|r "
@@ -109,31 +109,31 @@ local ELITE_MARK = { elite = "nameplates-icon-elite-gold", rareelite = "nameplat
 -- style's text sizes (its bar heights come from the portrait). compact = { health, power,
 -- healthText, powerText }: the bars of the compact style (bigger than the board's: no panel behind them).
 local UNITS = {
-  { unit = "player", name = "Player", label = "Player", own = true, w = 264, h = 70, portrait = { 66, 0, 0 },
+  { unit = "player", name = "Player", label = S.L["Player"], own = true, w = 264, h = 70, portrait = { 66, 0, 0 },
     ring = "round", back = { 32, 6, 232, 58 }, pad = { 38, 9, 5 }, nameSize = 14, gap = 3, health = 15, healthText = 11,
     power = 11, powerText = 10, badge = { 22, -3, 48 }, icons = true, compact = { 0, 0, 12, 10 }, bars = { 20, 8, 12, 11, 8 },
     pos = { "TOPLEFT", "BOTTOM", -302, 264 } },
-  { unit = "target", name = "Target", label = "Target", w = 264, h = 70, portrait = { 66, 198, 0 }, ring = "round",
+  { unit = "target", name = "Target", label = S.L["Target"], w = 264, h = 70, portrait = { 66, 198, 0 }, ring = "round",
     back = { 0, 6, 232, 58 }, pad = { 9, 38, 5 }, nameSize = 14, gap = 3, health = 15, healthText = 11, power = 11,
     powerText = 10, badge = { 22, 245, 48 }, info = true, combo = true, cast = { 0, 70, 232, 16, 14 },
     auras = { 0, 92, 20, 6, true }, auraRow = 8, watch = true, hostileRing = true, compact = { 0, 0, 12, 10 },
     bars = { 20, 8, 12, 11, 8 },
     pos = { "TOPLEFT", "BOTTOM", 38, 264 } },
-  { unit = "targettarget", name = "TargetTarget", label = "Target of target", w = 150, h = 40, portrait = { 36, 0, 2 },
+  { unit = "targettarget", name = "TargetTarget", label = S.L["Target of target"], w = 150, h = 40, portrait = { 36, 0, 2 },
     ring = "thin", back = { 18, 4, 132, 32 }, pad = { 22, 7, 2 }, nameSize = 11, gap = 2, health = 9, watch = true,
     poll = true, hostileRing = true, attach = { "target", 274, 28 }, compact = { 9 }, bars = { 14, nil, 10, 9 },
     pos = { "TOPLEFT", "BOTTOM", 312, 236 } },
-  { unit = "pet", name = "Pet", label = "Pet", own = true, w = 150, h = 44, portrait = { 36, 0, 4 }, ring = "thin",
+  { unit = "pet", name = "Pet", label = S.L["Pet"], own = true, w = 150, h = 44, portrait = { 36, 0, 4 }, ring = "thin",
     back = { 18, 4, 132, 36 }, pad = { 22, 7, 2 }, nameSize = 11, gap = 2, health = 9, power = 4, watch = true,
     compact = { 9, 6 }, bars = { 14, 5, 10, 9 }, pos = { "TOPLEFT", "BOTTOM", -470, 250 } },
-  { unit = "focus", name = "Focus", label = "Focus", heading = "Focus", w = 214, h = 64, portrait = { 44, 0, 14 },
+  { unit = "focus", name = "Focus", label = S.L["Focus"], heading = S.L["Focus"], w = 214, h = 64, portrait = { 44, 0, 14 },
     ring = "round", back = { 22, 18, 192, 38 }, pad = { 28, 8, 3 }, nameSize = 12, gap = 2, health = 13,
     healthText = 10, cast = { 22, 68, 192, 14, 12 }, auras = { 22, 86, 16, 4 }, auraRow = 9, watch = true,
     hostileRing = true, compact = { 0, 0, 11 }, bars = { 18, 6, 11, 10 }, pos = { "TOPLEFT", "TOPLEFT", 16, -18 } },
 }
 -- party1-4, stacked PARTY_STEP apart (the stack is moved as one, CodexDB.skins.frames.party)
 for index = 1, 4 do
-  UNITS[#UNITS + 1] = { unit = "party" .. index, name = "Party" .. index, label = "Party " .. index, party = index,
+  UNITS[#UNITS + 1] = { unit = "party" .. index, name = "Party" .. index, label = S.L["Party %d"]:format(index), party = index,
     w = 240, h = 58, portrait = { 54, 0, 0 }, ring = "round", back = { 28, 4, 212, 50 }, pad = { 32, 8, 4 },
     nameSize = 13, gap = 2, health = 14, healthText = 11, power = 10, powerText = 9, badge = { 20, -3, 38 },
     partyIcons = true, auras = { 60, 60, 16, 4 }, auraMax = { 4, 6 }, auraRow = 10, auraOneLine = true, watch = true,
@@ -2197,8 +2197,7 @@ local function WarnCastBar()
   end
   if Inside(bar, S.Get("PlayerFrame"), parking) then
     warned = true
-    print(PREFIX .. "your cast bar is locked to the player frame, which Codex replaces, so it is hidden. "
-      .. "To get it back: Edit Mode, click the Cast Bar, untick \"Lock to Player Frame\".")
+    print(PREFIX .. S.L["your cast bar is locked to the player frame, which Codex replaces, so it is hidden. To get it back: Edit Mode, click the Cast Bar, untick \"Lock to Player Frame\"."])
   end
 end
 
@@ -2530,10 +2529,10 @@ local function BuildMover(f)
     GameTooltip:SetOwner(self, "ANCHOR_TOP")
     GameTooltip:AddLine(f.spec.label)
     local wide, tall = Shape.Of(f.unit)
-    GameTooltip:AddLine("Drag to move. Mouse wheel: size (" .. math.floor(ScaleOf(f.unit) * 100 + 0.5) .. "%).", 1, 1, 1, true)
-    GameTooltip:AddLine(("Shift + wheel: width (%d%%). Ctrl + wheel: height (%d%%)."):format(
+    GameTooltip:AddLine(S.L["Drag to move. Mouse wheel: size (%d%%)."]:format(math.floor(ScaleOf(f.unit) * 100 + 0.5)), 1, 1, 1, true)
+    GameTooltip:AddLine(S.L["Shift + wheel: width (%d%%). Ctrl + wheel: height (%d%%)."]:format(
       math.floor(wide * 100 + 0.5), math.floor(tall * 100 + 0.5)), 1, 1, 1, true)
-    GameTooltip:AddLine("Right-click: back to its place. Shift + right-click: size, width and height back to 100 %.",
+    GameTooltip:AddLine(S.L["Right-click: back to its place. Shift + right-click: size, width and height back to 100 %."],
       0.7, 0.7, 0.7, true)
     GameTooltip:Show()
   end))
@@ -2595,7 +2594,7 @@ local function HideMovers()
   -- "Use Raid-Style Party Frames" switched in Edit Mode: which party frames show is decided at load
   if partyStyle ~= nil and RaidStyleParty() ~= partyStyle and not styleNoted then
     styleNoted = true
-    print(PREFIX .. "party frame style changed: /reload to switch between Codex's party frames and the raid-style ones.")
+    print(PREFIX .. S.L["party frame style changed: /reload to switch between Codex's party frames and the raid-style ones."])
   end
 end
 
@@ -2753,7 +2752,7 @@ local function Build()
   end
   if partyOn then
     -- the stack as one piece for Edit Mode, and the range fade on a timer
-    local stack = { unit = "party", spec = { label = "Party", pos = PARTY_POS }, button = partyHolder,
+    local stack = { unit = "party", spec = { label = S.L["Party"], pos = PARTY_POS }, button = partyHolder,
       w = frames.party1.w, h = PartyStep() - PARTY_GAP }
     partyHolder:SetSize(stack.w, stack.h)
     SetPosition(partyHolder, PositionOf(stack))
@@ -2795,8 +2794,8 @@ local function Build()
   S.HookGlobal("PlayerFrame_AttachCastBar", WarnCastBar)
   S.Run("unitframes", CastBar.Style)
   if #lostBars > 0 then
-    print(PREFIX .. "this class bar sat on the player frame, which Codex replaces, and is hidden with it: "
-      .. table.concat(lostBars, ", ") .. ". Turn off \"Player, target, pet and focus frames\" in Codex to get it back.")
+    print(PREFIX .. S.L["this class bar sat on the player frame, which Codex replaces, and is hidden with it: %s. Turn off \"Player, target, pet and focus frames\" in Codex to get it back."]
+      :format(table.concat(lostBars, ", ")))
   end
   for _, spec in ipairs(UNITS) do
     if not spec.poll and frames[spec.unit] then

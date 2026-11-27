@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Quest tracker, part 2: the window. `CodexQuestTracker` (LOW strata, as Blizzard's), a header ("Quests" + the
 -- count, a fold arrow that collapses the whole list) and rows: zone headings (fold arrow, name, count; a click folds
@@ -30,7 +31,7 @@ local ROW_GAP = { zone = 6, quest = 4, objective = 1, done = 1, failed = 1 }
 local ITEM = 22
 local MORE = 16 -- the "more above / below" lines
 local PARKED = 0.001
-local MOVER_TEXT = "Quest tracker"
+local MOVER_TEXT = L["Quest tracker"]
 
 -- The game's tracker modules that aren't quests (forever branch ObjectiveTrackerManager:Init)
 QT.OTHER_MODULES = { "ScenarioObjectiveTracker", "UIWidgetObjectiveTracker", "AdventureObjectiveTracker",
@@ -177,7 +178,7 @@ local function Tooltip(row)
   if not (QO.Str(link) and pcall(GameTooltip.SetHyperlink, GameTooltip, link)) then
     GameTooltip:SetText(QO.Str(QO.Ask(QO.API("GetTitleForQuestID"), data.id)) or "")
   end
-  GameTooltip:AddLine("Click: open in the quest log. Shift-click: stop tracking. Right-click: more.", 0.7, 0.7, 0.7, true)
+  GameTooltip:AddLine(L["Click: open in the quest log. Shift-click: stop tracking. Right-click: more."], 0.7, 0.7, 0.7, true)
   GameTooltip:Show()
 end
 
@@ -481,8 +482,8 @@ function QT.Build()
   header:SetScript("OnMouseWheel", function(_, delta) QT.Scroll(delta) end)
   frame:EnableMouseWheel(true)
   frame:SetScript("OnMouseWheel", function(_, delta) QT.Scroll(delta) end)
-  frame.above = MoreLine(frame, "More above", false)
-  frame.below = MoreLine(frame, "More below", true)
+  frame.above = MoreLine(frame, L["More above"], false)
+  frame.below = MoreLine(frame, L["More below"], true)
   frame.header = header
   QT.frame = frame
   Place()

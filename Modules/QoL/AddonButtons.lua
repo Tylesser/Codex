@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Addon buttons on the minimap in a list (the user's request, 2026-11-19): the buttons addons put round the
 -- minimap (LibDBIcon's, named addon buttons such as Codex's own) are hidden, and a click on the day/night moon
@@ -122,7 +123,7 @@ local function Describe(button)
   local frameName = Name(button)
   if not name then
     name = button.name or (frameName and frameName:gsub("^LibDBIcon10_", ""):gsub("MinimapButton$", ""))
-      or "Addon"
+      or L["Addon"]
   end
   if not icon then
     local region = button.icon or button.Icon
@@ -232,7 +233,7 @@ local function CreateList()
   list.empty = UI.Text(list, "body", 12, "muted")
   list.empty:SetPoint("TOPLEFT", 14, -14)
   list.empty:SetPoint("RIGHT", -14, 0)
-  list.empty:SetText("No addon buttons on the minimap.")
+  list.empty:SetText(L["No addon buttons on the minimap."])
   list.rows = {}
   table.insert(UISpecialFrames, "CodexAddonButtonList") -- Esc closes it
   list:Hide()
@@ -310,8 +311,8 @@ local function MoonScripts(on)
       end
       AB.Collect()
       GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-      GameTooltip:AddLine("Addon buttons")
-      GameTooltip:AddLine(("%d on the minimap. Click to list them."):format(#AB.Buttons()), 1, 1, 1)
+      GameTooltip:AddLine(L["Addon buttons"])
+      GameTooltip:AddLine((L["%d on the minimap. Click to list them."]):format(#AB.Buttons()), 1, 1, 1)
       GameTooltip:Show()
     end)
     moon:HookScript("OnLeave", function()
@@ -366,9 +367,8 @@ end
 
 Q.AddToggle({
   key = KEY,
-  name = "Addon buttons in a list",
-  desc = "Hides the buttons addons put round the minimap; click the moon (day and night) at the minimap's edge to "
-    .. "list them, and click one in the list to use it.",
+  name = L["Addon buttons in a list"],
+  desc = L["Hides the buttons addons put round the minimap; click the moon (day and night) at the minimap's edge to list them, and click one in the list to use it."],
   order = 15,
   Enable = function()
     if On() then

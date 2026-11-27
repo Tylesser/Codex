@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Zone levels on the world map. Hovering a zone on a continent map shows, under the game's big zone name, its
 -- level range ("50-58", coloured from your level the way the game colours quests: red far above you, grey far
@@ -385,9 +386,8 @@ end
 
 Q.AddToggle({
   key = KEY,
-  name = "Zone levels on the world map",
-  desc = "Hovering a zone on the map shows its level range (\"50-58\", coloured from your level) and, if you "
-    .. "have them, the Fishing skill it needs and its Mining and Herbalism ranges. A zone map shows its own.",
+  name = L["Zone levels on the world map"],
+  desc = L["Hovering a zone on the map shows its level range (\"50-58\", coloured from your level) and, if you have them, the Fishing skill it needs and its Mining and Herbalism ranges. A zone map shows its own."],
   order = 40,
   Enable = Z.Enable,
   Changed = Z.Changed,

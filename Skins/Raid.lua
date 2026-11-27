@@ -15,7 +15,7 @@ local S = ns.S
 local WHITE = "Interface\\Buttons\\WHITE8X8"
 local PATTERNS = { "^CompactRaidFrame%d+$", "^CompactRaidGroup%dMember%d$", "^CompactPartyFrameMember%d$" }
 local BORDERS = { "horizTopBorder", "horizBottomBorder", "vertLeftBorder", "vertRightBorder", "horizDivider" }
-local GAME_FONT = "Fonts\\FRIZQT__.TTF"
+local GAME_FONT = (STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF")
 local SHADE = 0.38 -- the board's class fill runs from 82 % to 52 % of the class colour: a black shade to .38 at the foot
 
 local function IsCompactFrame(frame)

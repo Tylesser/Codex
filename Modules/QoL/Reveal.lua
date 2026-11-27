@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Reveal unexplored areas on the map: a zone map shows the art of the parts you haven't explored yet too, so the
 -- whole zone is drawn instead of dark gaps. With "Tint unexplored areas" (on by default) those parts are drawn a
@@ -507,9 +508,8 @@ end
 
 Q.AddToggle({
   key = KEY,
-  name = "Reveal unexplored areas on the map",
-  desc = "Zone maps show the parts you haven't explored yet too, instead of leaving them dark. Also on the "
-    .. "small zone map.",
+  name = L["Reveal unexplored areas on the map"],
+  desc = L["Zone maps show the parts you haven't explored yet too, instead of leaving them dark. Also on the small zone map."],
   order = 45,
   Enable = R.Enable,
   Changed = R.Changed,
@@ -517,7 +517,7 @@ Q.AddToggle({
   options = {
     {
       key = TINT_KEY,
-      name = "Tint unexplored areas",
+      name = L["Tint unexplored areas"],
       default = true,
       Changed = function()
         R.Retint()

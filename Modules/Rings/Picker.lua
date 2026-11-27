@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 local R = ns.rings
 local UI = ns.UI
 
@@ -14,15 +15,15 @@ local WIDTH, HEIGHT, ROW = 340, 430, 26
 local window
 
 R.CHOICE_KINDS = {
-  { key = "spells", name = "Spells" },
-  { key = "items", name = "Items in your bags" },
-  { key = "mounts", name = "Mounts" },
-  { key = "toys", name = "Toys" },
-  { key = "macros", name = "Macros" },
-  { key = "markers", name = "Raid markers" },
-  { key = "actions", name = "Actions" },
-  { key = "windows", name = "Windows" },
-  { key = "rings", name = "Other rings" },
+  { key = "spells", name = L["Spells"] },
+  { key = "items", name = L["Items in your bags"] },
+  { key = "mounts", name = L["Mounts"] },
+  { key = "toys", name = L["Toys"] },
+  { key = "macros", name = L["Macros"] },
+  { key = "markers", name = L["Raid markers"] },
+  { key = "actions", name = L["Actions"] },
+  { key = "windows", name = L["Windows"] },
+  { key = "rings", name = L["Other rings"] },
 }
 
 local function Readable(value)
@@ -191,9 +192,9 @@ local function Fill()
   window.list:SetItems(shown)
   window.kindPicker:SetText(KindName(window.kind))
   window.empty:SetShown(#shown == 0)
-  window.empty:SetText(#all == 0 and "Nothing of this kind on this character yet." or "Nothing matches the search.")
+  window.empty:SetText(#all == 0 and L["Nothing of this kind on this character yet."] or L["Nothing matches the search."])
   window.clear:SetShown(ring ~= nil and R.Slices(ring)[window.index] ~= nil)
-  window.title:SetText(("Slot %d of %s"):format(window.index or 1, ring and ring.name or "the ring"))
+  window.title:SetText(L["Slot %d of %s"]:format(window.index or 1, ring and R.RingName(ring) or L["the ring"]))
 end
 
 local function Choose(entry)
@@ -222,7 +223,7 @@ local function Build()
   if type(UISpecialFrames) == "table" then
     table.insert(UISpecialFrames, "CodexRingPicker")
   end
-  window.title = UI.Heading(window, "Slot", 15)
+  window.title = UI.Heading(window, L["Slot"], 15)
   window.title:SetPoint("TOPLEFT", 16, -14)
   window.title:SetPoint("RIGHT", -40, 0)
   window.title:SetJustifyH("LEFT")
@@ -250,7 +251,7 @@ local function Build()
   end)
   local hint = UI.Text(window.search, "body", 12, "muted")
   hint:SetPoint("LEFT", 8, 0)
-  hint:SetText("Search")
+  hint:SetText(L["Search"])
   window.search:HookScript("OnTextChanged", function(self)
     hint:SetShown((self:GetText() or "") == "")
   end)
@@ -289,7 +290,7 @@ local function Build()
   window.empty:SetPoint("TOP", 0, -16)
   window.empty:SetWidth(WIDTH - 60)
 
-  window.clear = UI.Button(window, 130, 24, "Clear this slot")
+  window.clear = UI.Button(window, 130, 24, L["Clear this slot"])
   window.clear:SetPoint("BOTTOMLEFT", 16, 14)
   window.clear:SetScript("OnClick", function()
     local ring = window.ring and R.Find(window.ring)
@@ -303,7 +304,7 @@ local function Build()
   end)
   local tip = UI.Text(window, "body", 11, "muted")
   tip:SetPoint("BOTTOMRIGHT", -16, 20)
-  tip:SetText("Dragging onto a slot works too.")
+  tip:SetText(L["Dragging onto a slot works too."])
   window:Hide()
 end
 

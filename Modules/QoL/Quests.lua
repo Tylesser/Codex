@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Quest info in tooltips: a mob or item that one of your active quests needs gets the quest's title (in its
 -- difficulty colour) and the matching objective ("Witherbark Scalper slain: 3/10", green with a tick when done)
@@ -27,6 +28,20 @@ local function Readable(value)
 end
 
 -- "Witherbark Scalper slain: 3/10" -> "Witherbark Scalper", 3, 10.
+-- The word the game puts after a creature's name in a kill objective (QUEST_MONSTERS_KILLED "%s slain: %d/%d"; in
+-- German " getötet"), so other languages find the creature's name too (2026-11-27 audit). English as a fallback.
+local slainFrom, slainWord
+local function Slain()
+  local format = QUEST_MONSTERS_KILLED
+  if format ~= slainFrom then
+    slainFrom = format
+    local word = type(format) == "string" and format:match("^%%s(.-):")
+    slainWord = word and word ~= "" and word or " slain"
+  end
+  return slainWord or " slain"
+end
+QT.Slain = Slain
+
 function QT.ParseObjective(text)
   if type(text) ~= "string" then
     return nil
@@ -37,6 +52,10 @@ function QT.ParseObjective(text)
   end
   if not name then
     return nil
+  end
+  local slain = Slain()
+  if name:sub(-#slain) == slain then
+    name = name:sub(1, -#slain - 1)
   end
   name = name:gsub("%s+slain$", ""):gsub("^%s+", ""):gsub("%s+$", "")
   if name == "" then
@@ -203,7 +222,7 @@ local function Add(tooltip, key, lines)
   added[tooltip] = key
   -- the "Quest" section heading of the tooltip skin (TylesserCodex.TooltipSection), when it is on
   if ns.API.TooltipSection then
-    ns.API.TooltipSection(tooltip, "Quest")
+    ns.API.TooltipSection(tooltip, L["Quest"])
   end
   for _, line in ipairs(lines) do
     tooltip:AddLine(line[1], line[2], line[3], line[4])
@@ -296,7 +315,7 @@ function QT.OnItem(tooltip, data)
   if not gameStarts then
     local info = BagQuestInfo(tooltip)
     if info and info.questID and not info.isActive then
-      lines[#lines + 1] = { "Starts a quest", 1, 0.82, 0 }
+      lines[#lines + 1] = { L["Starts a quest"], 1, 0.82, 0 }
     end
   end
   Add(tooltip, "item:" .. id, lines)
@@ -334,9 +353,8 @@ end
 
 Q.AddToggle({
   key = "questTooltips",
-  name = "Quest info in tooltips",
-  desc = "Mobs and items your quests need show the quest and your progress (\"Witherbark Scalper slain: 3/10\"); "
-    .. "bag items that start a quest say so.",
+  name = L["Quest info in tooltips"],
+  desc = L["Mobs and items your quests need show the quest and your progress (\"Witherbark Scalper slain: 3/10\"); bag items that start a quest say so."],
   order = 20,
   Enable = QT.Enable,
   Elsewhere = QT.Elsewhere,

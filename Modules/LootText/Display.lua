@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Loot text, part 2: the lines on screen. One holder `CodexLootText` (moved in Edit Mode like the personal bars;
 -- each look keeps its own place), lines from a pool: icon, text in the theme's body font with an outline (they sit
@@ -34,14 +35,14 @@ LT.ICONS = {
 
 -- The game's own sounds (SOUNDKIT names and IDs from Blizzard_SharedXML/Mainline/SoundKitConstants.lua).
 LT.SOUNDS = {
-  { "coin", "Loot coin", "LOOT_WINDOW_COIN_SOUND", 120 },
-  { "toast", "Friend toast", "UI_BNET_TOAST", 18019 },
-  { "questdone", "Quest complete", "IG_QUEST_LIST_COMPLETE", 878 },
-  { "ping", "Map ping", "MAP_PING", 3175 },
-  { "raidwarning", "Raid warning", "RAID_WARNING", 8959 },
-  { "readycheck", "Ready check", "READY_CHECK", 8960 },
-  { "epicloot", "Epic loot", "UI_EPICLOOT_TOAST", 31578 },
-  { "none", "None" },
+  { "coin", L["Loot coin"], "LOOT_WINDOW_COIN_SOUND", 120 },
+  { "toast", L["Friend toast"], "UI_BNET_TOAST", 18019 },
+  { "questdone", L["Quest complete"], "IG_QUEST_LIST_COMPLETE", 878 },
+  { "ping", L["Map ping"], "MAP_PING", 3175 },
+  { "raidwarning", L["Raid warning"], "RAID_WARNING", 8959 },
+  { "readycheck", L["Ready check"], "READY_CHECK", 8960 },
+  { "epicloot", L["Epic loot"], "UI_EPICLOOT_TOAST", 31578 },
+  { "none", L["None"] },
 }
 
 function LT.PlaySound(key)
@@ -113,14 +114,14 @@ function LT.LineText(data)
     local own, others = LT.Totals(data.info.id)
     if own and own > 0 then
       text = text .. ("|cff%s (%s%s)|r"):format(muted, Number(own),
-        others > 0 and (" · " .. Number(own + others) .. " all") or "")
+        others > 0 and (" · " .. L["%s all"]:format(Number(own + others))) or "")
     end
     if data.value and data.value > 0 then
       text = text .. ("|cff%s · |r"):format(muted) .. LT.Coins(data.value)
     end
     return text, data.info.icon or "Interface\\Icons\\INV_Misc_QuestionMark"
   elseif kind == "junk" then
-    local text = ("|cff%sJunk x%d|r"):format(QualityHex(0), data.amount)
+    local text = ("|cff%s%s|r"):format(QualityHex(0), L["Junk x%d"]:format(data.amount))
     if data.value and data.value > 0 then
       text = text .. ("|cff%s · |r"):format(muted) .. LT.Coins(data.value)
     end
@@ -132,14 +133,14 @@ function LT.LineText(data)
     return ("|cff%s%s%s %s|r"):format(Hex(good and "good" or "bad", good and "40c040" or "e04040"),
       good and "+" or "-", Number(math.abs(data.amount)), data.name), LT.ICONS.reputation
   elseif kind == "xp" then
-    local text = ("|cff%s+%s XP|r"):format(Hex("accent", "b080ff"), Number(data.amount))
+    local text = ("|cff%s%s|r"):format(Hex("accent", "b080ff"), L["+%s XP"]:format(Number(data.amount)))
     if data.left and db.xp then
-      text = text .. ("|cff%s (%s more to level)|r"):format(muted, Number(data.left))
+      text = text .. ("|cff%s %s|r"):format(muted, L["(%s more to level)"]:format(Number(data.left)))
     end
     return text, LT.ICONS.xp
   elseif kind == "honor" then
     local faction = UnitFactionGroup and UnitFactionGroup("player")
-    return ("|cff%s+%s Honor|r"):format(Hex("warn", "ffb040"), Number(data.amount)),
+    return ("|cff%s%s|r"):format(Hex("warn", "ffb040"), L["+%s Honor"]:format(Number(data.amount))),
       faction == "Horde" and "Interface\\Icons\\INV_BannerPVP_01" or LT.ICONS.honor
   elseif kind == "currency" then
     return ("|cff%s+%s %s|r"):format(Hex("bright", "ffffff"), Number(data.amount), data.name),
@@ -147,10 +148,10 @@ function LT.LineText(data)
   elseif kind == "skill" then
     return ("|cff%s%s %d|r"):format(Hex("accent", "80c0ff"), data.name, data.rank or 0), LT.ICONS.skill
   elseif kind == "legacy" then
-    local text = ("|cff%s+%s Legacy %s|r"):format(Hex("good", "40c040"), Number(data.amount),
-      data.amount == 1 and "point" or "points")
+    local text = ("|cff%s%s|r"):format(Hex("good", "40c040"),
+      data.amount == 1 and L["+1 Legacy point"] or L["+%s Legacy points"]:format(Number(data.amount)))
     if data.total then
-      text = text .. ("|cff%s (%s in all)|r"):format(muted, Number(data.total))
+      text = text .. ("|cff%s %s|r"):format(muted, L["(%s in all)"]:format(Number(data.total)))
     end
     return text, LT.ICONS.legacy
   end
@@ -390,7 +391,7 @@ function LT.ShowBanner(data)
       fs:SetFont(font, size, "OUTLINE")
     end
   end
-  banner.title:SetText("Watched item")
+  banner.title:SetText(L["Watched item"])
   local text, icon = LT.LineText(data)
   banner.text:SetText(text)
   banner.icon:SetTexture(icon)
@@ -470,7 +471,7 @@ local function BuildMover()
   local label = mover:CreateFontString(nil, "OVERLAY")
   UI.Font(label, "body", 12, "bright")
   label:SetPoint("BOTTOM", mover, "TOP", 0, 3)
-  label:SetText("Loot text")
+  label:SetText(L["Loot text"])
   mover:SetScript("OnDragStart", function()
     holder:StartMoving()
   end)

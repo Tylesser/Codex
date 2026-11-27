@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Info bars, part 3: the chat panel's two corner buttons.
 --   Hide chat: the chat windows, their tabs and side buttons fade out (alpha only: nothing is hidden, moved or
@@ -191,7 +192,7 @@ local copy
 local function ChatName(frame)
   local id = frame.GetID and I.Num(frame:GetID())
   local name = id and I.Str(I.Ask(GetChatWindowInfo, id))
-  return name or "Chat"
+  return name or L["Chat"]
 end
 
 local function CreateCopy()
@@ -206,7 +207,7 @@ local function CreateCopy()
   copy:SetScript("OnDragStart", copy.StartMoving)
   copy:SetScript("OnDragStop", copy.StopMovingOrSizing)
   UI.Panel(copy)
-  local heading = UI.Heading(copy, "Copy chat", 16)
+  local heading = UI.Heading(copy, L["Copy chat"], 16)
   heading:SetPoint("TOPLEFT", 18, -16)
   copy.sub = UI.Text(copy, "body", 12, "muted")
   copy.sub:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -4)
@@ -247,8 +248,9 @@ function I.ShowCopy()
   end
   local lines = frame and I.ChatLines(frame, COPY_LINES) or {}
   copy.text = table.concat(lines, "\n")
-  copy.sub:SetText(("%s, the last %d line%s. Select what you want and copy it with Ctrl+C.")
-    :format(frame and ChatName(frame) or "Chat", #lines, #lines == 1 and "" or "s"))
+  copy.sub:SetText((#lines == 1 and L["%s, the last %d line. Select what you want and copy it with Ctrl+C."]
+    or L["%s, the last %d lines. Select what you want and copy it with Ctrl+C."])
+    :format(frame and ChatName(frame) or L["Chat"], #lines))
   copy:Show()
   -- the scroll area's width is 0 until the game has laid the window out (the first open showed an empty box:
   -- a negative width, 2026-11-20): then the width the window's size gives (600 - insets)

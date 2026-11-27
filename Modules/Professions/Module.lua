@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Professions module, part 6: events, start-up and registration. Profit Sort ported into Codex, with Codex's
 -- own auction prices instead of Auctionator's. While the standalone Profit Sort addon is loaded Codex leaves
@@ -56,11 +57,11 @@ end
 
 ns.RegisterModule({
   id = "professions",
-  name = "Professions",
+  name = L["Professions"],
   -- its section in the Codex window (Areas.lua)
   area = "trade", sectionOrder = 20, folded = true, pageEstimate = 330,
   icon = "Interface\\Icons\\Trade_BlackSmithing",
-  desc = "Reagent cost, auction value and profit in the profession window, a profit list, and craft cost in item tooltips.",
+  desc = L["Reagent cost, auction value and profit in the profession window, a profit list, and craft cost in item tooltips."],
   standalone = "ProfitSort",
   standaloneName = "Profit Sort",
   order = 35,

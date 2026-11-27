@@ -6,6 +6,7 @@ local addonName, ns = ...
 -- turn-ins. Ported from Tylesser - Commerce Authority's window, drawn with Codex's widgets in the active theme.
 
 local C = ns.commerce
+local L = ns.L
 local UI = ns.UI
 
 local WIDTH = 400
@@ -16,16 +17,19 @@ local TITLE_H = 34
 local CHEAP_ROWS = 8
 local DELIVERY_ROWS = 4
 -- the cheapest list's rankings, switched by one button
-local MODE_LABELS = { writ = "By writ", npc = "By NPC", zone = "By zone" }
+local MODE_LABELS = { writ = L["By writ"], npc = L["By NPC"], zone = L["By zone"] }
 local NEXT_MODE = { writ = "npc", npc = "zone", zone = "writ" }
 local MODE_HELP = {
-  writ = "Writs sorted by what each costs per 100 reputation (the writ and the item it asks for).",
-  npc = "The NPCs who take writs, by what buying all their priced writs costs per 100 reputation: one shopping "
-    .. "list, one trip.",
-  zone = "Zones, by what buying all the priced writs their NPCs take costs per 100 reputation: one shopping list, "
-    .. "one trip around the zone.",
+  writ = L["Writs sorted by what each costs per 100 reputation (the writ and the item it asks for)."],
+  npc = L["The NPCs who take writs, by what buying all their priced writs costs per 100 reputation: one shopping list, one trip."],
+  zone = L["Zones, by what buying all the priced writs their NPCs take costs per 100 reputation: one shopping list, one trip around the zone."],
 }
 local window
+
+-- "1 writ" / "5 writs" and the like.
+local function Writs(count)
+  return count == 1 and L["1 writ"] or L["%d writs"]:format(count)
+end
 
 -- The standalone addon's colour codes in the theme's own colours (a light theme needs darker ones).
 local TONES = { ["|cff999999"] = "muted", ["|cff666666"] = "muted", ["|cff40ff40"] = "good", ["|cffffd100"] = "warn",
@@ -160,23 +164,23 @@ local function CustomerTooltip(row)
   for _, entry in ipairs(group.writs) do
     local writ = C.WRITS[entry.writID]
     local tier = C.WritTier(entry.writID)
-    GameTooltip:AddDoubleLine(("%s |cff999999(%s, %d)|r"):format(writ[3], tier.name, entry.rep),
+    GameTooltip:AddDoubleLine(("%s |cff999999(%s, %d)|r"):format(writ[3], C.TierName(tier.name), entry.rep),
       C.Money(entry.total), 1, 1, 1, 1, 1, 1)
   end
-  GameTooltip:AddLine(("All %d: %s for %s reputation, %s per 100"):format(#group.writs, C.Money(group.total),
+  GameTooltip:AddLine(L["All %d: %s for %s reputation, %s per 100"]:format(#group.writs, C.Money(group.total),
     C.Number(group.rep), C.Money(group.per100)), 0.25, 1, 0.25)
   if group.have > 0 then
-    GameTooltip:AddLine(("You also hold %d writ%s for %s: deliver %s on the same trip."):format(group.have,
-      group.have == 1 and "" or "s", customer.name, group.have == 1 and "it" or "them"), 1, 0.82, 0, true)
+    local text = group.have == 1 and L["You also hold 1 writ for %s: deliver it on the same trip."]:format(customer.name)
+      or L["You also hold %d writs for %s: deliver them on the same trip."]:format(group.have, customer.name)
+    GameTooltip:AddLine(text, 1, 0.82, 0, true)
   end
   local missing = #C.CustomerWrits(customer) - #group.writs - group.have
   if missing > 0 then
-    GameTooltip:AddLine(("%d more writ%s for %s with no auction price yet."):format(missing,
-      missing == 1 and "" or "s", customer.name), 0.6, 0.6, 0.6, true)
+    local text = missing == 1 and L["1 more writ for %s with no auction price yet."]:format(customer.name)
+      or L["%d more writs for %s with no auction price yet."]:format(missing, customer.name)
+    GameTooltip:AddLine(text, 0.6, 0.6, 0.6, true)
   end
-  GameTooltip:AddLine("Click: search the auction house for these writs and their items (the materials, for items "
-    .. "cheaper to craft) when it's open, else make the Codex buy list. Way: waypoint to " .. customer.name .. ".",
-    0.6, 0.6, 0.6, true)
+  GameTooltip:AddLine(L["Click: search the auction house for these writs and their items (the materials, for items cheaper to craft) when it's open, else make the Codex buy list. Way: waypoint to %s."]:format(customer.name), 0.6, 0.6, 0.6, true)
   GameTooltip:Show()
 end
 
@@ -190,19 +194,18 @@ local function ZoneTooltip(row)
     for _, entry in ipairs(group.writs) do
       local writ = C.WRITS[entry.writID]
       local tier = C.WritTier(entry.writID)
-      GameTooltip:AddDoubleLine(("  %s |cff999999(%s, %d)|r"):format(writ[3], tier.name, entry.rep),
+      GameTooltip:AddDoubleLine(("  %s |cff999999(%s, %d)|r"):format(writ[3], C.TierName(tier.name), entry.rep),
         C.Money(entry.total), 1, 1, 1, 1, 1, 1)
     end
   end
-  GameTooltip:AddLine(("All %d writs: %s for %s reputation, %s per 100"):format(#zone.writs, C.Money(zone.total),
+  GameTooltip:AddLine(L["All %d writs: %s for %s reputation, %s per 100"]:format(#zone.writs, C.Money(zone.total),
     C.Number(zone.rep), C.Money(zone.per100)), 0.25, 1, 0.25)
   if zone.have > 0 then
-    GameTooltip:AddLine(("You also hold %d writ%s for NPCs here: deliver %s on the same trip."):format(zone.have,
-      zone.have == 1 and "" or "s", zone.have == 1 and "it" or "them"), 1, 0.82, 0, true)
+    local text = zone.have == 1 and L["You also hold 1 writ for NPCs here: deliver it on the same trip."]
+      or L["You also hold %d writs for NPCs here: deliver them on the same trip."]:format(zone.have)
+    GameTooltip:AddLine(text, 1, 0.82, 0, true)
   end
-  GameTooltip:AddLine("Click: search the auction house for these writs and their items (the materials, for items "
-    .. "cheaper to craft) when it's open, else make the Codex buy list. Way: waypoints to the NPCs (all of them "
-    .. "with TomTom, else the first).", 0.6, 0.6, 0.6, true)
+  GameTooltip:AddLine(L["Click: search the auction house for these writs and their items (the materials, for items cheaper to craft) when it's open, else make the Codex buy list. Way: waypoints to the NPCs (all of them with TomTom, else the first)."], 0.6, 0.6, 0.6, true)
   GameTooltip:Show()
 end
 
@@ -210,7 +213,7 @@ local function CheapRow(index)
   local row = CreateFrame("Button", nil, window)
   row:SetSize(INNER, 17)
   C.RowHighlight(row)
-  row.way = UI.Button(row, 40, 16, "Way")
+  row.way = UI.Button(row, 40, 16, L["Way"])
   row.way:SetPoint("RIGHT", 0, 0)
   row.way:SetScript("OnClick", function()
     if row.zone then
@@ -233,8 +236,7 @@ local function CheapRow(index)
     elseif self.group then
       CustomerTooltip(self)
     elseif self.writID then
-      ItemTooltip(self, self.writID, "Click at the auction house to search for it and its item (or the item's "
-        .. "materials, when crafting it is cheaper). Shift-click to link it.")
+      ItemTooltip(self, self.writID, L["Click at the auction house to search for it and its item (or the item's materials, when crafting it is cheaper). Shift-click to link it."])
     end
   end)
   row:SetScript("OnLeave", HideTooltip)
@@ -275,7 +277,7 @@ end
 
 local function WritName(writID)
   local writ = C.Writ(writID)
-  return writ and writ[3] or ("item " .. writID)
+  return writ and writ[3] or L["item %d"]:format(writID)
 end
 C.WritName = WritName
 
@@ -296,18 +298,17 @@ local function CrateTooltip(row)
   local crate = row.crate
   GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
   GameTooltip:AddLine(crate.info.name)
-  GameTooltip:AddLine(("%d in your bags: about %s Merchant's Favor each"):format(crate.count,
+  GameTooltip:AddLine(L["%d in your bags: about %s Merchant's Favor each"]:format(crate.count,
     C.Number(crate.favor)), 1, 1, 1, true)
   for _, option in ipairs(crate.options) do
-    local have = option.owned > 0 and (" |cff999999(you have %d)|r"):format(option.owned) or ""
-    GameTooltip:AddDoubleLine(C.Tone(("Fill: %d %s%s"):format(option.count, option.name, have)),
-      option.cost and C.Money(option.cost) or C.Tone("|cff999999no price|r"), 1, 1, 1, 1, 1, 1)
+    local have = option.owned > 0 and (" |cff999999" .. L["(you have %d)"]:format(option.owned) .. "|r") or ""
+    GameTooltip:AddDoubleLine(C.Tone(L["Fill: %d %s"]:format(option.count, option.name) .. have),
+      option.cost and C.Money(option.cost) or C.Tone("|cff999999" .. L["no price"] .. "|r"), 1, 1, 1, 1, 1, 1)
   end
   if #crate.options == 0 then
-    GameTooltip:AddLine("What fills it isn't known.", 0.6, 0.6, 0.6, true)
+    GameTooltip:AddLine(L["What fills it isn't known."], 0.6, 0.6, 0.6, true)
   end
-  GameTooltip:AddLine("Click: search the auction house for what fills it when it's open, else put the cheapest "
-    .. "fill on the Codex buy list.", 0.6, 0.6, 0.6, true)
+  GameTooltip:AddLine(L["Click: search the auction house for what fills it when it's open, else put the cheapest fill on the Codex buy list."], 0.6, 0.6, 0.6, true)
   GameTooltip:Show()
 end
 
@@ -325,22 +326,22 @@ local function DeliveryTooltip(row)
   if customer then
     GameTooltip:AddLine(customer.name)
     GameTooltip:AddLine(("%s %.1f, %.1f%s"):format(C.MapName(customer.mapID), customer.x, customer.y,
-      customer.learned and " (seen at your turn-in)" or ""), 0.6, 0.6, 0.6)
+      customer.learned and (" " .. L["(seen at your turn-in)"]) or customer.collected and (" " .. L["(players' data)"])
+      or ""), 0.6, 0.6, 0.6)
   else
     GameTooltip:AddLine(WritName(group.writs[1].writID))
-    GameTooltip:AddLine("Who takes this writ isn't known yet. Use it, and the game marks the spot on your map; "
-      .. "Codex remembers the NPC once you turn it in.", 1, 1, 1, true)
+    GameTooltip:AddLine(L["Who takes this writ isn't known yet. Use it, and the game marks the spot on your map; Codex remembers the NPC once you turn it in."], 1, 1, 1, true)
   end
   local mine = {}
   for _, entry in ipairs(group.writs) do
     mine[entry.writID] = true
     local state
     if entry.ready then
-      state = "|cff40ff40ready|r"
+      state = "|cff40ff40" .. L["ready"] .. "|r"
     elseif entry.questID then
-      state = "|cffffd100needs the item|r"
+      state = "|cffffd100" .. L["needs the item"] .. "|r"
     else
-      state = "|cff999999not opened, needs the item|r"
+      state = "|cff999999" .. L["not opened, needs the item"] .. "|r"
     end
     GameTooltip:AddDoubleLine(WritName(entry.writID), state, 1, 1, 1, 1, 1, 1)
   end
@@ -352,7 +353,7 @@ local function DeliveryTooltip(row)
       end
     end
     if #others > 0 then
-      GameTooltip:AddLine("Also takes: " .. table.concat(others, ", "), 0.6, 0.6, 0.6, true)
+      GameTooltip:AddLine(L["Also takes: %s"]:format(table.concat(others, ", ")), 0.6, 0.6, 0.6, true)
     end
   end
   GameTooltip:Show()
@@ -364,19 +365,19 @@ local function DeliveryRow()
   C.RowHighlight(row)
   row:SetScript("OnEnter", DeliveryTooltip)
   row:SetScript("OnLeave", HideTooltip)
-  row.way = UI.Button(row, 44, 17, "Way")
+  row.way = UI.Button(row, 44, 17, L["Way"])
   row.way:SetPoint("RIGHT", 0, 0)
   row.way:SetScript("OnClick", function()
     Way(row)
   end)
   row.way:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-    GameTooltip:AddLine("Waypoint")
-    GameTooltip:AddLine("Puts a waypoint on who takes these writs (TomTom when installed).", 1, 1, 1, true)
+    GameTooltip:AddLine(L["Waypoint"])
+    GameTooltip:AddLine(L["Puts a waypoint on who takes these writs (TomTom when installed)."], 1, 1, 1, true)
     GameTooltip:Show()
   end)
   row.way:SetScript("OnLeave", HideTooltip)
-  row.start = UI.Button(row, 48, 17, "Start")
+  row.start = UI.Button(row, 48, 17, L["Start"])
   row.start:SetPoint("RIGHT", row.way, "LEFT", -4, 0)
   row.start:SetScript("OnClick", function()
     local writID = row.group and C.StartableWrit(row.group)
@@ -390,9 +391,9 @@ local function DeliveryRow()
   row.start:SetScript("OnEnter", function(self)
     local writID = row.group and C.StartableWrit(row.group)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-    GameTooltip:AddLine("Start")
-    GameTooltip:AddLine(("Opens the quest of %s: your bags hold what it asks for. Each click starts one writ."):format(
-      writID and WritName(writID) or "the writ"), 1, 1, 1, true)
+    GameTooltip:AddLine(L["Start"])
+    GameTooltip:AddLine(L["Opens the quest of %s: your bags hold what it asks for. Each click starts one writ."]:format(
+      writID and WritName(writID) or L["the writ"]), 1, 1, 1, true)
     GameTooltip:Show()
   end)
   row.start:SetScript("OnLeave", HideTooltip)
@@ -432,34 +433,30 @@ end
 
 local function BuyTooltip(self)
   GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-  GameTooltip:AddLine("Buy list")
-  local list = "Makes the Codex shopping list \"" .. C.SHOPPING_LIST .. "\" with "
+  GameTooltip:AddLine(L["Buy list"])
   if C.CheapestMode() == "zone" then
     local zone = C.CheapestZones(1)[1]
-    GameTooltip:AddLine(list .. "every priced writ taken in the cheapest zone, and the items they ask for. Click a "
-      .. "zone's row for that zone's.", 1, 1, 1, true)
+    GameTooltip:AddLine(L["Makes the Codex shopping list \"%s\" with every priced writ taken in the cheapest zone, and the items they ask for. Click a zone's row for that zone's."]:format(C.SHOPPING_LIST), 1, 1, 1, true)
     if zone then
-      GameTooltip:AddLine(("%s: %d writs for %d NPCs, %s reputation, about %s"):format(zone.name, #zone.writs,
+      GameTooltip:AddLine(L["%s: %d writs for %d NPCs, %s reputation, about %s"]:format(zone.name, #zone.writs,
         #zone.npcs, C.Number(zone.rep), C.Money(zone.total)), 0.25, 1, 0.25)
     end
   elseif C.CheapestMode() == "npc" then
     local group = C.CheapestCustomers(1)[1]
-    GameTooltip:AddLine(list .. "every priced writ the cheapest NPC takes, and the items they ask for. Click an "
-      .. "NPC's row for that NPC's.", 1, 1, 1, true)
+    GameTooltip:AddLine(L["Makes the Codex shopping list \"%s\" with every priced writ the cheapest NPC takes, and the items they ask for. Click an NPC's row for that NPC's."]:format(C.SHOPPING_LIST), 1, 1, 1, true)
     if group then
-      GameTooltip:AddLine(("%s: %d writs, %s reputation, about %s"):format(group.customer.name, #group.writs,
+      GameTooltip:AddLine(L["%s: %d writs, %s reputation, about %s"]:format(group.customer.name, #group.writs,
         C.Number(group.rep), C.Money(group.total)), 0.25, 1, 0.25)
     end
   else
     local plan = C.PlanPurchases()
-    GameTooltip:AddLine(list .. "the cheapest writs for the reputation you still need to your next standing, and "
-      .. "the items they ask for.", 1, 1, 1, true)
+    GameTooltip:AddLine(L["Makes the Codex shopping list \"%s\" with the cheapest writs for the reputation you still need to your next standing, and the items they ask for."]:format(C.SHOPPING_LIST), 1, 1, 1, true)
     if #plan.picks > 0 then
-      GameTooltip:AddLine(("%d writs, about %s reputation, about %s"):format(#plan.picks, C.Number(plan.rep),
+      GameTooltip:AddLine(L["%d writs, about %s reputation, about %s"]:format(#plan.picks, C.Number(plan.rep),
         C.Money(plan.cost)), 0.25, 1, 0.25)
     end
   end
-  GameTooltip:AddLine("At the auction house, click the list in the Codex panel to search it.", 0.6, 0.6, 0.6, true)
+  GameTooltip:AddLine(L["At the auction house, click the list in the Codex panel to search it."], 0.6, 0.6, 0.6, true)
   GameTooltip:Show()
 end
 
@@ -500,20 +497,20 @@ local function Create()
   window.favor:SetPoint("RIGHT", -PAD, 0)
   window.favor:SetWordWrap(false)
 
-  Heading(-110, "In your bags")
+  Heading(-110, L["In your bags"])
   window.bags = Text(window)
   window.bags:SetPoint("TOPLEFT", PAD, -130)
   window.bags:SetPoint("RIGHT", -PAD, 0)
   window.bags:SetSpacing(2)
 
-  Heading(-192, "Deliveries", 86)
-  local allNPCs = UI.Button(window, 76, 20, "All NPCs")
+  Heading(-192, L["Deliveries"], 86)
+  local allNPCs = UI.Button(window, 76, 20, L["All NPCs"])
   allNPCs:SetPoint("RIGHT", window, "TOPRIGHT", -PAD, -199) -- on the heading's middle
   allNPCs:SetScript("OnClick", function()
     C.ToggleNPCWindow()
   end)
-  TipButton(allNPCs, "Writ NPCs", "Every NPC who takes writs, with all its writs and which of them you have "
-    .. "(/codex commerce npcs).")
+  TipButton(allNPCs, L["Writ NPCs"], L["Every NPC who takes writs, with all its writs and which of them you have (%s)."]:format(
+    "/codex commerce npcs"))
   window.deliveries = {}
   for index = 1, DELIVERY_ROWS do
     local row = DeliveryRow()
@@ -524,14 +521,14 @@ local function Create()
   window.noDeliveries:SetPoint("TOPLEFT", PAD + 2, -214)
   window.noDeliveries:SetPoint("RIGHT", -PAD, 0)
 
-  Heading(-294, "Next standings")
+  Heading(-294, L["Next standings"])
   window.goals = Text(window)
   window.goals:SetPoint("TOPLEFT", PAD, -314)
   window.goals:SetPoint("RIGHT", -PAD, 0)
   window.goals:SetSpacing(2)
 
-  Heading(-368, "Cheapest reputation")
-  local mine = UI.Check(window, "Only my professions")
+  Heading(-368, L["Cheapest reputation"])
+  local mine = UI.Check(window, L["Only my professions"])
   mine:SetPoint("TOPLEFT", PAD - 2, -386)
   UI.Font(mine.label, "body", 11, "text")
   mine:SetScript("OnShow", function(self)
@@ -560,12 +557,12 @@ local function Create()
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
     GameTooltip:AddLine(MODE_LABELS[C.CheapestMode()])
     GameTooltip:AddLine(MODE_HELP[C.CheapestMode()], 1, 1, 1, true)
-    GameTooltip:AddLine("Click to switch: by writ, by NPC, by zone.", 0.6, 0.6, 0.6)
+    GameTooltip:AddLine(L["Click to switch: by writ, by NPC, by zone."], 0.6, 0.6, 0.6)
     GameTooltip:Show()
   end)
   mode:SetScript("OnLeave", HideTooltip)
   window.mode = mode
-  local buy = UI.Button(window, 96, 20, "Buy list")
+  local buy = UI.Button(window, 96, 20, L["Buy list"])
   buy:SetPoint("TOPRIGHT", -PAD, -386)
   buy:SetScript("OnClick", function()
     if C.CheapestMode() == "zone" then
@@ -600,22 +597,22 @@ end
 local function Bags(summary)
   local lines = {}
   if summary.writs > 0 then
-    lines[#lines + 1] = ("%d writs: %s reputation"):format(summary.writs, C.Number(summary.writRep))
+    lines[#lines + 1] = L["%d writs: %s reputation"]:format(summary.writs, C.Number(summary.writRep))
   end
   if summary.sealedWrits > 0 then
-    lines[#lines + 1] = ("%d sealed writs: %s reputation once done"):format(summary.sealedWrits,
+    lines[#lines + 1] = L["%d sealed writs: %s reputation once done"]:format(summary.sealedWrits,
       C.Number(summary.sealedRep))
   end
   if summary.crates > 0 then
-    lines[#lines + 1] = ("%d filled crates: about %s Favor + %s"):format(summary.crates,
+    lines[#lines + 1] = L["%d filled crates: about %s Favor + %s"]:format(summary.crates,
       C.Number(C.ExpectedFavor(summary.crateFavor)), C.Money(summary.crateFavor * C.COPPER_PER_FAVOR))
   end
   if summary.toFill > 0 then
-    lines[#lines + 1] = ("%d crates to fill: about %s Favor"):format(summary.toFill,
+    lines[#lines + 1] = L["%d crates to fill: about %s Favor"]:format(summary.toFill,
       C.Number(C.ExpectedFavor(summary.fillFavor)))
   end
   if #lines == 0 then
-    return "No writs or crates in your bags."
+    return L["No writs or crates in your bags."]
   end
   return table.concat(lines, "\n")
 end
@@ -624,8 +621,8 @@ C.BagsText = Bags
 local function Goals(faction, bagRep)
   local upcoming = C.NextStandings(faction)
   if #upcoming == 0 then
-    return faction and "Exalted. Nothing left to earn here but Merchant's Favor." or
-      "Turn in your first crate at the trade hub to start."
+    return faction and L["Exalted. Nothing left to earn here but Merchant's Favor."] or
+      L["Turn in your first crate at the trade hub to start."]
   end
   local lines = {}
   local fewest = C.TierRep(C.WRIT_TIERS[3])
@@ -633,12 +630,12 @@ local function Goals(faction, bagRep)
   for index = 1, math.min(#upcoming, 3) do
     local goal = upcoming[index]
     local needed = math.max(goal.needed - bagRep, 0)
-    local text = ("%s: %s more"):format(C.StandingName(goal.standingID), C.Number(goal.needed))
+    local text = L["%s: %s more"]:format(C.StandingName(goal.standingID), C.Number(goal.needed))
     if bagRep > 0 then
-      text = text .. (" (%s after your bags)"):format(C.Number(needed))
+      text = text .. " " .. L["(%s after your bags)"]:format(C.Number(needed))
     end
     if needed > 0 then
-      text = text .. (", %d-%d writs"):format(math.ceil(needed / fewest), math.ceil(needed / most))
+      text = text .. ", " .. L["%d-%d writs"]:format(math.ceil(needed / fewest), math.ceil(needed / most))
     end
     lines[#lines + 1] = text
   end
@@ -648,27 +645,28 @@ C.GoalsText = Goals
 
 -- "Kzixx, Duskwood: 2 writs, 1 ready" or "Radiant Circlet (Artisan): who takes it isn't known yet"
 local function DeliveryText(group)
-  local ready = group.ready > 0 and (" |cff40ff40%d ready|r"):format(group.ready) or ""
+  local ready = group.ready > 0 and (" |cff40ff40" .. L["%d ready"]:format(group.ready) .. "|r") or ""
   if group.customer then
-    local what = #group.writs == 1 and WritName(group.writs[1].writID) or (#group.writs .. " writs")
+    local what = #group.writs == 1 and WritName(group.writs[1].writID) or Writs(#group.writs)
     return ("%s |cff999999%s|r: %s%s"):format(group.customer.name, C.MapName(group.customer.mapID), what,
       ready ~= "" and "," .. ready or "")
   end
-  return ("%s |cff999999(not known who takes it)|r%s"):format(WritName(group.writs[1].writID), ready)
+  return ("%s |cff999999%s|r%s"):format(WritName(group.writs[1].writID), L["(not known who takes it)"], ready)
 end
 
 -- "Crate: Journeyman Ore x2: fill 20 Iron Ore, 20s" (or "ready to fill" when your bags hold enough)
 local function CrateText(crate)
-  local name = crate.info.name:gsub("^Waylaid Crate: ", "Crate: ")
+  local short = crate.info.name:match("^Waylaid Crate: (.+)$")
+  local name = short and L["Crate: %s"]:format(short) or crate.info.name
   local times = crate.count > 1 and (" x%d"):format(crate.count) or ""
   if crate.ready then
-    return ("%s%s |cff40ff40ready to fill|r"):format(name, times)
+    return ("%s%s |cff40ff40%s|r"):format(name, times, L["ready to fill"])
   end
   local option = crate.options[1]
   if not option then
-    return ("%s%s |cff999999(fill not known)|r"):format(name, times)
+    return ("%s%s |cff999999%s|r"):format(name, times, L["(fill not known)"])
   end
-  return ("%s%s|cff999999: fill %d %s%s|r"):format(name, times, option.count, option.name,
+  return ("%s%s|cff999999: %s%s|r"):format(name, times, L["fill %d %s"]:format(option.count, option.name),
     option.cost and (", " .. C.ShortMoney(option.cost)) or "")
 end
 
@@ -688,7 +686,7 @@ local function Deliveries(counts)
     if group or crate then
       local text = group and DeliveryText(group) or CrateText(crate)
       if index == DELIVERY_ROWS and #groups > DELIVERY_ROWS then
-        text = text .. (" |cff999999+%d more|r"):format(#groups - DELIVERY_ROWS)
+        text = text .. " |cff999999" .. L["+%d more"]:format(#groups - DELIVERY_ROWS) .. "|r"
       end
       SetText(row.name, text)
       row.way:SetShown(group ~= nil and (group.customer ~= nil or group.writs[1].questID ~= nil))
@@ -701,8 +699,7 @@ local function Deliveries(counts)
     end
   end
   if #groups == 0 then
-    window.noDeliveries:SetText("No writs or crates. The writs you hold show here, grouped by who takes them, "
-      .. "then the crates you have to fill.")
+    window.noDeliveries:SetText(L["No writs or crates. The writs you hold show here, grouped by who takes them, then the crates you have to fill."])
   else
     window.noDeliveries:SetText("")
   end
@@ -717,7 +714,7 @@ local function CheapestByNPC(counts)
     CheapLayout(row, true)
     if group then
       row.group = group
-      local what = #group.writs == 1 and C.WRITS[group.writs[1].writID][3] or (#group.writs .. " writs")
+      local what = #group.writs == 1 and C.WRITS[group.writs[1].writID][3] or Writs(#group.writs)
       SetText(row.name, ("%s |cff999999%s|r: %s"):format(group.customer.name, C.MapName(group.customer.mapID),
         what))
       SetText(row.cost, ("%s |cff999999· %s / 100|r"):format(C.ShortMoney(group.total),
@@ -740,8 +737,8 @@ local function CheapestByZone(counts)
     CheapLayout(row, true)
     if zone then
       row.zone = zone
-      SetText(row.name, ("%s|cff999999:|r %d NPC%s, %d writ%s"):format(zone.name, #zone.npcs,
-        #zone.npcs == 1 and "" or "s", #zone.writs, #zone.writs == 1 and "" or "s"))
+      local npcs = #zone.npcs == 1 and L["1 NPC"] or L["%d NPCs"]:format(#zone.npcs)
+      SetText(row.name, ("%s|cff999999:|r %s, %s"):format(zone.name, npcs, Writs(#zone.writs)))
       SetText(row.cost, ("%s |cff999999· %s / 100|r"):format(C.ShortMoney(zone.total), C.ShortMoney(zone.per100)))
       row:Show()
     else
@@ -755,11 +752,11 @@ end
 -- Why the cheapest list is empty.
 function C.EmptyCheapestText()
   if #C.PriceSourceNames() == 0 then
-    return "Switch on Codex's Auction House module and scan the auction house to see writ prices."
+    return L["Switch on Codex's Auction House module and scan the auction house to see writ prices."]
   elseif C.DB().onlyMyProfessions and next(C.PlayerProfessions()) == nil then
-    return "No crafting profession found on this character."
+    return L["No crafting profession found on this character."]
   end
-  return "No priced writs yet. Scan the auction house, or search for \"Craftsman's Writ\"."
+  return L["No priced writs yet. Scan the auction house, or search for \"%s\"."]:format("Craftsman's Writ")
 end
 
 local function Cheapest(counts)
@@ -781,7 +778,7 @@ local function Cheapest(counts)
       CheapLayout(row, false)
       row.group, row.zone = nil, nil
       row.writID = entry.writID
-      SetText(row.name, ("%s |cff999999(%s, %d)|r"):format(writ[3], tier.name, entry.rep))
+      SetText(row.name, ("%s |cff999999(%s, %d)|r"):format(writ[3], C.TierName(tier.name), entry.rep))
       SetText(row.cost, ("%s |cff999999/ 100|r"):format(C.Money(entry.per100)))
       row:Show()
     else
@@ -797,7 +794,7 @@ function C.FactionText(faction)
   if faction then
     return ("%s: |cffffffff%s|r"):format(faction.name, C.StandingName(faction.standingID))
   end
-  return C.MyFactionName() .. ": |cff999999no reputation yet|r"
+  return C.MyFactionName() .. ": |cff999999" .. L["no reputation yet"] .. "|r"
 end
 
 function C.RefreshWindow()
@@ -820,19 +817,19 @@ function C.RefreshWindow()
   else
     bar.fill:SetWidth(0.01)
     bar.bags:SetWidth(0.01)
-    bar.text:SetText("Trade hub: " .. (C.HUBS[C.Side()] or C.HUBS.Alliance))
+    bar.text:SetText(L["Trade hub: %s"]:format(C.HubText()))
   end
 
   local favor = C.Favor()
   if favor then
-    local text = "Merchant's Favor: |cffffffff" .. C.Number(favor) .. "|r"
+    local text = L["Merchant's Favor: %s"]:format("|cffffffff" .. C.Number(favor) .. "|r")
     local coming = C.ExpectedFavor(summary.crateFavor)
     if coming > 0 then
-      text = text .. ("  |cff999999(about %s after your crates)|r"):format(C.Number(favor + coming))
+      text = text .. "  |cff999999" .. L["(about %s after your crates)"]:format(C.Number(favor + coming)) .. "|r"
     end
     SetText(window.favor, text)
   else
-    window.favor:SetText("Merchant's Favor: not found")
+    window.favor:SetText(L["Merchant's Favor: not found"])
   end
   window.bags:SetText(Bags(summary))
   Deliveries(counts)
@@ -842,9 +839,9 @@ function C.RefreshWindow()
   Cheapest(counts)
 
   local session = C.session
-  window.session:SetText(("This session: +%s Favor, +%s reputation, %d crates, %d writs%s"):format(
-    C.Number(session.favor), C.Number(session.rep), session.crates, session.writs,
-    session.bonuses > 0 and (", " .. session.bonuses .. " bonus") or ""))
+  window.session:SetText(L["This session: +%s Favor, +%s reputation, %d crates, %d writs"]:format(
+    C.Number(session.favor), C.Number(session.rep), session.crates, session.writs)
+    .. (session.bonuses > 0 and (", " .. L["%d bonus"]:format(session.bonuses)) or ""))
 end
 
 local function RefreshAll()
@@ -872,7 +869,7 @@ end
 
 function C.ToggleWindow()
   if not C.running then
-    ns.Say("the Commerce module is off; switch it on in the Codex window.")
+    ns.Say(L["the Commerce module is off; switch it on in the Codex window."])
     return
   end
   if not window then

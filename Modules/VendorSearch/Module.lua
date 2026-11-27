@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Vendor search module, part 3: settings, events, the module's page, commands and registration. Tylesser - Vendor
 -- Search ported into Codex: a search box on the vendor window that filters its own item grid by name, type or
@@ -105,18 +106,15 @@ end
 local view = {}
 
 local OPTIONS = {
-  { "fade", "Fade instead of hide", "Keep the vendor's own pages and fade the items that don't match; Enter turns to the first page with a match." },
-  { "bagCount", "How many you have", "A backpack mark with the count from your bags and bank on each item." },
+  { "fade", L["Fade instead of hide"], L["Keep the vendor's own pages and fade the items that don't match; Enter turns to the first page with a match."] },
+  { "bagCount", L["How many you have"], L["A backpack mark with the count from your bags and bank on each item."] },
 }
 
-local HOW = "Talk to a vendor: a search box sits at the top of the vendor window. Type part of an item's name, "
-  .. "type or slot (\"vial\", \"recipe cooking\", \"head\"); every word must match. The vendor's own window shows "
-  .. "the matches, so buying, tooltips and item previews work as usual. Under the box, \"Unknown recipes\" "
-  .. "shows only recipes you haven't learned and \"Usable\" only what your character can use; both reset when "
-  .. "the vendor closes. Learned recipes get a green \"Known\" mark.\n\nAlt-drag the box to move it."
+local HOW = L["Talk to a vendor: a search box sits at the top of the vendor window. Type part of an item's name, type or slot (\"vial\", \"recipe cooking\", \"head\"); every word must match. The vendor's own window shows the matches, so buying, tooltips and item previews work as usual. Under the box, \"Unknown recipes\" shows only recipes you haven't learned and \"Usable\" only what your character can use; both reset when the vendor closes. Learned recipes get a green \"Known\" mark."]
+  .. "\n\n" .. L["Alt-drag the box to move it."]
 
 function V.StatusText()
-  return "A search box on the vendor window."
+  return L["A search box on the vendor window."]
 end
 
 function V.RefreshPage()
@@ -140,7 +138,7 @@ end
 function V.BuildPage(page)
   V.DB()
   view.page = page
-  local heading = UI.Heading(page, "Vendor search", 20)
+  local heading = UI.Heading(page, L["Vendor search"], 20)
   heading:SetPoint("TOPLEFT")
   local status = UI.Text(page, "body", 12, "muted")
   status:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -4)
@@ -170,7 +168,7 @@ function V.BuildPage(page)
     anchor = check
   end
 
-  local reset = UI.Button(page, 190, 24, "Put the search box back")
+  local reset = UI.Button(page, 190, 24, L["Put the search box back"])
   reset:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -14)
   reset:SetScript("OnClick", function()
     V.ResetBox()
@@ -178,7 +176,7 @@ function V.BuildPage(page)
 
   local how = UI.Text(page, "head", 12, "accent")
   how:SetPoint("TOPLEFT", reset, "BOTTOMLEFT", 0, -18)
-  how:SetText("How it works")
+  how:SetText(L["How it works"])
   local text = UI.Text(page, "body", 12, "text")
   text:SetPoint("TOPLEFT", how, "BOTTOMLEFT", 0, -6)
   text:SetPoint("RIGHT", 0, 0)
@@ -196,7 +194,7 @@ function V.ResetBox()
   if V.running then
     V.Filter:ResetPosition()
   end
-  ns.Say("vendor search box moved back to its default place.")
+  ns.Say(L["search box moved back to its default place."])
 end
 
 -- /codex vendorsearch [reset | help]; anything else (or nothing) puts the cursor in the box at a vendor
@@ -205,16 +203,16 @@ function V.Slash(rest)
   if command == "reset" then
     V.ResetBox()
   elseif command == "help" then
-    ns.Say("Vendor search commands:")
-    print("  /codex vendorsearch: put the cursor in the vendor's search box")
-    print("  /codex vendorsearch reset: move the search box back to its default place")
-    print("  /codex vendorsearch options: this module's page in the Codex window")
+    ns.Say(L["Vendor search commands:"])
+    print("  /codex vendorsearch: " .. L["put the cursor in the search box"])
+    print("  /codex vendorsearch reset: " .. L["move the search box back to its default place"])
+    print("  /codex vendorsearch options: " .. L["this module's page in the Codex window"])
   elseif command == "options" then
     ns.ShowPage("vendorsearch")
   elseif not V.running then
-    ns.Say("the Vendor search module is off; switch it on in the Codex window.")
+    ns.Say(L["the Vendor search module is off; switch it on in the Codex window."])
   elseif not MerchantOpen() then
-    ns.Say("talk to a vendor to search their items. /codex vendorsearch help lists the commands.")
+    ns.Say(L["talk to a vendor to search their items. Type %s for commands."]:format("/codex vendorsearch help"))
   else
     V.Filter:Focus()
   end
@@ -222,12 +220,11 @@ end
 
 ns.RegisterModule({
   id = "vendorsearch",
-  name = "Vendor search",
+  name = L["Vendor search"],
   -- its section in the Codex window (Areas.lua)
   area = "trade", sectionOrder = 32, folded = true, pageEstimate = 260,
   icon = "Interface\\Icons\\INV_Misc_Spyglass_02",
-  desc = "A search box on the vendor window: filter its items by name, type or slot, unknown recipes or usable "
-    .. "items, with bag counts and \"Known\" marks.",
+  desc = L["A search box on the vendor window: filter its items by name, type or slot, unknown recipes or usable items, with bag counts and \"Known\" marks."],
   standalone = "VendorSearch",
   standaloneName = "Vendor Search",
   order = 97,

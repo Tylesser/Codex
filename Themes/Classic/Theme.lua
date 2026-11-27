@@ -6,7 +6,7 @@ local SILVER, SILVER_DARK, GOLD = { 0.66, 0.66, 0.69 }, { 0.23, 0.23, 0.25 }, { 
 TylesserCodex.RegisterTheme({
   id = "classic", name = "Classic",
   swatch = { 0.65, 0.11, 0.11 },
-  font = { head = "Fonts\\FRIZQT__.TTF", headSize = 1.05 },
+  font = { head = (STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"), headSize = 1.05 },
   text = { 1, 1, 1 }, muted = { 0.71, 0.71, 0.71 }, accent = GOLD, bright = { 1, 1, 1 },
   titleText = GOLD, good = { 0.1, 1, 0.1 }, bad = { 1, 0.13, 0.13 }, warn = GOLD,
   panel = { from = { 0.04, 0.04, 0.05 }, to = { 0.11, 0.11, 0.13 }, alpha = 0.95 },

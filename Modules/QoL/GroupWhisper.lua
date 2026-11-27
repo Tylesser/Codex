@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Whisper group leaders (2026-11-27, the user's wish): a "Whisper" button on every group in the game's Looking For
 -- Group window that sends the leader the message written on the Chat page, in one click.
@@ -66,7 +67,7 @@ local function UpdateButton(button)
   end
   button.leader = leader
   local done = RecentlySent(leader)
-  button:SetText(done and "Sent" or "Whisper")
+  button:SetText(done and L["Sent"] or L["Whisper##button"])
   button:SetEnabled(not done)
   button:Show()
 end
@@ -75,13 +76,13 @@ end
 function Q.WhisperLeader(button)
   local text = Message()
   if not text then
-    ns.Say("Write your message first: Chat page, \"Whisper group leaders\".")
+    ns.Say(L["Write your message first: Chat page, \"Whisper group leaders\"."])
     ns.ShowPage("qol-" .. KEY)
     return false
   end
   local leader = Leader(button.resultID)
   if not leader then
-    ns.Say("This group's leader can't be whispered right now.")
+    ns.Say(L["This group's leader can't be whispered right now."])
     return false
   end
   if RecentlySent(leader) then
@@ -113,7 +114,7 @@ local function Decorate(entry)
     if not Q.On(KEY) then
       return
     end
-    button = UI.Button(entry, 62, 16, "Whisper")
+    button = UI.Button(entry, 62, 16, L["Whisper##button"])
     button:SetPoint("BOTTOMRIGHT", -8, 3)
     button:SetFrameLevel(entry:GetFrameLevel() + 5)
     button:SetScript("OnClick", function(self)
@@ -121,9 +122,9 @@ local function Decorate(entry)
     end)
     button:SetScript("OnEnter", function(self)
       GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-      GameTooltip:AddLine("Whisper the leader")
-      GameTooltip:AddLine(Message() and ("Sends " .. (self.leader or "the leader") .. ": " .. Message())
-        or "Write your message on the Chat page first (Whisper group leaders).", 0.8, 0.8, 0.8, true)
+      GameTooltip:AddLine(L["Whisper the leader"])
+      GameTooltip:AddLine(Message() and L["Sends %s: %s"]:format(self.leader or L["the leader"], Message())
+        or L["Write your message on the Chat page first (Whisper group leaders)."], 0.8, 0.8, 0.8, true)
       GameTooltip:Show()
     end)
     button:SetScript("OnLeave", GameTooltip_Hide)
@@ -174,7 +175,7 @@ local function BuildMessage(body, last, sub)
   sub.holder = holder
   sub.label = UI.Text(holder, "body", 12, "text")
   sub.label:SetPoint("LEFT", 0, 0)
-  sub.label:SetText("Message")
+  sub.label:SetText(L["Message"])
   local box = UI.EditBox(holder, 300, 22)
   box:SetPoint("LEFT", 80, 0)
   box:SetPoint("RIGHT", 0, 0)
@@ -202,17 +203,16 @@ local function RefreshMessage(sub, on)
   if not on then
     sub.status:SetText("")
   elseif Message() then
-    sub.status:SetText("Each group in the Looking For Group window has a Whisper button that sends this to its leader.")
+    sub.status:SetText(L["Each group in the Looking For Group window has a Whisper button that sends this to its leader."])
   else
-    sub.status:SetText("Write the message the Whisper button sends, e.g. \"Hi, 60 mage LF Scholo, can I join?\"")
+    sub.status:SetText(L["Write the message the Whisper button sends, e.g. \"Hi, 60 mage LF Scholo, can I join?\""])
   end
 end
 
 Q.AddToggle({
   key = KEY,
-  name = "Whisper group leaders",
-  desc = "A Whisper button on every group in the Looking For Group window: one click sends the group's leader "
-    .. "your message. The same leader can be whispered again after two minutes.",
+  name = L["Whisper group leaders"],
+  desc = L["A Whisper button on every group in the Looking For Group window: one click sends the group's leader your message. The same leader can be whispered again after two minutes."],
   default = true,
   order = 75,
   Enable = Enable,

@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 local R = ns.rings
 
 -- Rings (off by default; standalone = OPie, so while OPie is loaded Codex leaves rings to it unless forced):
@@ -17,9 +18,9 @@ local function RingCommand(_, rest)
   if not ring then
     local names = {}
     for _, each in ipairs(R.Rings()) do
-      names[#names + 1] = each.name
+      names[#names + 1] = R.RingName(each)
     end
-    ns.Say(("No ring called %s. Rings: %s."):format(name, #names > 0 and table.concat(names, ", ") or "none"))
+    ns.Say(L["No ring called %s. Rings: %s."]:format(name, #names > 0 and table.concat(names, ", ") or L["none##rings"]))
     return
   end
   local ok, why = R.ToggleAtCursor(ring)
@@ -30,11 +31,11 @@ end
 
 ns.RegisterModule({
   id = "rings",
-  name = "Rings",
+  name = L["Rings"],
   -- its section in the Codex window (Areas.lua)
   area = "ringmenus", sectionOrder = 10, pageEstimate = 470,
   icon = "Interface\\Icons\\Spell_Arcane_PortalDalaran",
-  desc = "Hold a key and a ring of spells, items, mounts or markers opens round the mouse; point and let go.",
+  desc = L["Hold a key and a ring of spells, items, mounts or markers opens round the mouse; point and let go."],
   standalone = "OPie",
   default = false,
   order = 32,

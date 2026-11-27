@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- First-run setup (board R3-Setup): five steps, Welcome > Theme > Interface parts > Action bars > Done.
 -- It opens once, a few seconds after the first login with Codex (CodexDB.setupDone; installs from before the
@@ -10,8 +11,11 @@ local addonName, ns = ...
 local UI = ns.UI
 local WIDTH, HEIGHT = 776, 616
 local STEPS = { "Welcome", "Theme", "Interface parts", "Action bars", "Done" }
+-- what the step row and the Next button show (STEPS stays English: S.STEPS for the tests)
+local STEP_NAMES = { L["Welcome"], L["Theme"], L["Interface parts"], L["Action bars"], L["Done"] }
+local NEXT_TEXT = { nil, L["Next: theme"], L["Next: interface parts"], L["Next: action bars"], L["Next: done"] }
 local CIRCLE = "Interface\\AddOns\\Codex\\Media\\Circle"
-local GAME_FONT = "Fonts\\FRIZQT__.TTF"
+local GAME_FONT = (STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF")
 
 local S = {}
 ns.setup = S
@@ -90,16 +94,14 @@ end
 -- Step 1: welcome ------------------------------------------------------------------------------------------
 
 builders[1] = function(page, width)
-  local heading = UI.Heading(page, "Welcome to Codex", 20)
+  local heading = UI.Heading(page, L["Welcome to Codex"], 20)
   heading:SetPoint("TOPLEFT")
   local intro = Wrapped(page, 14, "text", width)
   intro:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -10)
   intro:SetSpacing(3)
-  intro:SetText("Codex brings the Tylesser tools together in one addon. Each feature has its own switch "
-    .. "in the Codex window; a feature that is off does nothing at all.\n\nThis short setup picks a theme, which parts of "
-    .. "the game's interface Codex restyles, and a tidy layout for your action bars. Nothing here is final: "
-    .. "/codex opens the window to change all of it later, and /codex setup brings this window back.")
-  local label = UI.Section(page, "What's inside")
+  intro:SetText(L["Codex brings the Tylesser tools together in one addon. Each feature has its own switch in the Codex window; a feature that is off does nothing at all."]
+    .. "\n\n" .. L["This short setup picks a theme, which parts of the game's interface Codex restyles, and a tidy layout for your action bars. Nothing here is final: /codex opens the window to change all of it later, and /codex setup brings this window back."])
+  local label = UI.Section(page, L["What's inside"])
   label:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", 0, -22)
   local list = ns.ModulesInOrder and ns.ModulesInOrder() or ns.moduleList
   local columns = 3
@@ -423,17 +425,17 @@ local function BuildScene(parent, id)
 end
 S.BuildScene = BuildScene
 
-local FONT_NAMES = { runestone = "Cinzel and Friz Quadrata", hearthwood = "IM Fell English SC and Friz Quadrata",
+local FONT_NAMES = { runestone = L["Cinzel and Friz Quadrata"], hearthwood = L["IM Fell English SC and Friz Quadrata"],
   classic = "Friz Quadrata", slate = "Arial Narrow", dusk = "Inter", obsidian = "Inter",
   onyx = "Inter", bronze = "Friz Quadrata" }
 
 builders[2] = function(page, width)
   local leftWidth = 420
-  local heading = UI.Heading(page, "Pick a theme", 17)
+  local heading = UI.Heading(page, L["Pick a theme"], 17)
   heading:SetPoint("TOPLEFT")
   local intro = Wrapped(page, 13, "muted", leftWidth)
   intro:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -4)
-  intro:SetText("Every window, bar and tooltip Codex restyles follows it. You can change it later on the Look page.")
+  intro:SetText(L["Every window, bar and tooltip Codex restyles follows it. You can change it later on the Look page."])
 
   local gap = 10
   local perRow = 3 -- six themes: two rows of three
@@ -492,7 +494,7 @@ builders[2] = function(page, width)
 
   local accentLabel = UI.Text(page, "body", 13, "text")
   accentLabel:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -64 - rows * (cardHeight + gap) - 6)
-  accentLabel:SetText("Accent colour")
+  accentLabel:SetText(L["Accent colour"])
   page.accent = ns.Segmented(page, ns.ACCENT_CHOICES, function()
     return ns.LookValue("accent")
   end, function(key)
@@ -513,7 +515,7 @@ builders[2] = function(page, width)
   local previewWidth = width - previewX
   local previewLabel = UI.Text(page, "body", 12, "muted")
   previewLabel:SetPoint("TOPLEFT", page, "TOPLEFT", previewX, 0)
-  previewLabel:SetText("Live preview")
+  previewLabel:SetText(L["Live preview"])
   page.fonts = UI.Text(page, "body", 12, "muted")
   page.fonts:SetPoint("TOPRIGHT", page, "TOPRIGHT", 0, 0)
   page.fonts:SetJustifyH("RIGHT")
@@ -533,7 +535,7 @@ builders[2] = function(page, width)
         line:SetShown(on)
       end
       card.dot:SetVertexColor(UI.Unpack(on and theme.accent or { 0, 0, 0, 0.7 }))
-      card.tag:SetText(on and (theme.id == id and "In use" or "After reload") or "")
+      card.tag:SetText(on and (theme.id == id and L["In use"] or L["After reload"]) or "")
     end
     page.accent:Refresh()
     if ns.THEME_PREVIEW[picked] then
@@ -548,7 +550,7 @@ builders[2] = function(page, width)
     page.fonts:SetText(FONT_NAMES[picked] or "")
     local info = ns.ThemeInfo(picked)
     if theme.id ~= picked and info then
-      page.note:SetText(("%s shows after a reload (the last step offers one)."):format(info.name))
+      page.note:SetText(L["%s shows after a reload (the last step offers one)."]:format(info.name))
     else
       page.note:SetText("")
     end
@@ -558,13 +560,12 @@ end
 -- Step 3: the restyle switch and its parts ---------------------------------------------------------------------
 
 builders[3] = function(page, width)
-  local heading = UI.Heading(page, "Interface parts", 17)
+  local heading = UI.Heading(page, L["Interface parts"], 17)
   heading:SetPoint("TOPLEFT")
   local intro = Wrapped(page, 13, "muted", width)
   intro:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -4)
-  intro:SetText("Codex can restyle the game's own frames in your theme. Edit Mode still decides where they sit. "
-    .. "Changes here show after a reload.")
-  local skins = UI.Check(page, "Restyle the game's interface with this theme")
+  intro:SetText(L["Codex can restyle the game's own frames in your theme. Edit Mode still decides where they sit. Changes here show after a reload."])
+  local skins = UI.Check(page, L["Restyle the game's interface with this theme"])
   UI.Font(skins.label, "body", 13, "bright")
   skins:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", -2, -12)
   skins:SetScript("OnClick", function(self)
@@ -617,12 +618,12 @@ end
 -- Step 4: the action bar guide and the spacing check --------------------------------------------------------------
 
 builders[4] = function(page, width)
-  local heading = UI.Heading(page, "Action bars", 17)
+  local heading = UI.Heading(page, L["Action bars"], 17)
   heading:SetPoint("TOPLEFT")
   local intro = Wrapped(page, 13, "muted", width)
   intro:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -4)
-  intro:SetText("Edit Mode moves the bars; Codex can draw a panel behind each one. These steps give a tidy layout.")
-  local panels = UI.Check(page, "Panel behind the action bars")
+  intro:SetText(L["Edit Mode moves the bars; Codex can draw a panel behind each one. These steps give a tidy layout."])
+  local panels = UI.Check(page, L["Panel behind the action bars"])
   UI.Font(panels.label, "body", 13, "bright")
   panels:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", -2, -12)
   panels:SetScript("OnClick", function(self)
@@ -638,7 +639,7 @@ builders[4] = function(page, width)
   guide:SetPoint("TOPLEFT", panels, "BOTTOMLEFT", 2, -30)
   guide:SetSpacing(4)
   guide:SetText(ns.BAR_GUIDE or "")
-  local check = UI.Button(page, 140, 26, "Check spacing")
+  local check = UI.Button(page, 140, 26, L["Check spacing"])
   check:SetPoint("TOPLEFT", guide, "BOTTOMLEFT", 0, -14)
   local result = Wrapped(page, 12, "good", width)
   result:SetPoint("TOPLEFT", check, "BOTTOMLEFT", 0, -8)
@@ -646,7 +647,7 @@ builders[4] = function(page, width)
     local text = ns.BarSpacingText and ns.BarSpacingText() or ""
     result:SetText(text)
     local theme = Theme()
-    result:SetTextColor(UI.Unpack(text:find("^All clear") and theme.good or theme.text))
+    result:SetTextColor(UI.Unpack(text == L["All clear: no panels overlap."] and theme.good or theme.text))
   end)
   page.result = result
   page.checkButton = check
@@ -655,25 +656,26 @@ builders[4] = function(page, width)
     panels:SetChecked(ns.SkinPartWanted("barpanels"))
     panels:SetEnabled(on)
     panels:SetAlpha(on and 1 or 0.5)
-    panelsNote:SetText(on and "One panel per bar, fitted to its buttons. Shows after a reload."
-      or "Needs \"Restyle the game's interface\" (the step before).")
+    panelsNote:SetText(on and L["One panel per bar, fitted to its buttons. Shows after a reload."]
+      or L["Needs \"Restyle the game's interface\" (the step before)."])
   end
 end
 
 -- Step 5: done ---------------------------------------------------------------------------------------------------
 
 builders[5] = function(page, width)
-  local heading = UI.Heading(page, "All set", 20)
+  local heading = UI.Heading(page, L["All set"], 20)
   heading:SetPoint("TOPLEFT")
   local summary = Wrapped(page, 14, "text", width)
   summary:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -12)
   summary:SetSpacing(5)
   page.summary = summary
-  local reload = UI.Button(page, 150, 28, "Reload now")
+  local reload = UI.Button(page, 150, 28, L["Reload now"])
   reload:SetPoint("TOPLEFT", summary, "BOTTOMLEFT", 0, -18)
   -- only reached in combat or when the secure button could not be made: the overlay takes the click
   reload:SetScript("OnClick", function()
-    Say(InCombatLockdown() and "type /reload after the fight to apply your changes." or "type /reload to apply your changes.")
+    Say(InCombatLockdown() and L["type /reload after the fight to apply your changes."]
+      or L["type /reload to apply your changes."])
   end)
   reload:HookScript("OnShow", S.PlaceOverlay)
   reload:HookScript("OnHide", S.PlaceOverlay)
@@ -681,19 +683,19 @@ builders[5] = function(page, width)
   local reloadNote = Wrapped(page, 12, "muted", width - 170)
   reloadNote:SetPoint("LEFT", reload, "RIGHT", 12, 0)
   page.reloadNote = reloadNote
-  local tipsLabel = UI.Section(page, "Good to know")
+  local tipsLabel = UI.Section(page, L["Good to know"])
   tipsLabel:SetPoint("TOPLEFT", reload, "BOTTOMLEFT", 0, -26)
   local tips = Wrapped(page, 13, "text", width)
   tips:SetPoint("TOPLEFT", tipsLabel, "BOTTOMLEFT", 0, -8)
   tips:SetSpacing(4)
-  tips:SetText("/codex opens Codex.\n/codex settings changes anything you picked here.\n"
-    .. "/codex profile keeps different settings per character, and shares them as text.\n"
-    .. "/codex setup runs this setup again.")
+  tips:SetText(L["/codex opens Codex."] .. "\n" .. L["/codex settings changes anything you picked here."] .. "\n"
+    .. L["/codex profile keeps different settings per character, and shares them as text."] .. "\n"
+    .. L["/codex setup runs this setup again."])
   page.refresh = function()
     local info = ns.ThemeInfo(ns.db.theme) or ns.THEMES[1]
     local lines = {}
-    lines[#lines + 1] = ("Theme: %s%s"):format(info.name, Theme().id ~= info.id and " (after a reload)" or "")
-    lines[#lines + 1] = ("Accent: %s"):format(ns.LookValue("accent") == "class" and "class colour" or "the theme's")
+    lines[#lines + 1] = L["Theme: %s%s"]:format(info.name, Theme().id ~= info.id and L[" (after a reload)"] or "")
+    lines[#lines + 1] = L["Accent: %s"]:format(ns.LookValue("accent") == "class" and L["class colour"] or L["the theme's"])
     if ns.db.skins.enabled then
       local on = 0
       for _, part in ipairs(ns.SKIN_PARTS or {}) do
@@ -701,9 +703,9 @@ builders[5] = function(page, width)
           on = on + 1
         end
       end
-      lines[#lines + 1] = ("Game interface: restyled, %d of %d parts"):format(on, #(ns.SKIN_PARTS or {}))
+      lines[#lines + 1] = L["Game interface: restyled, %d of %d parts"]:format(on, #(ns.SKIN_PARTS or {}))
     else
-      lines[#lines + 1] = "Game interface: left as the game draws it"
+      lines[#lines + 1] = L["Game interface: left as the game draws it"]
     end
     -- the info bar moves the minimap and buffs out of its way (the user's choice, 2026-11-17); done here too so a
     -- fresh install sees it before the first reload (combat: the module repeats it after the fight)
@@ -711,12 +713,12 @@ builders[5] = function(page, width)
     if makeRoom and ns.ModuleState and ns.ModuleState("infobar") == "on" then
       local moved = makeRoom()
       if type(moved) == "table" and #moved > 0 then
-        lines[#lines + 1] = "Info bar: moved out of its way: " .. table.concat(moved, ", ")
+        lines[#lines + 1] = L["Info bar: moved out of its way: %s"]:format(table.concat(moved, ", "))
       end
     end
     summary:SetText(table.concat(lines, "\n"))
     reload:SetShown(ns.pendingReload and true or false)
-    reloadNote:SetText(ns.pendingReload and "Your choices take effect after a reload." or "")
+    reloadNote:SetText(ns.pendingReload and L["Your choices take effect after a reload."] or "")
     S.PlaceOverlay()
   end
 end
@@ -750,7 +752,7 @@ local function StepMarker(nav, index, x, width)
   marker.tick:SetPoint("CENTER", marker.disc, "CENTER", 1, 0)
   marker.label = UI.Text(marker, "body", 12, "muted")
   marker.label:SetPoint("TOP", marker.disc, "BOTTOM", 0, -5)
-  marker.label:SetText(STEPS[index])
+  marker.label:SetText(STEP_NAMES[index])
   return marker
 end
 
@@ -797,10 +799,10 @@ function S.Go(step)
     page.refresh()
   end
   UpdateNav(step)
-  window.stepText:SetText(("Step %d of %d"):format(step, #STEPS))
+  window.stepText:SetText(L["Step %d of %d"]:format(step, #STEPS))
   window.back:SetEnabled(step > 1)
   window.skip:SetShown(step < #STEPS)
-  window.next:SetText(step < #STEPS and ("Next: " .. STEPS[step + 1]:lower()) or "Finish")
+  window.next:SetText(step < #STEPS and NEXT_TEXT[step + 1] or L["Finish"])
   S.PlaceOverlay()
 end
 
@@ -844,7 +846,7 @@ local function CreateWindow()
   emblem:SetPoint("LEFT", 6, 0)
   local title = UI.Text(bar, "head", 15, "titleText")
   title:SetPoint("LEFT", emblem, "RIGHT", 8, 0)
-  title:SetText(theme.titlebar.upper and "CODEX SETUP" or "Codex setup")
+  title:SetText(theme.titlebar.upper and L["Codex setup"]:upper() or L["Codex setup"])
   local close = UI.CloseButton(window)
   close:SetParent(bar)
   close:SetPoint("RIGHT", -4, 0)
@@ -877,7 +879,7 @@ local function CreateWindow()
   skip:SetPoint("BOTTOMLEFT", 20, 13)
   skip.label = UI.Text(skip, "body", 13, "muted")
   skip.label:SetPoint("LEFT", 4, 0)
-  skip.label:SetText("Skip setup")
+  skip.label:SetText(L["Skip setup"])
   local underline = skip:CreateTexture(nil, "ARTWORK")
   underline:SetPoint("TOPLEFT", skip.label, "BOTTOMLEFT", 0, -2)
   underline:SetPoint("TOPRIGHT", skip.label, "BOTTOMRIGHT", 0, -2)
@@ -893,7 +895,7 @@ local function CreateWindow()
     window:Hide()
   end)
   window.skip = skip
-  local nextButton = UI.Button(window, 180, 28, "Next")
+  local nextButton = UI.Button(window, 180, 28, L["Next"])
   nextButton:SetPoint("BOTTOMRIGHT", -20, 13)
   nextButton:SetScript("OnClick", function()
     if window.step < #STEPS then
@@ -903,7 +905,7 @@ local function CreateWindow()
     end
   end)
   window.next = nextButton
-  local back = UI.Button(window, 90, 28, "Back")
+  local back = UI.Button(window, 90, 28, L["Back"])
   back:SetPoint("RIGHT", nextButton, "LEFT", -10, 0)
   back:SetScript("OnClick", function()
     S.Go(window.step - 1)
@@ -948,7 +950,7 @@ end
 function ns.ShowSetup(step, quiet)
   if InCombatLockdown() then
     if not quiet then
-      Say("the setup opens after the fight.")
+      Say(L["the setup opens after the fight."])
     end
     waitingForCombat = true
     S.WaitForCombat()

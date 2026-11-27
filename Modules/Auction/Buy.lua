@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Auction house module, part 2c: the Buy button of "Below vendor" (2026-11-27, the user's wish). One click buys
 -- the top item of the list, and only what is still under the vendor price right now:
@@ -133,7 +134,7 @@ end
 
 local function ItemName(key)
   local name = A.ItemInfo(key, true)
-  return name or A.CachedName(key) or ("Item " .. key)
+  return name or A.CachedName(key) or L["Item %s"]:format(key)
 end
 
 -- Searches the top item so the next click can buy it. Called whenever the list or the panel changes.
@@ -240,7 +241,7 @@ local function Done(ok, why)
     buy.bought = buy.bought + offer.quantity
     buy.spent = buy.spent + offer.total
     buy.profit = buy.profit + (offer.sell * offer.quantity - offer.total)
-    ns.Say(("Bought %d %s for %s (a vendor pays %s)."):format(offer.quantity, ItemName(key), ns.Money(offer.total),
+    ns.Say(L["Bought %d %s for %s (a vendor pays %s)."]:format(offer.quantity, ItemName(key), ns.Money(offer.total),
       ns.Money(offer.sell * offer.quantity)))
   elseif why then
     ns.Say(why)
@@ -259,7 +260,7 @@ local function Timeout(gen)
       if buy.state == "quote" and C_AuctionHouse.CancelCommoditiesPurchase then
         pcall(C_AuctionHouse.CancelCommoditiesPurchase)
       end
-      Done(false, "The auction house didn't answer; nothing more was bought.")
+      Done(false, L["The auction house didn't answer; nothing more was bought."])
     end
   end)
 end
@@ -269,14 +270,14 @@ end
 function A.BuyNext()
   local buy = A.buy
   if not A.open then
-    return false, "Open the auction house first."
+    return false, L["Open the auction house first."]
   end
   if buy.state == "quote" or buy.state == "buying" then
-    return false, "Still buying the last one."
+    return false, L["Still buying the last one."]
   end
   if buy.state ~= "ready" or not buy.offer then
     A.PrepareBuy()
-    return false, Target() and "Checking the price; click again in a moment." or "Nothing to buy below the vendor price."
+    return false, Target() and L["Checking the price; click again in a moment."] or L["Nothing to buy below the vendor price."]
   end
   local api = C_AuctionHouse
   local offer = buy.offer
@@ -284,18 +285,18 @@ function A.BuyNext()
     Reset()
     A.PrepareBuy()
     Changed()
-    return false, "Not enough gold for it."
+    return false, L["Not enough gold for it."]
   end
   if buy.kind == "commodity" then
     if not api.StartCommoditiesPurchase then
-      return false, "This game version can't buy from here."
+      return false, L["This game version can't buy from here."]
     end
     buy.state = "quote"
     -- (Blizzard's buy view passes the price per item as well: AuctionHouseFrameMixin:StartCommoditiesPurchase)
     api.StartCommoditiesPurchase(buy.key, offer.quantity, math.ceil(offer.total / offer.quantity))
   else
     if not api.PlaceBid then
-      return false, "This game version can't buy from here."
+      return false, L["This game version can't buy from here."]
     end
     buy.state = "buying"
     api.PlaceBid(offer.auctionID, offer.total)
@@ -319,7 +320,7 @@ function handlers.COMMODITY_PRICE_UPDATED(_, total)
   local api = C_AuctionHouse
   if type(total) ~= "number" or total >= offer.sell * offer.quantity or total > Money() then
     pcall(api.CancelCommoditiesPurchase)
-    Done(false, ("%s got dearer before the purchase; nothing was bought."):format(ItemName(buy.key)))
+    Done(false, L["%s got dearer before the purchase; nothing was bought."]:format(ItemName(buy.key)))
     return
   end
   offer.total = total
@@ -331,7 +332,7 @@ end
 function handlers.COMMODITY_PRICE_UNAVAILABLE()
   if A.buy.state == "quote" then
     pcall(C_AuctionHouse.CancelCommoditiesPurchase)
-    Done(false, "That price isn't available any more; nothing was bought.")
+    Done(false, L["That price isn't available any more; nothing was bought."])
   end
 end
 
@@ -344,7 +345,7 @@ end
 function handlers.COMMODITY_PURCHASE_FAILED()
   local state = A.buy.state
   if (state == "buying" or state == "quote") and A.buy.kind == "commodity" then
-    Done(false, "The purchase failed; nothing was bought.")
+    Done(false, L["The purchase failed; nothing was bought."])
   end
 end
 
@@ -358,7 +359,7 @@ end
 function handlers.AUCTION_HOUSE_SHOW_ERROR()
   local buy = A.buy
   if buy.state == "buying" and buy.kind == "item" then
-    Done(false, "The auction house refused the purchase (someone may have bought it first).")
+    Done(false, L["The auction house refused the purchase (someone may have bought it first)."])
   end
 end
 
@@ -394,16 +395,16 @@ function A.BuyText()
   local state = buy.state
   if state == "ready" and buy.offer then
     local offer = buy.offer
-    return ("Next: %s x%d for %s, +%s"):format(ItemName(buy.key), offer.quantity, ns.Money(offer.total),
+    return L["Next: %s x%d for %s, +%s"]:format(ItemName(buy.key), offer.quantity, ns.Money(offer.total),
       ns.Money(offer.sell * offer.quantity - offer.total))
   elseif state == "checking" then
-    return ("Checking %s..."):format(ItemName(buy.key))
+    return L["Checking %s..."]:format(ItemName(buy.key))
   elseif state == "quote" or state == "buying" then
-    return ("Buying %s..."):format(ItemName(buy.key))
+    return L["Buying %s..."]:format(ItemName(buy.key))
   end
   if buy.bought > 0 then
-    return ("Bought %d for %s, +%s."):format(buy.bought, ns.Money(buy.spent), ns.Money(buy.profit))
+    return L["Bought %d for %s, +%s."]:format(buy.bought, ns.Money(buy.spent), ns.Money(buy.profit))
   end
-  return A.BuyStacksOnly() and "No stackable goods to buy below the vendor price."
-    or "Nothing to buy below the vendor price."
+  return A.BuyStacksOnly() and L["No stackable goods to buy below the vendor price."]
+    or L["Nothing to buy below the vendor price."]
 end

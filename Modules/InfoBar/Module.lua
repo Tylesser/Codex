@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Info bars, part 4: the module page (show each bar, the screen bar's edge, what each slot shows, the clock)
 -- and registration.
@@ -12,7 +13,7 @@ I.pageView = view
 local LABEL_WIDTH = 92
 local COLUMN_GAP = 30
 
-local POSITIONS = { { id = "top", name = "Top of the screen" }, { id = "bottom", name = "Bottom of the screen" } }
+local POSITIONS = { { id = "top", name = L["Top of the screen"] }, { id = "bottom", name = L["Bottom of the screen"] } }
 
 local function Wrap(text)
   text:SetJustifyH("LEFT")
@@ -22,7 +23,7 @@ end
 
 function I.StatusText()
   if not I.running then
-    return "Off: no info bars."
+    return L["Off: no info bars."]
   end
   local db = I.DB()
   local parts = {}
@@ -31,16 +32,16 @@ function I.StatusText()
     if I.AtTop then
       atTop = I.AtTop()
     end
-    parts[#parts + 1] = atTop and "Screen bar at the top" or "Screen bar at the bottom"
+    parts[#parts + 1] = atTop and L["Screen bar at the top"] or L["Screen bar at the bottom"]
     if I.fit and I.fit.width then
-      parts[#parts + 1] = ("%d px wide"):format(I.fit.width)
+      parts[#parts + 1] = L["%d px wide"]:format(I.fit.width)
     end
   end
   if db.panel then
-    parts[#parts + 1] = "data panel under the chat"
+    parts[#parts + 1] = L["data panel under the chat"]
   end
   if #parts == 0 then
-    return "Both bars are hidden. Show them below."
+    return L["Both bars are hidden. Show them below."]
   end
   local text = table.concat(parts, ", ")
   return text:sub(1, 1):upper() .. text:sub(2) .. "."
@@ -48,17 +49,17 @@ end
 
 local function TextName(id)
   local text = I.TEXTS[id]
-  return text and text.name or "Nothing"
+  return text and text.name or L["Nothing"]
 end
 
 local function Join(list)
   if #list == 0 then
-    return "nothing"
+    return L["nothing"]
   end
   if #list == 1 then
     return list[1]
   end
-  return table.concat(list, ", ", 1, #list - 1) .. " and " .. list[#list]
+  return L["%s and %s"]:format(table.concat(list, ", ", 1, #list - 1), list[#list])
 end
 
 -- The page's note: what was moved out of the bar's way (or what it runs under), and with the fit option the
@@ -72,24 +73,24 @@ function I.OverlapText()
   local fit = I.fit
   local moved = I.MovedNames and I.MovedNames() or {}
   if #moved > 0 then
-    parts[#parts + 1] = ("Moved out of the bar's way: %s. \"Put them back\" restores their places."):format(Join(moved))
+    parts[#parts + 1] = L["Moved out of the bar's way: %s. \"Put them back\" restores their places."]:format(Join(moved))
   end
   if db.fit then
     if fit and fit.fallback then
-      parts[#parts + 1] = ("The top edge leaves only %d px beside %s, so the bar is at the bottom.")
+      parts[#parts + 1] = L["The top edge leaves only %d px beside %s, so the bar is at the bottom."]
         :format(fit.topWidth or 0, Join(fit.topNames or {}))
     end
     if fit and fit.width and #fit.names > 0 then
-      parts[#parts + 1] = ("Fitted to %d px, making room for %s."):format(fit.width, Join(fit.names))
+      parts[#parts + 1] = L["Fitted to %d px, making room for %s."]:format(fit.width, Join(fit.names))
     end
     if I.dropped and #I.dropped > 0 then
-      parts[#parts + 1] = ("No room for %s: move those frames a little in Edit Mode, or show fewer texts.")
+      parts[#parts + 1] = L["No room for %s: move those frames a little in Edit Mode, or show fewer texts."]
         :format(Join(I.dropped))
     end
   else
     local names = I.Overlaps and I.Overlaps() or {}
     if #names > 0 then
-      parts[#parts + 1] = ("The bar runs under %s (they draw on top of it). \"Make room\" moves them out of its way.")
+      parts[#parts + 1] = L["The bar runs under %s (they draw on top of it). \"Make room\" moves them out of its way."]
         :format(Join(names))
     end
   end
@@ -144,7 +145,7 @@ local function TextChoices()
   for _, id in ipairs(I.MENU_ORDER) do
     list[#list + 1] = { id = id, name = I.TEXTS[id].name }
   end
-  list[#list + 1] = { id = "none", name = "Nothing" }
+  list[#list + 1] = { id = "none", name = L["Nothing"] }
   return list
 end
 
@@ -272,7 +273,7 @@ local function SlotRows(parent, bar, items)
     if info.bar == bar then
       local row = PickerRow(parent, info.name)
       row.picker:SetScript("OnClick", function(self)
-        OpenPicker(self, "Show in this slot", TextChoices(), I.DB().slots[info.key], function(id)
+        OpenPicker(self, L["Show in this slot"], TextChoices(), I.DB().slots[info.key], function(id)
           if I.running then
             I.SetSlot(info.key, id)
           else
@@ -307,30 +308,28 @@ function I.BuildPage(page)
   if icon.SetTexCoord then
     icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
   end
-  local heading = UI.Heading(head, "Info bars", 22)
+  local heading = UI.Heading(head, L["Info bars"], 22)
   heading:SetPoint("TOPLEFT", icon, "TOPRIGHT", 12, -1)
   view.status = UI.Text(head, "body", 13, "muted")
   view.status:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -4)
   view.status:SetPoint("RIGHT", 0, 0)
   view.status:SetWordWrap(false)
   local about = Text(body, 13, "text")
-  about:SetText("A slim bar along the screen edge and a data panel under the chat window, with your gold, bags, "
-    .. "location, experience and more. Point at a slot for details, click it to open its window, right-click it "
-    .. "to choose what it shows.")
+  about:SetText(L["A slim bar along the screen edge and a data panel under the chat window, with your gold, bags, location, experience and more. Point at a slot for details, click it to open its window, right-click it to choose what it shows."])
   view.header = { Item("row", head, 36, 12), Item("text", about, 0, 8) }
 
   -- left column: the screen bar
   local left = {}
-  left[#left + 1] = Item("title", UI.Section(body, "Screen bar"), 14, 6)
-  view.top = UI.Check(body, "Show the screen bar")
+  left[#left + 1] = Item("title", UI.Section(body, L["Screen bar"]), 14, 6)
+  view.top = UI.Check(body, L["Show the screen bar"])
   view.top:SetScript("OnClick", function(self)
     Change("top", self:GetChecked() and true or false)
   end)
   left[#left + 1] = Item("check", view.top, 20, 8, -2)
-  local positionRow = PickerRow(body, "Position")
+  local positionRow = PickerRow(body, L["Position"])
   view.position = positionRow.picker
   view.position:SetScript("OnClick", function(self)
-    OpenPicker(self, "Screen bar", POSITIONS, I.DB().position, function(id)
+    OpenPicker(self, L["Screen bar"], POSITIONS, I.DB().position, function(id)
       Change("position", id)
     end)
   end)
@@ -339,19 +338,19 @@ function I.BuildPage(page)
   -- the frames at the bar's edge: moved out of its way (default), or the bar fits beside them (option)
   local buttons = CreateFrame("Frame", nil, body)
   buttons:SetHeight(24)
-  view.makeRoom = UI.Button(buttons, 110, 24, "Make room")
+  view.makeRoom = UI.Button(buttons, 110, 24, L["Make room"])
   view.makeRoom:SetPoint("LEFT")
   view.makeRoom:SetScript("OnClick", function()
     I.DB().room = true
     local names = I.MakeRoom()
     if names == nil then
-      ns.Say("the frames move out of the bar's way after the fight.")
+      ns.Say(L["the frames move out of the bar's way after the fight."])
     elseif #names == 0 then
-      ns.Say("nothing sits in the bar's way.")
+      ns.Say(L["nothing sits in the bar's way."])
     end
     RefreshPage()
   end)
-  view.putBack = UI.Button(buttons, 110, 24, "Put them back")
+  view.putBack = UI.Button(buttons, 110, 24, L["Put them back"])
   view.putBack:SetPoint("LEFT", view.makeRoom, "RIGHT", 8, 0)
   view.putBack:SetScript("OnClick", function()
     I.PutBack()
@@ -362,38 +361,36 @@ function I.BuildPage(page)
   view.overlap = Text(body, 12, "warn")
   left[#left + 1] = Item("text", view.overlap, 0, 6)
   local roomNote = Text(body, 12, "muted")
-  roomNote:SetText("Moves the minimap, buffs and bars at the bar's edge out of its way, and again after Edit Mode. "
-    .. "Frames you place elsewhere are left alone. For this session only: Codex never writes Edit Mode layouts, so "
-    .. "it happens again at every login.")
+  roomNote:SetText(L["Moves the minimap, buffs and bars at the bar's edge out of its way, and again after Edit Mode. Frames you place elsewhere are left alone. For this session only: Codex never writes Edit Mode layouts, so it happens again at every login."])
   left[#left + 1] = Item("text", roomNote, 0, 10)
-  view.full = UI.Check(body, "Fit the bar beside those frames instead")
+  view.full = UI.Check(body, L["Fit the bar beside those frames instead"])
   view.full:SetScript("OnClick", function(self)
     Change("fit", self:GetChecked() and true or false)
   end)
   left[#left + 1] = Item("check", view.full, 20, 14, -2)
   local slotsLeft = Text(body, 12, "muted")
-  slotsLeft:SetText("What each slot shows")
+  slotsLeft:SetText(L["What each slot shows"])
   left[#left + 1] = Item("text", slotsLeft, 0, 6)
   SlotRows(body, "top", left)
   view.left = left
 
   -- right column: the chat panel and the clock
   local right = {}
-  right[#right + 1] = Item("title", UI.Section(body, "Chat panel"), 14, 6)
-  view.panel = UI.Check(body, "Show the data panel under the chat")
+  right[#right + 1] = Item("title", UI.Section(body, L["Chat panel"]), 14, 6)
+  view.panel = UI.Check(body, L["Show the data panel under the chat"])
   view.panel:SetScript("OnClick", function(self)
     Change("panel", self:GetChecked() and true or false)
   end)
   right[#right + 1] = Item("check", view.panel, 20, 8, -2)
   local panelNote = Text(body, 12, "muted")
-  panelNote:SetText("Its corner buttons hide the chat (click again to show it) and copy the chat's recent lines.")
+  panelNote:SetText(L["Its corner buttons hide the chat (click again to show it) and copy the chat's recent lines."])
   right[#right + 1] = Item("text", panelNote, 0, 12)
   local slotsRight = Text(body, 12, "muted")
-  slotsRight:SetText("What each slot shows")
+  slotsRight:SetText(L["What each slot shows"])
   right[#right + 1] = Item("text", slotsRight, 0, 6)
   SlotRows(body, "panel", right)
-  right[#right + 1] = Item("title", UI.Section(body, "Clock"), 14, 6)
-  view.clock = UI.Check(body, "24-hour clock")
+  right[#right + 1] = Item("title", UI.Section(body, L["Clock"]), 14, 6)
+  view.clock = UI.Check(body, L["24-hour clock"])
   view.clock:SetScript("OnClick", function(self)
     Change("clock24", self:GetChecked() and true or false)
   end)
@@ -415,12 +412,11 @@ end
 
 ns.RegisterModule({
   id = "infobar",
-  name = "Info bars",
+  name = L["Info bars"],
   -- its section in the Codex window (Areas.lua)
   area = "info", sectionOrder = 10, pageEstimate = 600,
   icon = "Interface\\Icons\\INV_Misc_PocketWatch_01",
-  desc = "A slim bar along the screen edge and a panel under the chat: gold, bags, location, experience, "
-    .. "reputation, clock, frame rate, friends, guild and durability.",
+  desc = L["A slim bar along the screen edge and a panel under the chat: gold, bags, location, experience, reputation, clock, frame rate, friends, guild and durability."],
   order = 99,
   Enable = function()
     I.Enable()

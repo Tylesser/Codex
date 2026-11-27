@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- The info panel (2026-11-24, the user's request after FlareUI's settings: "shows preview of what is changed"): a
 -- column on the right of the Codex window that tells what the thing under the mouse does. Hovering a section's
@@ -270,7 +271,8 @@ function ns.InfoForPage(page, area)
   area = area or (page and ns.AREA_BY_ID and ns.AREA_BY_ID[page.area or page.id])
   ns.ShowInfo({ key = "page:" .. tostring(area and area.id or (page and page.id)),
     title = area and area.name or "Tylesser Codex",
-    text = area and area.desc or "Pick a page on the left. Hover a section or an option and this panel says what it changes.",
+    text = area and area.desc
+      or L["Pick a page on the left. Hover a section or an option and this panel says what it changes."],
   })
 end
 

@@ -6,6 +6,7 @@ local addonName, ns = ...
 -- loaded (it owns them otherwise).
 
 local C = ns.commerce
+local L = ns.L
 
 -- Registered at Enable; pcall because not every client has every event.
 local EVENTS = {
@@ -105,12 +106,12 @@ function C.Slash(rest)
   elseif command == "feedback" then
     ns.T.ShowFeedback()
   else
-    ns.Say("Commerce commands:")
-    print("  /codex commerce: show or hide the window")
-    print("  /codex commerce npcs: every NPC who takes writs, with all its writs and which you have")
-    print("  /codex commerce buy: Codex shopping list of the cheapest writs to your next standing")
-    print("  /codex commerce options: this module's page in the Codex window")
-    print("  /codex commerce debug: what Codex sees (faction, Favor, prices, bags)")
+    ns.Say(L["Commerce commands:"])
+    print("  /codex commerce: " .. L["show or hide the window"])
+    print("  /codex commerce npcs: " .. L["every NPC who takes writs, with all its writs and which you have"])
+    print("  /codex commerce buy: " .. L["Codex shopping list of the cheapest writs to your next standing"])
+    print("  /codex commerce options: " .. L["this module's page in the Codex window"])
+    print("  /codex commerce debug: " .. L["what Codex sees (faction, Favor, prices, bags)"])
   end
 end
 
@@ -150,8 +151,7 @@ ns.RegisterModule({
   -- its section in the Codex window (Areas.lua)
   area = "trade", sectionOrder = 25, folded = true, pageEstimate = 470,
   icon = "Interface\\Icons\\INV_Misc_Note_02",
-  desc = "Craftsman's Writs and Waylaid Crates: auction prices, reputation, Merchant's Favor, who takes each writ "
-    .. "and the cheapest writs to buy.",
+  desc = L["Craftsman's Writs and Waylaid Crates: auction prices, reputation, Merchant's Favor, who takes each writ and the cheapest writs to buy."],
   standalone = "CommerceAuthority",
   standaloneName = "Commerce Authority",
   order = 36,

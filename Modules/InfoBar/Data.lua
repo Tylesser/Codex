@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Info bars, part 1: settings and the data texts (board R3-InfoBars). No frames here.
 --
@@ -26,17 +27,17 @@ local DEFAULTS = {
 
 -- The slots of both bars, in order. side: where a screen bar slot sits (the middle one stretches).
 I.SLOTS = {
-  { key = "t1", bar = "top", side = "left", name = "Left 1" },
-  { key = "t2", bar = "top", side = "left", name = "Left 2" },
-  { key = "t3", bar = "top", side = "center", name = "Middle" },
-  { key = "t4", bar = "top", side = "right", name = "Right 1" },
-  { key = "t5", bar = "top", side = "right", name = "Right 2" },
-  { key = "t6", bar = "top", side = "right", name = "Right 3" },
-  { key = "t7", bar = "top", side = "right", name = "Right 4" },
-  { key = "p1", bar = "panel", name = "Slot 1" },
-  { key = "p2", bar = "panel", name = "Slot 2" },
-  { key = "p3", bar = "panel", name = "Slot 3" },
-  { key = "p4", bar = "panel", name = "Slot 4" },
+  { key = "t1", bar = "top", side = "left", name = L["Left 1"] },
+  { key = "t2", bar = "top", side = "left", name = L["Left 2"] },
+  { key = "t3", bar = "top", side = "center", name = L["Middle"] },
+  { key = "t4", bar = "top", side = "right", name = L["Right 1"] },
+  { key = "t5", bar = "top", side = "right", name = L["Right 2"] },
+  { key = "t6", bar = "top", side = "right", name = L["Right 3"] },
+  { key = "t7", bar = "top", side = "right", name = L["Right 4"] },
+  { key = "p1", bar = "panel", name = L["Slot 1"] },
+  { key = "p2", bar = "panel", name = L["Slot 2"] },
+  { key = "p3", bar = "panel", name = L["Slot 3"] },
+  { key = "p4", bar = "panel", name = L["Slot 4"] },
 }
 
 function I.DB()
@@ -177,34 +178,34 @@ local function BnetOnline()
 end
 
 Add({
-  id = "friends", name = "Friends", icon = "People",
+  id = "friends", name = L["Friends"], icon = "People",
   events = { "FRIENDLIST_UPDATE", "BN_FRIEND_INFO_CHANGED", "BN_FRIEND_ACCOUNT_ONLINE", "BN_FRIEND_ACCOUNT_OFFLINE",
     "BN_CONNECTED", "BN_DISCONNECTED" },
   Value = function()
     local online = (C_FriendList and Num(Ask(C_FriendList.GetNumOnlineFriends)) or 0) + BnetOnline()
-    return nil, tostring(online), "bright", "friends"
+    return nil, tostring(online), "bright", L["friends"]
   end,
   Tooltip = function(tip)
     local wow = WowFriends()
     local bnet = BnetOnline()
-    tip:Title("Friends", (#wow + bnet) .. " online")
+    tip:Title(L["Friends"], L["%d online"]:format(#wow + bnet))
     for index, info in ipairs(wow) do
       if index > 20 then
-        tip:Line(("and %d more"):format(#wow - 20), nil, "muted")
+        tip:Line((L["and %d more"]):format(#wow - 20), nil, "muted")
         break
       end
       local level = Num(info.level)
       local area = Str(info.area)
-      tip:Line(Str(info.name) or "?", (level and ("Level " .. level) or "") .. (area and (" · " .. area) or ""),
+      tip:Line(Str(info.name) or "?", (level and L["Level %d"]:format(level) or "") .. (area and (" · " .. area) or ""),
         ClassColor(Str(info.className) and I.ClassToken(info.className)) or "text", "muted")
     end
     if bnet > 0 then
-      tip:Line("Battle.net friends online", tostring(bnet), "muted", "bright")
+      tip:Line(L["Battle.net friends online"], tostring(bnet), "muted", "bright")
     end
     if #wow == 0 and bnet == 0 then
-      tip:Line("No friends online.", nil, "muted")
+      tip:Line(L["No friends online."], nil, "muted")
     end
-    tip:Note("Click to open your friends list.")
+    tip:Note(L["Click to open your friends list."])
   end,
   Click = function()
     Open(ToggleFriendsFrame, 1)
@@ -229,14 +230,14 @@ end
 -- Guild ------------------------------------------------------------------------------------------------------
 
 Add({
-  id = "guild", name = "Guild", icon = "Shield",
+  id = "guild", name = L["Guild"], icon = "Shield",
   events = { "GUILD_ROSTER_UPDATE", "PLAYER_GUILD_UPDATE" },
   Value = function()
     if not Ask(IsInGuild) then
-      return nil, "No guild", "muted"
+      return nil, L["No guild"], "muted"
     end
     local _, online = Ask(GetNumGuildMembers)
-    return nil, tostring(Num(online) or 0), "bright", "guild"
+    return nil, tostring(Num(online) or 0), "bright", L["guild"]
   end,
   Tooltip = function(tip)
     -- fresh numbers for next time, at most every 15 s (the answer, GUILD_ROSTER_UPDATE, rebuilds this tooltip)
@@ -246,15 +247,15 @@ Add({
       Ask(C_GuildInfo.GuildRoster)
     end
     if not Ask(IsInGuild) then
-      tip:Title("Guild")
-      tip:Line("You are not in a guild.", nil, "muted")
+      tip:Title(L["Guild"])
+      tip:Line(L["You are not in a guild."], nil, "muted")
       return
     end
     local guildName = Str(Ask(GetGuildInfo, "player"))
     local total, online = Ask(GetNumGuildMembers)
     total, online = Num(total) or 0, Num(online) or 0
     -- a name never goes in the heading font (Cinzel and IM Fell have capitals only)
-    tip:Title("Guild", ("%d of %d online"):format(online, total))
+    tip:Title(L["Guild"], (L["%d of %d online"]):format(online, total))
     if guildName then
       tip:Line(guildName, nil, "accent")
     end
@@ -264,16 +265,16 @@ Add({
       if isOnline and Str(name) then
         shown = shown + 1
         if shown > 20 then
-          tip:Line(("and %d more"):format(online - 20), nil, "muted")
+          tip:Line((L["and %d more"]):format(online - 20), nil, "muted")
           break
         end
         name = Ambiguate and Ambiguate(name, "guild") or name
         level = Num(level)
-        tip:Line(name, (level and ("Level " .. level) or "") .. (Str(zone) and (" · " .. zone) or ""),
+        tip:Line(name, (level and L["Level %d"]:format(level) or "") .. (Str(zone) and (" · " .. zone) or ""),
           ClassColor(class) or "text", "muted")
       end
     end
-    tip:Note("Click to open the guild window.")
+    tip:Note(L["Click to open the guild window."])
   end,
   Click = function()
     Open(ToggleGuildFrame)
@@ -287,7 +288,7 @@ local function MyMoney()
 end
 
 Add({
-  id = "gold", name = "Gold", icon = "Coins",
+  id = "gold", name = L["Gold"], icon = "Coins",
   events = { "PLAYER_MONEY" },
   Value = function()
     local money = MyMoney()
@@ -318,29 +319,29 @@ Add({
       end
       return a.name < b.name
     end)
-    tip:Title("Gold", realm .. " · " .. #list .. (#list == 1 and " character" or " characters"))
+    tip:Title(L["Gold"], (#list == 1 and L["%s · %d character"] or L["%s · %d characters"]):format(realm, #list))
     for _, entry in ipairs(list) do
       total = total + entry.money
       tip:Line(entry.name .. (entry.realm and (" (" .. entry.realm .. ")") or ""), I.Coins(entry.money),
         ClassColor(entry.class) or "text", "bright")
     end
     tip:Rule()
-    tip:Line("Total", I.Coins(total), "muted", "bright")
+    tip:Line(L["Total"], I.Coins(total), "muted", "bright")
     local session = I.sessionMoney and money - I.sessionMoney or 0
-    tip:Line("This session", (session < 0 and "-" or (session > 0 and "+" or "")) .. I.Coins(session), "muted",
+    tip:Line(L["This session"], (session < 0 and "-" or (session > 0 and "+" or "")) .. I.Coins(session), "muted",
       session < 0 and "bad" or (session > 0 and "good" or "muted"))
     -- Loot text's session (Modules/LootText): what was looted since login, its worth per hour and the best drop
     local loot = ns.loottext
     if loot and loot.running and type(loot.Session) == "function" then
       local s = loot.Session()
-      tip:Line("Looted", I.Coins(s.money), "muted", "bright")
-      tip:Line("Items' worth", I.Coins(s.value), "muted", "bright")
-      tip:Line("Per hour", I.Coins(s.perHour), "muted", "good")
+      tip:Line(L["Looted"], I.Coins(s.money), "muted", "bright")
+      tip:Line(L["Items' worth"], I.Coins(s.value), "muted", "bright")
+      tip:Line(L["Per hour"], I.Coins(s.perHour), "muted", "good")
       if s.best and s.best.link then
-        tip:Line("Best drop", s.best.link, "muted", "bright")
+        tip:Line(L["Best drop"], s.best.link, "muted", "bright")
       end
     end
-    tip:Note("Click to open your bags.")
+    tip:Note(L["Click to open your bags."])
   end,
   Click = function()
     if ToggleAllBags then
@@ -418,7 +419,7 @@ function I.RepairCost(rows)
 end
 
 Add({
-  id = "durability", name = "Durability", icon = "Armor",
+  id = "durability", name = L["Durability"], icon = "Armor",
   events = { "UPDATE_INVENTORY_DURABILITY", "PLAYER_EQUIPMENT_CHANGED" },
   Value = function()
     local _, overall, lowest = I.Durability()
@@ -430,9 +431,9 @@ Add({
   end,
   Tooltip = function(tip)
     local rows, overall = I.Durability()
-    tip:Title("Durability", overall and (overall .. "%") or nil, "bright")
+    tip:Title(L["Durability"], overall and (overall .. "%") or nil, "bright")
     if #rows == 0 then
-      tip:Line("Nothing equipped wears down.", nil, "muted")
+      tip:Line(L["Nothing equipped wears down."], nil, "muted")
       return
     end
     for _, row in ipairs(rows) do
@@ -441,9 +442,9 @@ Add({
     local cost = I.RepairCost(rows)
     if cost and cost > 0 then
       tip:Rule()
-      tip:Line("Repair cost", I.Coins(cost), "muted", "bright")
+      tip:Line(L["Repair cost"], I.Coins(cost), "muted", "bright")
     end
-    tip:Note("Click to open your character.")
+    tip:Note(L["Click to open your character."])
   end,
   Click = function()
     Open(ToggleCharacter, "PaperDollFrame")
@@ -487,19 +488,19 @@ function I.BagSlots()
 end
 
 Add({
-  id = "bags", name = "Free bag slots", icon = "Bag",
+  id = "bags", name = L["Free bag slots"], icon = "Bag",
   events = { "BAG_UPDATE_DELAYED" },
   Value = function()
     local free = I.BagSlots()
-    return nil, tostring(free), free == 0 and "bad" or (free < 5 and "warn" or "bright"), "free"
+    return nil, tostring(free), free == 0 and "bad" or (free < 5 and "warn" or "bright"), L["free"]
   end,
   Tooltip = function(tip)
     local free, total, bags = I.BagSlots()
-    tip:Title("Bags", ("%d of %d free"):format(free, total))
+    tip:Title(L["Bags"], (L["%d of %d free"]):format(free, total))
     for _, bag in ipairs(bags) do
-      tip:Line(bag.name, ("%d / %d free"):format(bag.free, bag.size), bag.special and "muted" or "text", "bright")
+      tip:Line(bag.name, (L["%d / %d free"]):format(bag.free, bag.size), bag.special and "muted" or "text", "bright")
     end
-    tip:Note("Click to open your bags.")
+    tip:Note(L["Click to open your bags."])
   end,
   Click = function()
     if ToggleAllBags then
@@ -520,7 +521,7 @@ local function AmmoSlot()
 end
 
 Add({
-  id = "ammo", name = "Ammo", icon = "Arrow",
+  id = "ammo", name = L["Ammo"], icon = "Arrow",
   events = { "BAG_UPDATE_DELAYED", "PLAYER_EQUIPMENT_CHANGED" },
   unitEvents = { UNIT_INVENTORY_CHANGED = "player" },
   Value = function()
@@ -530,17 +531,17 @@ Add({
     end
     local id = Num(Ask(GetInventoryItemID, "player", slot))
     if not id then
-      return nil, "0", "muted", "ammo"
+      return nil, "0", "muted", L["ammo"]
     end
     local count = Num(Ask(GetInventoryItemCount, "player", slot)) or 0
-    return nil, Group(count), count < 100 and (count == 0 and "bad" or "warn") or "bright", "ammo"
+    return nil, Group(count), count < 100 and (count == 0 and "bad" or "warn") or "bright", L["ammo"]
   end,
   Tooltip = function(tip)
     local slot = AmmoSlot()
     local id = slot and Num(Ask(GetInventoryItemID, "player", slot))
-    tip:Title("Ammo")
+    tip:Title(L["Ammo"])
     if not id then
-      tip:Line("No ammo in the ammo slot.", nil, "muted")
+      tip:Line(L["No ammo in the ammo slot."], nil, "muted")
       return
     end
     local name = C_Item and Str(Ask(C_Item.GetItemNameByID, id)) or "Ammo"
@@ -556,7 +557,7 @@ local function Latency()
 end
 
 Add({
-  id = "fps", name = "Frame rate and latency", icon = "Signal", tick = true,
+  id = "fps", name = L["Frame rate and latency"], icon = "Signal", tick = true,
   Value = function()
     local fps = math.floor((Num(Ask(GetFramerate)) or 0) + 0.5)
     local home, world = Latency()
@@ -565,10 +566,10 @@ Add({
   end,
   Tooltip = function(tip)
     local home, world = Latency()
-    tip:Title("Performance")
-    tip:Line("Frame rate", math.floor((Num(Ask(GetFramerate)) or 0) + 0.5) .. " fps", "muted", "bright")
-    tip:Line("Latency (home)", home .. " ms", "muted", home < 150 and "good" or (home < 300 and "warn" or "bad"))
-    tip:Line("Latency (world)", world .. " ms", "muted", world < 150 and "good" or (world < 300 and "warn" or "bad"))
+    tip:Title(L["Performance"])
+    tip:Line(L["Frame rate"], math.floor((Num(Ask(GetFramerate)) or 0) + 0.5) .. " fps", "muted", "bright")
+    tip:Line(L["Latency (home)"], home .. " ms", "muted", home < 150 and "good" or (home < 300 and "warn" or "bad"))
+    tip:Line(L["Latency (world)"], world .. " ms", "muted", world < 150 and "good" or (world < 300 and "warn" or "bad"))
   end,
 })
 
@@ -595,18 +596,18 @@ local function RealmTime()
 end
 
 Add({
-  id = "clock", name = "Clock", icon = "Clock", tick = true,
+  id = "clock", name = L["Clock"], icon = L["Clock"], tick = true,
   Value = function()
     return nil, LocalTime(), "bright"
   end,
   Tooltip = function(tip)
-    tip:Title("Clock", date("%d %B %Y"))
-    tip:Line("Local time", LocalTime(), "muted", "bright")
+    tip:Title(L["Clock"], date("%d %B %Y"))
+    tip:Line(L["Local time"], LocalTime(), "muted", "bright")
     local realm = RealmTime()
     if realm then
-      tip:Line("Realm time", realm, "muted", "bright")
+      tip:Line(L["Realm time"], realm, "muted", "bright")
     end
-    tip:Note("Click to open the calendar.")
+    tip:Note(L["Click to open the calendar."])
   end,
   Click = function()
     Open(ToggleCalendar)
@@ -653,34 +654,34 @@ function I.QuestXP()
 end
 
 Add({
-  id = "xp", name = "Experience", icon = "Star",
+  id = "xp", name = L["Experience"], icon = "Star",
   events = { "PLAYER_XP_UPDATE", "UPDATE_EXHAUSTION", "PLAYER_LEVEL_UP", "ENABLE_XP_GAIN", "DISABLE_XP_GAIN" },
   Value = function()
     local level, xp, max, rested = I.Experience()
     if not xp then
-      return "Level", tostring(level), "bright"
+      return L["Level"], tostring(level), "bright"
     end
     local note = rested > 0 and ("+%d%%"):format(math.floor(rested / max * 100 + 0.5)) or nil
-    return "XP", Percent(xp / max * 100), "bright", note, { 0.5, 0.7, 1 }
+    return L["XP"], Percent(xp / max * 100), "bright", note, { 0.5, 0.7, 1 }
   end,
   Tooltip = function(tip)
     local level, xp, max, rested = I.Experience()
     if not xp then
-      tip:Title("Experience", "Level " .. level)
-      tip:Line(level >= MaxLevel() and "You are at the highest level." or "Experience gain is switched off.", nil, "muted")
+      tip:Title(L["Experience"], L["Level %d"]:format(level))
+      tip:Line(level >= MaxLevel() and L["You are at the highest level."] or L["Experience gain is switched off."], nil, "muted")
       return
     end
     local questXP, quests = I.QuestXP()
-    tip:Title("Experience", ("Level %d to %d"):format(level, level + 1))
+    tip:Title(L["Experience"], (L["Level %d to %d"]):format(level, level + 1))
     tip:XPBar(xp / max, rested / max, (questXP or 0) / max)
-    tip:Line("Earned", Group(xp) .. " / " .. Group(max), "muted", "bright", { 0.49, 0.39, 0.59 })
-    tip:Line("To level", Group(max - xp), "muted", "bright", false)
+    tip:Line(L["Earned"], Group(xp) .. " / " .. Group(max), "muted", "bright", { 0.49, 0.39, 0.59 })
+    tip:Line(L["To level"], Group(max - xp), "muted", "bright", false)
     if rested > 0 then
-      tip:Line("Rested", ("%s (%d%%)"):format(Group(rested), math.floor(rested / max * 100 + 0.5)), "muted",
+      tip:Line(L["Rested"], ("%s (%d%%)"):format(Group(rested), math.floor(rested / max * 100 + 0.5)), "muted",
         { 0.5, 0.7, 1 }, { 0.35, 0.59, 1 })
     end
     if questXP and quests > 0 then
-      tip:Line(("Completed quests (%d)"):format(quests), Group(questXP), "muted", { 1, 0.82, 0 }, { 1, 0.82, 0 })
+      tip:Line((L["Completed quests (%d)"]):format(quests), Group(questXP), "muted", { 1, 0.82, 0 }, { 1, 0.82, 0 })
     end
   end,
 })
@@ -719,41 +720,41 @@ end
 function I.Duration(seconds)
   seconds = math.floor((seconds or 0) + 0.5)
   if seconds < 60 then
-    return "under a minute"
+    return L["under a minute"]
   end
   local hours, minutes = math.floor(seconds / 3600), math.floor(seconds / 60) % 60
   if hours > 0 then
-    return minutes > 0 and ("%d h %d m"):format(hours, minutes) or ("%d h"):format(hours)
+    return minutes > 0 and (L["%d h %d m"]):format(hours, minutes) or (L["%d h"]):format(hours)
   end
-  return ("%d m"):format(minutes)
+  return (L["%d m"]):format(minutes)
 end
 
 Add({
-  id = "xprate", name = "Experience per hour", icon = "Star",
+  id = "xprate", name = L["Experience per hour"], icon = "Star",
   events = { "PLAYER_XP_UPDATE", "PLAYER_LEVEL_UP" },
   Value = function()
     local r = I.XPRate()
     if r.maxed then
-      return "XP/h", "max level", "muted"
+      return L["XP/h"], L["max level"], "muted"
     end
     if r.gained <= 0 then
-      return "XP/h", "--", "muted"
+      return L["XP/h"], "--", "muted"
     end
-    return "XP/h", Group(r.rate), "bright", r.toLevel and ("level in " .. I.Duration(r.toLevel)) or nil, "muted"
+    return L["XP/h"], Group(r.rate), "bright", r.toLevel and L["level in %s"]:format(I.Duration(r.toLevel)) or nil, "muted"
   end,
   Tooltip = function(tip)
     local r = I.XPRate()
-    tip:Title("Experience per hour", "Level " .. r.level)
+    tip:Title(L["Experience per hour"], L["Level %d"]:format(r.level))
     if r.maxed then
-      tip:Line(r.level >= MaxLevel() and "You are at the highest level." or "Experience gain is switched off.", nil,
+      tip:Line(r.level >= MaxLevel() and L["You are at the highest level."] or L["Experience gain is switched off."], nil,
         "muted")
       return
     end
-    tip:Line("This session", Group(r.gained) .. " in " .. I.Duration(r.seconds), "muted", "bright")
-    tip:Line("Per hour", r.gained > 0 and Group(r.rate) or "--", "muted", "bright")
-    tip:Line("To level", Group(r.left), "muted", "bright")
-    tip:Line("Next level in", r.toLevel and I.Duration(r.toLevel) or "--", "muted", "good")
-    tip:Note("Counted from your login (or since the bar first showed it).")
+    tip:Line(L["This session"], L["%s in %s"]:format(Group(r.gained), I.Duration(r.seconds)), "muted", "bright")
+    tip:Line(L["Per hour"], r.gained > 0 and Group(r.rate) or "--", "muted", "bright")
+    tip:Line(L["To level"], Group(r.left), "muted", "bright")
+    tip:Line(L["Next level in"], r.toLevel and I.Duration(r.toLevel) or "--", "muted", "good")
+    tip:Note(L["Counted from your login (or since the bar first showed it)."])
   end,
 })
 
@@ -843,68 +844,68 @@ function I.WearTalentSet(curr, prev)
   return false
 end
 
-local TALENT_NAMES = { "primary", "secondary" }
+local TALENT_NAMES = { L["With primary talents"], L["With secondary talents"] }
 
 Add({
-  id = "gearset", name = "Gear set", icon = "Armor",
+  id = "gearset", name = L["Gear set"], icon = "Armor",
   events = { "EQUIPMENT_SETS_CHANGED", "PLAYER_EQUIPMENT_CHANGED", "EQUIPMENT_SWAP_FINISHED",
     "ACTIVE_TALENT_GROUP_CHANGED" },
   Value = function()
     local sets = I.GearSets()
     if #sets == 0 then
-      return "Set", "none", "muted"
+      return L["Set"], L["none"], "muted"
     end
     for _, set in ipairs(sets) do
       if set.equipped then
-        return "Set", set.name, "bright"
+        return L["Set"], set.name, "bright"
       end
     end
-    return "Set", "mixed", "muted"
+    return L["Set"], L["mixed"], "muted"
   end,
   Tooltip = function(tip)
     local sets = I.GearSets()
-    tip:Title("Gear sets")
+    tip:Title(L["Gear sets"])
     if #sets == 0 then
-      tip:Line("No sets yet: make one in the character window's equipment manager.", nil, "muted")
+      tip:Line(L["No sets yet: make one in the character window's equipment manager."], nil, "muted")
       return
     end
     for _, set in ipairs(sets) do
-      local state = set.equipped and "worn" or (set.lost > 0 and (set.lost .. " missing") or
+      local state = set.equipped and L["worn"] or (set.lost > 0 and L["%d missing"]:format(set.lost) or
         (set.worn .. " / " .. set.items))
       tip:Line(set.name, state, set.equipped and "good" or "text", set.lost > 0 and "bad" or "muted")
     end
     if I.TwoTalentGroups() then
       local active = I.TalentGroup()
       for group, label in ipairs(TALENT_NAMES) do
-        local name = "none"
+        local name
         for _, set in ipairs(sets) do
           if set.id == I.TalentSet(group) then
             name = set.name
           end
         end
-        tip:Line("With " .. label .. " talents" .. (group == active and " (now)" or ""), name, "muted",
-          name == "none" and "muted" or "text")
+        tip:Line(group == active and L["%s (now)"]:format(label) or label, name or L["none"], "muted",
+          name and "text" or "muted")
       end
     end
-    tip:Note(InCombat() and "Not in a fight." or "Click to put on a set or pick one for your talents.")
+    tip:Note(InCombat() and L["Not in a fight."] or L["Click to put on a set or pick one for your talents."])
   end,
   Click = function()
     if InCombat() then
       return
     end
-    local items = { { text = "Put on a set", title = true } }
+    local items = { { text = L["Put on a set"], title = true } }
     for _, set in ipairs(I.GearSets()) do
       items[#items + 1] = { text = set.name, checked = set.equipped, func = function()
         I.WearSet(set.id)
       end }
     end
     if #items == 1 then
-      items[#items + 1] = { text = "No sets yet", disabled = true }
+      items[#items + 1] = { text = L["No sets yet"], disabled = true }
     elseif I.TwoTalentGroups() then
       local sets = I.GearSets()
       for group, label in ipairs(TALENT_NAMES) do
-        items[#items + 1] = { text = "With " .. label .. " talents", title = true }
-        items[#items + 1] = { text = "No set", checked = I.TalentSet(group) == nil, func = function()
+        items[#items + 1] = { text = label, title = true }
+        items[#items + 1] = { text = L["No set"], checked = I.TalentSet(group) == nil, func = function()
           I.SetTalentSet(group, nil)
         end }
         for _, set in ipairs(sets) do
@@ -956,7 +957,7 @@ function I.Legacy()
         and Ask(C_MajorFactions.GetRenownRewardsForLevel, LEGACY_FACTION, at)
       local reward = type(rewards) == "table" and rewards[1]
       if type(reward) == "table" then
-        nextLevel, nextReward = at, Str(reward.name) or "a reward"
+        nextLevel, nextReward = at, Str(reward.name) or L["a reward"]
         break
       end
     end
@@ -965,33 +966,33 @@ function I.Legacy()
 end
 
 Add({
-  id = "legacy", name = "Legacy points", icon = "Star",
+  id = "legacy", name = L["Legacy points"], icon = "Star",
   events = { "MAJOR_FACTION_RENOWN_LEVEL_CHANGED", "TRAIT_TREE_CURRENCY_INFO_UPDATED", "TRAIT_CONFIG_UPDATED" },
   Value = function()
     local legacy = I.Legacy()
     if not legacy then
-      return "Legacy", "--", "muted"
+      return L["Legacy"], "--", "muted"
     end
     if legacy.unspent and legacy.unspent > 0 then
-      return "Legacy", tostring(legacy.points), "bright", legacy.unspent .. " to spend", "good"
+      return L["Legacy"], tostring(legacy.points), "bright", L["%d to spend"]:format(legacy.unspent), "good"
     end
-    return "Legacy", tostring(legacy.points), "bright"
+    return L["Legacy"], tostring(legacy.points), "bright"
   end,
   Tooltip = function(tip)
     local legacy = I.Legacy()
-    tip:Title("Legacy")
+    tip:Title(L["Legacy"])
     if not legacy then
-      tip:Line("No Legacy data yet.", nil, "muted")
+      tip:Line(L["No Legacy data yet."], nil, "muted")
       return
     end
-    tip:Line("Points earned (account)", tostring(legacy.points), "text", "bright")
+    tip:Line(L["Points earned (account)"], tostring(legacy.points), "text", "bright")
     if legacy.unspent then
-      tip:Line("To spend on this character", tostring(legacy.unspent), "text", legacy.unspent > 0 and "good" or "muted")
+      tip:Line(L["To spend on this character"], tostring(legacy.unspent), "text", legacy.unspent > 0 and "good" or "muted")
     end
     if legacy.nextLevel then
-      tip:Line("Next reward at " .. legacy.nextLevel, legacy.nextReward, "text", "accent")
+      tip:Line(L["Next reward at %d"]:format(legacy.nextLevel), legacy.nextReward, "text", "accent")
     end
-    tip:Note("Legacy challenges earn points for every character on your account.")
+    tip:Note(L["Legacy challenges earn points for every character on your account."])
   end,
 })
 
@@ -1028,29 +1029,29 @@ local function ReactionColor(reaction)
 end
 
 Add({
-  id = "rep", name = "Reputation", icon = "Flag",
+  id = "rep", name = L["Reputation"], icon = "Flag",
   events = { "UPDATE_FACTION" },
   Value = function()
     local name, reaction, value, size = I.Watched()
     if not name then
-      return nil, "No reputation watched", "muted"
+      return nil, L["No reputation watched"], "muted"
     end
     local note = size > 0 and (Group(value) .. " / " .. Group(size)) or nil
     return name, Standing(reaction), ReactionColor(reaction), note
   end,
   Tooltip = function(tip)
     local name, reaction, value, size = I.Watched()
-    tip:Title("Reputation")
+    tip:Title(L["Reputation"])
     if not name then
-      tip:Line("No faction is watched. Pick one in your reputation list.", nil, "muted")
+      tip:Line(L["No faction is watched. Pick one in your reputation list."], nil, "muted")
     else
       tip:Line(name, Standing(reaction), "bright", ReactionColor(reaction))
       if size > 0 then
-        tip:Bar("Progress", value / size, ReactionColor(reaction), math.floor(value / size * 100) .. "%")
-        tip:Line("Points", Group(value) .. " / " .. Group(size), "muted", "bright")
+        tip:Bar(L["Progress"], value / size, ReactionColor(reaction), math.floor(value / size * 100) .. "%")
+        tip:Line(L["Points"], Group(value) .. " / " .. Group(size), "muted", "bright")
       end
     end
-    tip:Note("Click to open your reputation.")
+    tip:Note(L["Click to open your reputation."])
   end,
   Click = function()
     Open(ToggleCharacter, "ReputationFrame")
@@ -1093,12 +1094,12 @@ function I.Professions()
 end
 
 Add({
-  id = "prof", name = "Professions", icon = "Hammer",
+  id = "prof", name = L["Professions"], icon = "Hammer",
   events = { "SKILL_LINES_CHANGED", "CHAT_MSG_SKILL" },
   Value = function()
     local list = I.Professions()
     if #list == 0 then
-      return nil, "No professions", "muted"
+      return nil, L["No professions"], "muted"
     end
     -- the second one's name muted like the first's, its rank in the same bright colour as the first rank
     local second = list[2] and (list[2].name .. " " .. I.Hex("bright") .. list[2].rank .. "|r") or nil
@@ -1106,9 +1107,9 @@ Add({
   end,
   Tooltip = function(tip)
     local list = I.Professions()
-    tip:Title("Professions")
+    tip:Title(L["Professions"])
     if #list == 0 then
-      tip:Line("You have no professions yet.", nil, "muted")
+      tip:Line(L["You have no professions yet."], nil, "muted")
     end
     for _, prof in ipairs(list) do
       tip:Line(prof.name, prof.max and (prof.rank .. " / " .. prof.max) or tostring(prof.rank), "text", "bright")
@@ -1148,7 +1149,7 @@ local function ZoneColor()
 end
 
 Add({
-  id = "zone", name = "Location", icon = "Pin", tick = true,
+  id = "zone", name = L["Location"], icon = "Pin", tick = true,
   events = { "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA" },
   Value = function()
     local zone = Str(Ask(GetRealZoneText)) or Str(Ask(GetZoneText)) or "?"
@@ -1167,14 +1168,14 @@ Add({
     local zone = Str(Ask(GetRealZoneText)) or Str(Ask(GetZoneText)) or "?"
     local sub = Str(Ask(GetSubZoneText))
     local _, _, faction = Ask(GetZonePVPInfo)
-    tip:Title("Location")
+    tip:Title(L["Location"])
     tip:Line(zone, Str(faction), ZoneColor(), "muted")
     if sub and sub ~= zone then
       tip:Line(sub, nil, "text")
     end
     local x, y = I.Coordinates()
-    tip:Line("Coordinates", x and ("%.1f, %.1f"):format(x, y) or "none here", "muted", "bright")
-    tip:Note("Click to open the map.")
+    tip:Line(L["Coordinates"], x and ("%.1f, %.1f"):format(x, y) or L["none here"], "muted", "bright")
+    tip:Note(L["Click to open the map."])
   end,
   Click = function()
     Open(ToggleWorldMap)
@@ -1182,7 +1183,7 @@ Add({
 })
 
 -- Nothing: the slot stays empty (the panel keeps the space, the screen bar closes the gap).
-I.NOTHING = { id = "none", name = "Nothing" }
+I.NOTHING = { id = "none", name = L["Nothing"] }
 
 function I.Text(id)
   return I.TEXTS[id]

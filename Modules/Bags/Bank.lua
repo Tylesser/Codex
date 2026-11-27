@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Bags module, part 7: the bank window. At the banker (BANKFRAME_OPENED, or the game's BankFrame showing)
 -- the game's bank window stays open but is parked off screen with alpha 0 (Blizzard.lua B.ParkPanel): it
@@ -78,7 +79,7 @@ local function BagOrderSections(bags, slots)
   local names = TabNames()
   local sections, byBag = {}, {}
   for index, bagID in ipairs(bags) do
-    local name = names[bagID] or (index == 1 and "Bank" or ("Bank bag " .. (index - 1)))
+    local name = names[bagID] or (index == 1 and L["Bank"] or L["Bank bag %d"]:format(index - 1))
     local section = { id = "bank" .. bagID, name = name, entries = {}, wide = true }
     byBag[bagID] = section
     sections[#sections + 1] = section
@@ -100,12 +101,12 @@ end
 
 local function UpdateFooter(free, size)
   if size then
-    frame.free:SetText(("Free %d / %d"):format(free, size))
+    frame.free:SetText(L["Free %d / %d"]:format(free, size))
   else
-    frame.free:SetText(("Free %d"):format(free))
+    frame.free:SetText(L["Free %d"]:format(free))
   end
   local _, total = B.MoneyList()
-  frame.money.text:SetText(ns.Money(GetMoney() or 0) .. "   |cff999999Total|r " .. ns.Money(total))
+  frame.money.text:SetText(ns.Money(GetMoney() or 0) .. "   |cff999999" .. L["Total"] .. "|r " .. ns.Money(total))
 end
 
 -- A short line in the footer (the deposit's result), gone after a while.
@@ -125,7 +126,7 @@ end
 
 local function UpdateHeader()
   local theme = ns.Theme()
-  frame.title:SetText(theme.titlebar.upper and "BANK" or "Bank")
+  frame.title:SetText(theme.titlebar.upper and L["Bank"]:upper() or L["Bank"])
   local game = GameBank()
   B.SetIconState(frame.game, game ~= nil and game:IsShown() and not B.IsParked(game), game ~= nil)
   B.SetIconState(frame.sort, false, true)
@@ -207,7 +208,7 @@ end
 -- C_Container.SortBankBags()).
 function B.SortBank()
   if InCombatLockdown() then
-    ns.Say("the bank can be sorted after the fight.")
+    ns.Say(L["the bank can be sorted after the fight."])
     return false
   end
   local bankType = BankType()
@@ -218,7 +219,7 @@ function B.SortBank()
     C_Container.SortBankBags()
     return true
   end
-  ns.Say("this game client can't sort the bank.")
+  ns.Say(L["this game client can't sort the bank."])
   return false
 end
 
@@ -271,20 +272,20 @@ function B.CreateBankWindow()
   end, function()
     local game = GameBank()
     local shown = game and not B.IsParked(game)
-    return { "The game's bank window", (shown and "Click to hide it again." or "Click to show it: buy bank tabs and put bags in them there.") }
+    return { L["The game's bank window"], (shown and L["Click to hide it again."] or L["Click to show it: buy bank tabs and put bags in them there."]) }
   end)
   frame.game.keepColors = true
   frame.game:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -pad, top)
   frame.sort = B.IconButton(frame, "Interface\\Icons\\INV_Pet_Broom", function()
     B.SortBank()
   end, function()
-    return { "Sort the bank", "The game's own bank sort." }
+    return { L["Sort the bank"], L["The game's own bank sort."] }
   end)
   frame.sort:SetPoint("RIGHT", frame.game, "LEFT", -6, 0)
-  frame.deposit = B.TextButton(frame, 130, "Deposit reagents", function()
+  frame.deposit = B.TextButton(frame, 130, L["Deposit reagents"], function()
     B.deposit.Run(true)
   end, function()
-    return { "Deposit reagents", "Puts the crafting reagents from your bags into the bank. Never quest items, gear, ammo or keys." }
+    return { L["Deposit reagents"], L["Puts the crafting reagents from your bags into the bank. Never quest items, gear, ammo or keys."] }
   end)
   frame.deposit:SetPoint("RIGHT", frame.sort, "LEFT", -6, 0)
   frame.search = B.SearchBox(frame, frame.deposit, function(text)
@@ -323,7 +324,7 @@ function B.OpenBank()
     -- the buttons can't be made during a fight: the game's bank window this time
     if not bank.toldCombat then
       bank.toldCombat = true
-      ns.Say("the Codex bank window opens out of combat; the game's bank this time.")
+      ns.Say(L["the Codex bank window opens out of combat; the game's bank this time."])
     end
     return false
   end

@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Map extras: dungeon and raid entrances on zone and continent maps (an icon at each entrance; hover for the name,
 -- the level range coloured for your level, dungeon or raid and its size, the zone on a bigger map or another zone's
@@ -46,18 +47,18 @@ M.CONTINENT_LEVELS = 58 -- on a continent: our frame this far above the canvas (
 
 -- The groups, in the menu's order. default = shown when nothing is saved yet.
 M.GROUPS = {
-  { key = "dungeons", name = "Dungeons and raids", default = true },
-  { key = "inns", name = "Innkeepers", default = true, kinds = { inn = true } },
-  { key = "flight", name = "Flight masters", default = true, kinds = { fly = true } },
-  { key = "banks", name = "Banks", default = true, kinds = { bank = true } },
-  { key = "auction", name = "Auction houses", default = true, kinds = { ah = true } },
-  { key = "mail", name = "Mailboxes", default = true, kinds = { mail = true } },
-  { key = "classTrainers", name = "Class trainers", default = false, kinds = { ct = true } },
-  { key = "profTrainers", name = "Profession trainers", default = false, kinds = { pt = true } },
-  { key = "vendors", name = "Vendors", default = false, kinds = { goods = true, food = true, reagent = true, poison = true } },
-  { key = "repair", name = "Repair", default = false, kinds = { repair = true } },
-  { key = "stable", name = "Stable masters", default = false, kinds = { stable = true } },
-  { key = "others", name = "Others", default = false,
+  { key = "dungeons", name = L["Dungeons and raids"], default = true },
+  { key = "inns", name = L["Innkeepers"], default = true, kinds = { inn = true } },
+  { key = "flight", name = L["Flight masters"], default = true, kinds = { fly = true } },
+  { key = "banks", name = L["Banks"], default = true, kinds = { bank = true } },
+  { key = "auction", name = L["Auction houses"], default = true, kinds = { ah = true } },
+  { key = "mail", name = L["Mailboxes"], default = true, kinds = { mail = true } },
+  { key = "classTrainers", name = L["Class trainers"], default = false, kinds = { ct = true } },
+  { key = "profTrainers", name = L["Profession trainers"], default = false, kinds = { pt = true } },
+  { key = "vendors", name = L["Vendors"], default = false, kinds = { goods = true, food = true, reagent = true, poison = true } },
+  { key = "repair", name = L["Repair"], default = false, kinds = { repair = true } },
+  { key = "stable", name = L["Stable masters"], default = false, kinds = { stable = true } },
+  { key = "others", name = L["Others"], default = false,
     kinds = { bm = true, spirit = true, guild = true, wm = true, ride = true, barber = true, tmog = true } },
 }
 local GROUP_OF = {}
@@ -70,13 +71,13 @@ M.GROUP_OF = GROUP_OF
 
 -- What a service is called (tooltip title) and the colour token of its glyph.
 M.KINDS = {
-  inn = { "Innkeeper", "warn" }, fly = { "Flight master", "good" }, bank = { "Bank", "money" },
-  ah = { "Auction house", "money" }, mail = { "Mailbox", "bright" }, ct = { "Class trainer", "class" },
-  pt = { "Profession trainer", "accent" }, repair = { "Repair", "text" }, goods = { "General goods", "text" },
-  food = { "Food and drink", "text" }, reagent = { "Reagents", "text" }, poison = { "Poisons", "text" },
-  stable = { "Stable master", "text" }, bm = { "Battlemaster", "bad" }, spirit = { "Spirit healer", "bright" },
-  guild = { "Guild master", "text" }, wm = { "Weapon master", "text" }, ride = { "Riding trainer", "text" },
-  barber = { "Barber", "text" }, tmog = { "Transmogrifier", "text" },
+  inn = { L["Innkeeper"], "warn" }, fly = { L["Flight master"], "good" }, bank = { L["Bank"], "money" },
+  ah = { L["Auction house"], "money" }, mail = { L["Mailbox"], "bright" }, ct = { L["Class trainer"], "class" },
+  pt = { L["Profession trainer"], "accent" }, repair = { L["Repair"], "text" }, goods = { L["General goods"], "text" },
+  food = { L["Food and drink"], "text" }, reagent = { L["Reagents"], "text" }, poison = { L["Poisons"], "text" },
+  stable = { L["Stable master"], "text" }, bm = { L["Battlemaster"], "bad" }, spirit = { L["Spirit healer"], "bright" },
+  guild = { L["Guild master"], "text" }, wm = { L["Weapon master"], "text" }, ride = { L["Riding trainer"], "text" },
+  barber = { L["Barber"], "text" }, tmog = { L["Transmogrifier"], "text" },
 }
 M.PROFESSIONS = {
   alchemy = { "Alchemy", 171 }, blacksmithing = { "Blacksmithing", 164 }, enchanting = { "Enchanting", 333 },
@@ -262,6 +263,13 @@ function M.Wanted(group, mapID)
   return not M.Addon(group) and not M.GameShows(group, mapID)
 end
 
+-- Group names inside a sentence: lower case in English only (German nouns keep their capital, and string.lower
+-- doesn't know Cyrillic).
+local function Lower(text)
+  local locale = ns.T and ns.T.LOCALE or "enUS"
+  return locale:sub(1, 2) == "en" and text:lower() or text
+end
+
 -- The page's line about other addons.
 function M.NoteText()
   local by = {}
@@ -273,7 +281,7 @@ function M.NoteText()
         by[who] = {}
         order[#order + 1] = who
       end
-      table.insert(by[who], group.name:lower())
+      table.insert(by[who], Lower(group.name))
     end
   end
   local who = M.Addon("spirit")
@@ -282,11 +290,11 @@ function M.NoteText()
       by[who] = {}
       order[#order + 1] = who
     end
-    table.insert(by[who], "spirit healers")
+    table.insert(by[who], L["spirit healers"])
   end
   local parts = {}
   for _, name in ipairs(order) do
-    parts[#parts + 1] = ("%s shows %s, so Codex leaves those to it."):format(name, table.concat(by[name], ", "))
+    parts[#parts + 1] = L["%s shows %s, so Codex leaves those to it."]:format(name, table.concat(by[name], ", "))
   end
   return table.concat(parts, " ")
 end
@@ -505,7 +513,17 @@ function M.LevelText(low, high)
 end
 
 local function KindText(inst, players)
-  return ("%s, %d players"):format(inst.kind == "raid" and "Raid" or "Dungeon", players)
+  return (inst.kind == "raid" and L["Raid, %d players"] or L["Dungeon, %d players"]):format(players)
+end
+
+-- A profession's name in the game's language (the English one when the game doesn't say).
+function M.ProfessionName(prof)
+  local name = C_TradeSkillUI and Str(Ask(C_TradeSkillUI.GetTradeSkillDisplayName, prof[2]))
+  if not name and C_SkillInfo then
+    local info = Ask(C_SkillInfo.GetSkillLineInfoByID, prof[2])
+    name = Str(type(info) == "table" and info.name or info)
+  end
+  return name or prof[1]
 end
 
 function M.ServiceTitle(spot)
@@ -517,7 +535,7 @@ function M.ServiceTitle(spot)
     title = title .. ": " .. (Str(localized) or name)
   elseif spot.kind == "pt" and spot.detail then
     local prof = M.PROFESSIONS[spot.detail]
-    title = title .. ": " .. (prof and prof[1] or spot.detail)
+    title = title .. ": " .. (prof and M.ProfessionName(prof) or spot.detail)
   end
   return title
 end
@@ -545,7 +563,7 @@ function M.TooltipLines(pin)
         for _, wing in ipairs(wings) do
           same = same and wing[4] == players
         end
-        Add(same and KindText(inst, players) or (inst.kind == "raid" and "Raid" or "Dungeon"), nil, theme.muted)
+        Add(same and KindText(inst, players) or (inst.kind == "raid" and L["Raid"] or L["Dungeon"]), nil, theme.muted)
         for _, wing in ipairs(wings) do
           local label = wing[1] or inst.name
           if not same then
@@ -921,7 +939,7 @@ end
 -- The filter button on the map's top bar ------------------------------------------------------------------------------
 
 function M.MenuItems()
-  local items = { { text = "Map extras", title = true } }
+  local items = { { text = L["Map extras"], title = true } }
   for _, group in ipairs(M.GROUPS) do
     local who = M.Addon(group.key)
     items[#items + 1] = {
@@ -933,16 +951,16 @@ function M.MenuItems()
       end,
     }
   end
-  items[#items + 1] = { text = "Trainers", title = true }
+  items[#items + 1] = { text = L["Trainers"], title = true }
   items[#items + 1] = {
-    text = "Every class",
+    text = L["Every class"],
     checked = Q.DB()[CLASS_KEY] == "all",
     func = function()
       Q.Set(CLASS_KEY, Q.DB()[CLASS_KEY] == "all" and "mine" or "all")
     end,
   }
   items[#items + 1] = {
-    text = "Every profession",
+    text = L["Every profession"],
     checked = Q.DB()[PROF_KEY] ~= "mine",
     func = function()
       Q.Set(PROF_KEY, Q.DB()[PROF_KEY] == "mine" and "all" or "mine")
@@ -1046,8 +1064,8 @@ function M.MakeButton(map)
     if tip then
       local t = Theme()
       tip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
-      tip:SetText("Map extras", t.bright[1], t.bright[2], t.bright[3])
-      tip:AddLine("Pick what the map shows: dungeons, innkeepers, flight masters, banks...", t.text[1], t.text[2],
+      tip:SetText(L["Map extras"], t.bright[1], t.bright[2], t.bright[3])
+      tip:AddLine(L["Pick what the map shows: dungeons, innkeepers, flight masters, banks..."], t.text[1], t.text[2],
         t.text[3], true)
       tip:Show()
     end
@@ -1204,9 +1222,8 @@ end
 
 Q.AddToggle({
   key = KEY,
-  name = "Dungeons and town services on the map",
-  desc = "Dungeon and raid entrances on zone and continent maps (hover one for its level range and size), and "
-    .. "the services of your faction on zone maps. The funnel button at the top of the world map picks what shows.",
+  name = L["Dungeons and town services on the map"],
+  desc = L["Dungeon and raid entrances on zone and continent maps (hover one for its level range and size), and the services of your faction on zone maps. The funnel button at the top of the world map picks what shows."],
   order = 47,
   Enable = M.Enable,
   Changed = M.Changed,
@@ -1215,27 +1232,27 @@ Q.AddToggle({
     {
       key = CLASS_KEY,
       kind = "choice",
-      name = "Class trainers",
+      name = L["Class trainers"],
       default = "mine",
-      choices = { { "mine", "Your class" }, { "all", "Every class" } },
+      choices = { { "mine", L["Your class"] }, { "all", L["Every class"] } },
       Changed = function()
         M.Refresh()
       end,
       Disabled = function()
-        return not M.Shown("classTrainers") and "Class trainers are not shown." or nil
+        return not M.Shown("classTrainers") and L["Class trainers are not shown."] or nil
       end,
     },
     {
       key = PROF_KEY,
       kind = "choice",
-      name = "Profession trainers",
+      name = L["Profession trainers"],
       default = "all",
-      choices = { { "all", "Every profession" }, { "mine", "Your professions" } },
+      choices = { { "all", L["Every profession"] }, { "mine", L["Your professions"] } },
       Changed = function()
         M.Refresh()
       end,
       Disabled = function()
-        return not M.Shown("profTrainers") and "Profession trainers are not shown." or nil
+        return not M.Shown("profTrainers") and L["Profession trainers are not shown."] or nil
       end,
     },
     { key = NOTE_KEY, kind = "custom", Build = BuildNote, Refresh = RefreshNote },

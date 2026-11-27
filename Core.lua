@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Codex core: saved data, the module registry and small shared helpers. Every feature is a module that
 -- registers itself here; a module that is switched off (or left to its standalone addon) never runs its
@@ -15,6 +16,9 @@ ns.PREFIX = ns.T.Prefix("Codex")
 local API = {}
 TylesserCodex = API
 ns.API = API
+-- The translations (Tylesser.lua's ns.L) for the load-on-demand folders, which have their own namespace: Codex_Skins
+-- and the themes read TylesserCodex.L (2026-11-27).
+API.L = ns.L
 
 local DEFAULTS = {
   theme = "runestone",
@@ -384,13 +388,13 @@ end
 -- "3m", "2h", "5d" since a time() stamp.
 function ns.Age(stamp)
   if not stamp then
-    return "never"
+    return L["never"]
   end
   local seconds = math.max(0, time() - stamp)
   if seconds < 3600 then
-    return math.max(1, math.floor(seconds / 60)) .. "m"
+    return L["%dm"]:format(math.max(1, math.floor(seconds / 60)))
   elseif seconds < 86400 then
-    return math.floor(seconds / 3600) .. "h"
+    return L["%dh"]:format(math.floor(seconds / 3600))
   end
-  return math.floor(seconds / 86400) .. "d"
+  return L["%dd"]:format(math.floor(seconds / 86400))
 end

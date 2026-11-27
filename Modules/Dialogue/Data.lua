@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Reads what the game knows about the NPC talk into a plain page table, so drawing and keys never touch the game's
 -- APIs (and tests can check the content). Every value goes through D.Str / D.Num: a secret or a missing function
@@ -74,15 +75,15 @@ end
 -- Tag on the right of a quest row: Ready, Repeatable, Low level, Daily or the progress.
 local function Tag(row)
   if row.active and row.complete then
-    return "Ready", "good"
+    return L["Ready"], "good"
   elseif row.daily then
-    return "Daily", "muted"
+    return L["Daily"], "muted"
   elseif row.repeatable then
-    return "Repeatable", "muted"
+    return L["Repeatable"], "muted"
   elseif row.active then
     return Progress(row.id), "muted"
   elseif row.trivial then
-    return "Low level", "muted"
+    return L["Low level"], "muted"
   end
   return nil
 end

@@ -24,93 +24,105 @@ local addonName, ns = ...
 -- Modules declare where they go: RegisterModule({ area = "trade", sectionOrder = 10, pageHeight, pageEstimate,
 -- folded, sectionTitle, BuildSection }); every module without an area lands in General.
 
+local L = ns.L
 local UI = ns.UI
 
 local EMBLEM = "Interface\\AddOns\\Codex\\Media\\Emblem"
 ns.AREAS = {
-  { id = "home", name = "Home", icon = EMBLEM },
-  { id = "bars", name = "Action bars", icon = "Interface\\Icons\\Spell_Holy_HolyBolt",
-    desc = "How your bars look, when they show, glowing procs, new spell ranks and the cooldown manager." },
-  { id = "ringmenus", name = "Rings", icon = "Interface\\Icons\\Spell_Arcane_PortalDalaran",
-    desc = "Ring menus of spells, items, mounts or markers that open round the mouse while you hold a key." },
-  { id = "units", name = "Unit frames", icon = "Interface\\Icons\\Spell_Holy_FlashHeal",
-    desc = "Your own frames, the party and the raid, nameplates and the bars under your character." },
-  { id = "auras", name = "Buffs", icon = "Interface\\Icons\\Spell_Holy_WordFortitude",
-    desc = "The buffs you track, click-to-buff and dispel buttons, and how buffs and debuffs look." },
-  { id = "items", name = "Bags and items", icon = "Interface\\Icons\\INV_Misc_Bag_08",
-    desc = "Bags, bank and guild bank, stat changes on gear, looting and loot rolls." },
-  { id = "quests", name = "Quests", icon = "Interface\\Icons\\INV_Misc_Book_08",
-    desc = "Quest windows and keys, the quest tracker and the quest log." },
-  { id = "map", name = "Map", icon = "Interface\\Icons\\INV_Misc_Map_01",
-    desc = "The minimap, the world map, quest pins and highlights near you." },
-  { id = "chat", name = "Chat", icon = "Interface\\Icons\\INV_Misc_Note_01",
-    desc = "The chat box and the damage meter." },
-  { id = "info", name = "Info bars", icon = "Interface\\Icons\\INV_Misc_PocketWatch_01",
-    desc = "The info bars along the screen edge and under the chat." },
-  { id = "tooltips", name = "Tooltips", icon = "Interface\\Icons\\INV_Misc_Book_09",
-    desc = "How tooltips look and what Codex adds to them." },
-  { id = "trade", name = "Trade", icon = "Interface\\Icons\\INV_Misc_Coin_01",
-    desc = "The auction house, professions and merchants." },
-  { id = "general", name = "General", icon = "Interface\\Icons\\INV_Misc_Gear_01", lower = true,
-    desc = "Restyling the game's interface, game windows and menus, and the Codex window itself." },
-  { id = "look", name = "Look", icon = "Interface\\Icons\\INV_Misc_Gem_Ruby_01", lower = true,
-    desc = "The theme, fonts, accent colour and effects." },
-  { id = "profiles", name = "Profiles", icon = "Interface\\Icons\\INV_Scroll_03", lower = true,
-    desc = "Saved sets of settings, sharing them, and the first-run setup." },
+  { id = "home", name = L["Home"], icon = EMBLEM },
+  { id = "bars", name = L["Action bars"], icon = "Interface\\Icons\\Spell_Holy_HolyBolt",
+    desc = L["How your bars look, when they show, glowing procs, new spell ranks and the cooldown manager."] },
+  { id = "ringmenus", name = L["Rings"], icon = "Interface\\Icons\\Spell_Arcane_PortalDalaran",
+    desc = L["Ring menus of spells, items, mounts or markers that open round the mouse while you hold a key."] },
+  { id = "units", name = L["Unit frames"], icon = "Interface\\Icons\\Spell_Holy_FlashHeal",
+    desc = L["Your own frames, the party and the raid, nameplates and the bars under your character."] },
+  { id = "auras", name = L["Buffs"], icon = "Interface\\Icons\\Spell_Holy_WordFortitude",
+    desc = L["The buffs you track, click-to-buff and dispel buttons, and how buffs and debuffs look."] },
+  { id = "items", name = L["Bags and items"], icon = "Interface\\Icons\\INV_Misc_Bag_08",
+    desc = L["Bags, bank and guild bank, stat changes on gear, looting and loot rolls."] },
+  { id = "quests", name = L["Quests"], icon = "Interface\\Icons\\INV_Misc_Book_08",
+    desc = L["Quest windows and keys, the quest tracker and the quest log."] },
+  { id = "map", name = L["Map"], icon = "Interface\\Icons\\INV_Misc_Map_01",
+    desc = L["The minimap, the world map, quest pins and highlights near you."] },
+  { id = "chat", name = L["Chat"], icon = "Interface\\Icons\\INV_Misc_Note_01",
+    desc = L["The chat box and the damage meter."] },
+  { id = "info", name = L["Info bars"], icon = "Interface\\Icons\\INV_Misc_PocketWatch_01",
+    desc = L["The info bars along the screen edge and under the chat."] },
+  { id = "tooltips", name = L["Tooltips"], icon = "Interface\\Icons\\INV_Misc_Book_09",
+    desc = L["How tooltips look and what Codex adds to them."] },
+  { id = "trade", name = L["Trade"], icon = "Interface\\Icons\\INV_Misc_Coin_01",
+    desc = L["The auction house, professions and merchants."] },
+  { id = "general", name = L["General"], icon = "Interface\\Icons\\INV_Misc_Gear_01", lower = true,
+    desc = L["Restyling the game's interface, game windows and menus, and the Codex window itself."] },
+  { id = "look", name = L["Look"], icon = "Interface\\Icons\\INV_Misc_Gem_Ruby_01", lower = true,
+    desc = L["The theme, fonts, accent colour and effects."] },
+  { id = "profiles", name = L["Profiles"], icon = "Interface\\Icons\\INV_Scroll_03", lower = true,
+    desc = L["Saved sets of settings, sharing them, and the first-run setup."] },
 }
 ns.AREA_BY_ID = {}
 for _, area in ipairs(ns.AREAS) do
   ns.AREA_BY_ID[area.id] = area
 end
 
--- The tabs of each page: { title, section ids } in order. Related features share a tab (and fold there).
+-- The tabs of each page: { title, section ids, shown name } in order. Related features share a tab (and fold there).
+-- The title stays English: the chosen tab is saved by it (CodexDB.areaTabs); the third value is what the tab shows
+-- (addon names stay as they are).
 ns.AREA_TABS = {
   bars = {
-    { "Look", { "part-actionbars" } }, { "Visibility", { "barfade" } }, { "Proc glow", { "qol-procGlow" } },
-    { "Spells", { "qol-spellRanks", "qol-futureSpells" } }, { "Cooldown manager", { "part-cooldowns" } },
-    { "Buttons", { "qol-hoverBind", "qol-cooldownNumbers", "qol-greyOut", "qol-hideEmpty" } },
+    { "Look", { "part-actionbars" }, L["Look"] }, { "Visibility", { "barfade" }, L["Visibility"] },
+    { "Proc glow", { "qol-procGlow" }, L["Proc glow"] },
+    { "Spells", { "qol-spellRanks", "qol-futureSpells" }, L["Spells"] },
+    { "Cooldown manager", { "part-cooldowns" }, L["Cooldown manager"] },
+    { "Buttons", { "qol-hoverBind", "qol-cooldownNumbers", "qol-greyOut", "qol-hideEmpty" }, L["Buttons"] },
   },
   units = {
-    { "Player and target", { "part-unitframes" } }, { "Party", { "part-partyframes" } },
-    { "Raid", { "part-raidframes" } }, { "Nameplates", { "part-nameplates" } }, { "Personal bars", { "resource" } },
-    { "Skull mark", { "qol-skullMark" } },
+    { "Player and target", { "part-unitframes" }, L["Player and target"] }, { "Party", { "part-partyframes" }, L["Party"] },
+    { "Raid", { "part-raidframes" }, L["Raid"] }, { "Nameplates", { "part-nameplates" }, L["Nameplates"] },
+    { "Personal bars", { "resource" }, L["Personal bars"] }, { "Skull mark", { "qol-skullMark" }, L["Skull mark"] },
   },
   auras = {
-    { "Buff tracker", { "buffs" } }, { "Party buttons", { "buffs-party", "buffs-dispel" } },
-    { "Look", { "part-auras" } },
+    { "Buff tracker", { "buffs" }, L["Buff tracker"] },
+    { "Party buttons", { "buffs-party", "buffs-dispel" }, L["Party buttons"] },
+    { "Look", { "part-auras" }, L["Look"] },
   },
   items = {
-    { "Bags", { "bags" } }, { "Stat Delta", { "statdelta" } },
-    { "Looting", { "qol-fasterLoot", "loottext", "part-lootroll" } },
+    { "Bags", { "bags" }, L["Bags"] }, { "Stat Delta", { "statdelta" } },
+    { "Looting", { "qol-fasterLoot", "loottext", "part-lootroll" }, L["Looting"] },
   },
   quests = {
-    { "Quest windows", { "dialogue", "questkeys" } },
-    { "Tracker", { "questtracker", "part-tracker", "qol-trackerSort" } },
-    { "Quest log", { "part-questlog" } },
+    { "Quest windows", { "dialogue", "questkeys" }, L["Quest windows"] },
+    { "Tracker", { "questtracker", "part-tracker", "qol-trackerSort" }, L["Tracker"] },
+    { "Quest log", { "part-questlog" }, L["Quest log"] },
   },
   map = {
-    { "Minimap", { "part-minimap", "qol-addonButtons" } },
-    { "World map", { "qol-revealMap", "qol-zoneLevels", "qol-mapExtras", "part-questpins" } },
-    { "Highlights", { "highlight" } },
+    { "Minimap", { "part-minimap", "qol-addonButtons" }, L["Minimap"] },
+    { "World map", { "qol-revealMap", "qol-zoneLevels", "qol-mapExtras", "part-questpins" }, L["World map"] },
+    { "Highlights", { "highlight" }, L["Highlights"] },
   },
-  chat = { { "Chat", { "part-chat" } }, { "Damage meter", { "part-damagemeter" } }, { "Trade Crier", { "crier" } } },
+  chat = {
+    { "Chat", { "part-chat" }, L["Chat"] }, { "Damage meter", { "part-damagemeter" }, L["Damage meter"] },
+    { "Trade Crier", { "crier" } },
+  },
   tooltips = {
-    { "Look", { "part-tooltips" } },
-    { "Extra lines", { "qol-questTooltips", "qol-gatherTooltips", "tooltipextras" } },
+    { "Look", { "part-tooltips" }, L["Look"] },
+    { "Extra lines", { "qol-questTooltips", "qol-gatherTooltips", "tooltipextras" }, L["Extra lines"] },
   },
   trade = {
-    { "Auction house", { "auction", "auction-lists", "auction-prices" } }, { "Professions", { "professions" } },
-    { "Commerce Authority", { "commerce" } }, { "Merchants", { "vendor", "vendorsearch" } },
-    { "Trainers", { "qol-trainerAll" } },
+    { "Auction house", { "auction", "auction-lists", "auction-prices" }, L["Auction house"] },
+    { "Professions", { "professions" }, L["Professions"] },
+    { "Commerce Authority", { "commerce" } }, { "Merchants", { "vendor", "vendorsearch" }, L["Merchants"] },
+    { "Trainers", { "qol-trainerAll" }, L["Trainers"] },
   },
   general = {
-    { "Restyle", { "restyle", "part-windows", "part-menus", "part-floatingtext" } },
-    { "Move windows", { "movewindows" } }, { "Quality of life", { "qol" } }, { "Codex window", { "codexwindow" } },
+    { "Restyle", { "restyle", "part-windows", "part-menus", "part-floatingtext" }, L["Restyle"] },
+    { "Move windows", { "movewindows" }, L["Move windows"] }, { "Quality of life", { "qol" }, L["Quality of life"] },
+    { "Codex window", { "codexwindow" }, L["Codex window"] },
   },
   look = {
-    { "Theme", { "theme" } }, { "Fonts", { "fonts" } }, { "Accent colour", { "accent" } }, { "Effects", { "effects" } },
+    { "Theme", { "theme" }, L["Theme"] }, { "Fonts", { "fonts" }, L["Fonts"] },
+    { "Accent colour", { "accent" }, L["Accent colour"] }, { "Effects", { "effects" }, L["Effects"] },
   },
-  profiles = { { "Profiles", { "profiles" } }, { "First-run setup", { "setup" } } },
+  profiles = { { "Profiles", { "profiles" }, L["Profiles"] }, { "First-run setup", { "setup" }, L["First-run setup"] } },
 }
 
 -- Old page names that still open something: Settings and its tabs (ns.ShowSettings).
@@ -156,19 +168,19 @@ local function ModuleNotice(section)
   end
   local state = ns.ModuleState(module.id)
   if state == "standalone" then
-    return ("%s is installed on its own, so Codex leaves this to it."):format(module.standaloneName or module.standalone),
-      "Use Codex's instead", function()
+    return L["%s is installed on its own, so Codex leaves this to it."]:format(module.standaloneName or module.standalone),
+      L["Use Codex's instead"], function()
         ns.ForceModule(module.id)
       end
   end
   if module.error then
-    return "Failed to start: " .. tostring(module.error)
+    return L["Failed to start: %s"]:format(tostring(module.error))
   end
   if state == "on" and not module.running then
-    return "Switched on: it starts after a reload."
+    return L["Switched on: it starts after a reload."]
   end
   if state == "off" and module.running then
-    return "Switched off: it stops after a reload."
+    return L["Switched off: it stops after a reload."]
   end
   return nil
 end
@@ -445,7 +457,7 @@ local function RefreshHeader(section)
     tag = ok and text or ""
   elseif def.module then
     local state = ns.ModuleState(def.module)
-    tag = state == "standalone" and "addon" or ""
+    tag = state == "standalone" and L["addon"] or ""
   end
   section.tag:SetText(tag or "")
   section.arrow:SetOpen(not IsFolded(section))
@@ -537,7 +549,7 @@ function EnsureBody(section)
       text:SetPoint("TOPLEFT")
       text:SetWidth(section.inner)
       text:SetJustifyH("LEFT")
-      text:SetText("This section failed to load: " .. tostring(result))
+      text:SetText(L["This section failed to load: %s"]:format(tostring(result)))
       section.result = { Height = function() return 40 end }
       geterrorhandler()(result)
     end
@@ -696,13 +708,13 @@ local function BuildAreaPage(area, page)
   if #page.sections == 0 then
     local empty = UI.Text(body, "body", 12, "muted")
     empty:SetPoint("TOPLEFT")
-    empty:SetText("Nothing here yet.")
+    empty:SetText(L["Nothing here yet."])
   end
   -- the tabs: ns.AREA_TABS' groups that have sections here, then a tab for each section none of them lists
   page.tabs, page.tabOf = {}, {}
   local listed = {}
   for index, spec in ipairs(ns.AREA_TABS[area.id] or {}) do
-    local tab = { id = area.id .. ":" .. index, title = spec[1], sections = {} }
+    local tab = { id = area.id .. ":" .. index, title = spec[1], text = spec[3] or spec[1], sections = {} }
     for _, id in ipairs(spec[2]) do
       local section = page.byId[id]
       if section and not listed[id] then
@@ -716,7 +728,9 @@ local function BuildAreaPage(area, page)
   end
   for _, section in ipairs(page.sections) do
     if not listed[section.def.id] then
-      page.tabs[#page.tabs + 1] = { id = section.def.id, title = section.def.title, sections = { section } }
+      -- saved by the section id: its title may be translated (an older save holds the English title: see below)
+      page.tabs[#page.tabs + 1] = { id = section.def.id, title = section.def.id, text = section.def.title,
+        sections = { section } }
     end
   end
   for _, tab in ipairs(page.tabs) do
@@ -730,7 +744,7 @@ local function BuildAreaPage(area, page)
   if #page.tabs > 1 then
     local list = {}
     for _, tab in ipairs(page.tabs) do
-      list[#list + 1] = { id = tab.id, text = tab.title }
+      list[#list + 1] = { id = tab.id, text = tab.text }
     end
     page.tabBar = UI.Tabs(page, list, function(id)
       page.SelectTab(id)
@@ -813,7 +827,7 @@ local function BuildAreaPage(area, page)
   local saved = type(ns.db.areaTabs) == "table" and ns.db.areaTabs[area.id]
   local first = page.tabs[1]
   for _, tab in ipairs(page.tabs) do
-    if tab.title == saved then
+    if tab.title == saved or (tab.title == tab.id and tab.text == saved) then
       first = tab
     end
   end

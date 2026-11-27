@@ -1,4 +1,5 @@
 local addonName, codex = ...
+local L = codex.L
 local ns = codex.buffs
 local UI = codex.UI
 
@@ -81,49 +82,45 @@ end
 function ns.BuildDispelTab(tab)
   panel = tab
 
-  local intro = ns.HelpText(panel, "A button for each debuff you can remove, like a poison or a curse. Click it to "
-    .. "cast your dispel on that player.", WIDTH)
+  local intro = ns.HelpText(panel, L["A button for each debuff you can remove, like a poison or a curse. Click it to cast your dispel on that player."], WIDTH)
   intro:SetPoint("TOPLEFT", 0, 0)
 
-  partyCheck = ns.TightCheck(UI.Check(panel, "Dispel buttons next to party frames"))
+  partyCheck = ns.TightCheck(UI.Check(panel, L["Dispel buttons next to party frames"]))
   partyCheck:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -24)
   partyCheck:SetScript("OnClick", function(self)
     ns.db.dispel.party = self:GetChecked() and true or false
     Changed()
   end)
-  local partyHelp = ns.HelpText(panel, "In a party after the buff buttons, in a raid in the corner of the raid frames.",
+  local partyHelp = ns.HelpText(panel, L["In a party after the buff buttons, in a raid in the corner of the raid frames."],
     WIDTH - 24)
   partyHelp:SetPoint("TOPLEFT", partyCheck, "BOTTOMLEFT", 24, -2)
 
-  selfCheck = ns.TightCheck(UI.Check(panel, "Dispel buttons for yourself, under the icon row"))
+  selfCheck = ns.TightCheck(UI.Check(panel, L["Dispel buttons for yourself, under the icon row"]))
   selfCheck:SetPoint("TOPLEFT", partyHelp, "BOTTOMLEFT", -24, -10)
   selfCheck:SetScript("OnClick", function(self)
     ns.db.dispel.self = self:GetChecked() and true or false
     Changed()
   end)
-  local selfHelp = ns.HelpText(panel, "Also when you play alone.", WIDTH - 24)
+  local selfHelp = ns.HelpText(panel, L["Also when you play alone."], WIDTH - 24)
   selfHelp:SetPoint("TOPLEFT", selfCheck, "BOTTOMLEFT", 24, -2)
 
-  combatCheck = ns.TightCheck(UI.Check(panel, "Show dispel icons in combat"))
+  combatCheck = ns.TightCheck(UI.Check(panel, L["Show dispel icons in combat"]))
   combatCheck:SetPoint("TOPLEFT", selfHelp, "BOTTOMLEFT", -24, -10)
   combatCheck:SetScript("OnClick", function(self)
     ns.db.dispel.combat = self:GetChecked() and true or false
     Changed()
   end)
-  local combatHelp = ns.HelpText(panel, "During a fight the game doesn't let addons add or move clickable buttons, so "
-    .. "a debuff that shows up then gets a plain icon in the same place instead. It takes no clicks. Buttons that "
-    .. "were there before the fight keep working.", WIDTH - 24)
+  local combatHelp = ns.HelpText(panel, L["During a fight the game doesn't let addons add or move clickable buttons, so a debuff that shows up then gets a plain icon in the same place instead. It takes no clicks. Buttons that were there before the fight keep working."], WIDTH - 24)
   combatHelp:SetPoint("TOPLEFT", combatCheck, "BOTTOMLEFT", 24, -2)
 
-  listTitle = ns.SectionHeading(panel, "Your dispels", WIDTH)
+  listTitle = ns.SectionHeading(panel, L["Your dispels"], WIDTH)
   listTitle:SetPoint("TOPLEFT", combatHelp, "BOTTOMLEFT", -24, -20)
 
-  listEmpty = ns.HelpText(panel, "You don't know a spell that removes debuffs from others yet. Paladins (Purify, "
-    .. "Cleanse), priests, druids, shamans and mages learn one, and on newer game versions monks and evokers too. "
-    .. "New ones show up here as you learn them.", WIDTH)
+  listEmpty = ns.HelpText(panel, L["You don't know a spell that removes debuffs from others yet. Paladins (%s, %s), priests, druids, shamans and mages learn one, and on newer game versions monks and evokers too. New ones show up here as you learn them."]
+    :format(ns.LocalSpell("Purify"), ns.LocalSpell("Cleanse")), WIDTH)
   listEmpty:SetPoint("TOPLEFT", listTitle, "BOTTOMLEFT", 0, -10)
 
-  local note = ns.HelpText(panel, "When two of your spells remove the same debuff type, the button uses the better "
-    .. "one, like Cleanse over Purify. The button shows the debuff's icon, with a border in its type's color.", WIDTH)
+  local note = ns.HelpText(panel, L["When two of your spells remove the same debuff type, the button uses the better one, like %s over %s. The button shows the debuff's icon, with a border in its type's color."]
+    :format(ns.LocalSpell("Cleanse"), ns.LocalSpell("Purify")), WIDTH)
   note:SetPoint("TOPLEFT", listTitle, "BOTTOMLEFT", 0, -10 - 4 * ROW_HEIGHT - 8)
 end

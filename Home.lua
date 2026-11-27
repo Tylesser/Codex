@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Home: one card per module (in sidebar order: area by area) with its state, what it does and a live status line;
 -- a click on a card opens its section. The cards sit in a scrolling area, each row as tall as its tallest card; the
@@ -55,7 +56,7 @@ local function Layout()
   layout.scroll:Update()
 end
 
-local STATE_TEXT = { on = "On", off = "Off", standalone = "Using the standalone addon" }
+local STATE_TEXT = { on = L["On"], off = L["Off"], standalone = L["Using the standalone addon"] }
 
 local function UpdateCard(card)
   local module = card.module
@@ -70,16 +71,16 @@ local function UpdateCard(card)
   card.desc:SetTextColor(UI.Unpack(state == "off" and theme.muted or theme.text))
   local line = ""
   if state == "standalone" then
-    line = ("%s is installed on its own, so Codex leaves this to it."):format(module.standaloneName or module.standalone)
+    line = L["%s is installed on its own, so Codex leaves this to it."]:format(module.standaloneName or module.standalone)
   elseif state == "on" and module.Status then
     local ok, text = pcall(module.Status, module)
     line = ok and text or ""
   elseif module.error then
-    line = "Failed to start: " .. tostring(module.error)
+    line = L["Failed to start: %s"]:format(tostring(module.error))
   end
   card.status:SetText(line or "")
   card.action:SetShown(state ~= "on")
-  card.action:SetText(state == "off" and "Switch on" or "Use Codex's instead")
+  card.action:SetText(state == "off" and L["Switch on"] or L["Use Codex's instead"])
   card.action:SetWidth(state == "off" and 96 or 150)
 end
 
@@ -91,7 +92,7 @@ local function UpdateAll()
 end
 
 ns.builtinPages.home = {
-  name = "Home",
+  name = L["Home"],
   Build = function(_, page)
     local width = ns.AREA_WIDTH or 672
     local scroll, body = UI.ScrollArea(page)
@@ -99,14 +100,13 @@ ns.builtinPages.home = {
     scroll:SetPoint("BOTTOMRIGHT", 0, 48)
     body:SetSize(width, 400)
     local inner = width - 12 -- room for the scroll thumb
-    local heading = UI.Heading(body, "Home", 22)
+    local heading = UI.Heading(body, L["Home"], 22)
     heading:SetPoint("TOPLEFT")
     local intro = UI.Text(body, "body", 13, "muted")
     intro:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -4)
     intro:SetWidth(inner)
     intro:SetJustifyH("LEFT")
-    intro:SetText("Every Tylesser tool in one place. Click a card to open its options; the switch at the top of "
-      .. "each section turns that feature on or off. The search box above the pages finds any option.")
+    intro:SetText(L["Every Tylesser tool in one place. Click a card to open its options; the switch at the top of each section turns that feature on or off. The search box above the pages finds any option."])
 
     local columns, gap = 2, 10
     local cardWidth = math.floor((inner - gap) / columns)
@@ -163,11 +163,11 @@ ns.builtinPages.home = {
     line:SetPoint("BOTTOMRIGHT", -12, 38)
     local footer = UI.Text(page, "body", 12, "muted")
     footer:SetPoint("BOTTOMLEFT", 0, 10)
-    footer:SetText("Type |cffffffff/codex|r to open this window. Theme: " .. (ns.Theme().name or ""))
-    local more = UI.Button(page, 104, 26, "More addons")
+    footer:SetText(L["Type %s to open this window. Theme: %s"]:format("|cffffffff/codex|r", ns.Theme().name or ""))
+    local more = UI.Button(page, 104, 26, L["More addons"])
     more:SetPoint("BOTTOMRIGHT", -12, 4)
     more:SetScript("OnClick", ns.T.ShowMoreAddons)
-    local feedback = UI.Button(page, 96, 26, "Feedback")
+    local feedback = UI.Button(page, 96, 26, L["Feedback"])
     feedback:SetPoint("RIGHT", more, "LEFT", -8, 0)
     feedback:SetScript("OnClick", ns.T.ShowFeedback)
   end,

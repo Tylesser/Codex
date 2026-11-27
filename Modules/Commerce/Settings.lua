@@ -11,6 +11,7 @@ local addonName, ns = ...
 -- windows' places, and what turn-ins taught (learned, factionIDs: data, kept out of profiles).
 
 local C = ns.commerce
+local L = ns.L
 
 C.TITLE = "Commerce Authority"
 
@@ -118,6 +119,17 @@ function C.HasDiplomat()
   return C.HasLegacyTalent(C.DIPLOMAT_SPELL)
 end
 
+-- A talent's name as the game writes it in the client's language (2026-11-27, translations), else `english`.
+function C.TalentName(spellID, english)
+  if C_Spell and C_Spell.GetSpellName then
+    local ok, name = pcall(C_Spell.GetSpellName, spellID)
+    if ok and type(name) == "string" and name ~= "" and (not canaccessvalue or canaccessvalue(name)) then
+      return name
+    end
+  end
+  return english
+end
+
 -- Prices -----------------------------------------------------------------------------------------------------
 
 local function Readable(value)
@@ -182,7 +194,7 @@ end
 -- is off.
 function C.PriceSourceNames()
   if ns.ModuleOn and ns.ModuleOn("auction") then
-    return { "Codex auction scans" }
+    return { L["Codex auction scans"] }
   end
   return {}
 end

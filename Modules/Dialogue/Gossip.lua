@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Lists: a gossip window (C_GossipInfo) and a quest giver's greeting (QuestFrame's greeting panel). Board
 -- R4-Gossip: the NPC's text, then "Quests" with a line, rows of quests (mark "!" new / "?" yours, gold, blue for
@@ -10,7 +11,7 @@ local D = ns.dialogue
 local UI = ns.UI
 
 local ROW_HEIGHT = { a = 26, b = 30, c = 28 }
-local GAME_FONT = "Fonts\\FRIZQT__.TTF"
+local GAME_FONT = (STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF")
 
 local function Color(texture, color, alpha)
   texture:SetColorTexture(color[1], color[2], color[3], alpha or color[4] or 1)
@@ -173,7 +174,7 @@ function D.FillList(content, page, withText)
   local index = 0
   if #quests > 0 then
     if withText then
-      content:Section("Quests")
+      content:Section(L["Quests"])
     end
     for _, row in ipairs(quests) do
       index = index + 1

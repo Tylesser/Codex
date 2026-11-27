@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = TylesserCodex.L
 local S = ns.S
 
 -- Quest tracker as the R2-HUD board draws it: a soft HUD panel (no edge) with room round the text, as tall
@@ -564,7 +565,7 @@ local function UpdateCounts()
   end
   if counts.tracked then
     local watches = C_QuestLog and C_QuestLog.GetNumQuestWatches and Number(C_QuestLog.GetNumQuestWatches())
-    counts.tracked:SetText(watches and watches > 0 and ("%d tracked"):format(watches) or "")
+    counts.tracked:SetText(watches and watches > 0 and L["%d tracked"]:format(watches) or "")
   end
 end
 

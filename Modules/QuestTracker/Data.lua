@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Quest tracker, part 1: what to show. The tracked quests (the game's watch list) in QuestOrder's order, under a
 -- heading per zone (the zone you're in first), each quest's title with its level in the theme's difficulty colour,
@@ -91,9 +92,9 @@ local function ZoneTitle(entries, here)
         return entry.header
       end
     end
-    return Str(Ask(GetRealZoneText)) or entries[1].header or "Here"
+    return Str(Ask(GetRealZoneText)) or entries[1].header or L["Here"]
   end
-  return entries[1].header or "Other quests"
+  return entries[1].header or L["Other quests"]
 end
 
 -- The groups to show: { key, title, here, quests = { { id, logIndex, title, level, token, complete, failed,
@@ -111,7 +112,7 @@ function QT.Groups()
     current.entries[#current.entries + 1] = entry
     local info = entry.info or {}
     local logIndex = info.logIndex or Num(Ask(API("GetLogIndexForQuestID"), entry.id))
-    local title = info.title or Str(Ask(API("GetTitleForQuestID"), entry.id)) or ("Quest " .. entry.id)
+    local title = info.title or Str(Ask(API("GetTitleForQuestID"), entry.id)) or L["Quest %d"]:format(entry.id)
     local complete = Ask(API("IsComplete"), entry.id) == true
     local failed = Ask(API("IsFailed"), entry.id) == true
     current.quests[#current.quests + 1] = {

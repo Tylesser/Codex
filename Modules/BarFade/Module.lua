@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Action bar visibility, part 2: its page in the Codex window (one row per bar with its mode, the faded
 -- opacity, "Show all now") and registration.
@@ -16,13 +17,13 @@ local COLUMN_GAP = 30
 
 function BF.StatusText()
   if not BF.running then
-    return "Off: the action bars stay as the game shows them."
+    return L["Off: the action bars stay as the game shows them."]
   end
   local count = BF.FadingCount()
   if count == 0 then
-    return "Every bar is always shown. Pick when a bar shows below."
+    return L["Every bar is always shown. Pick when a bar shows below."]
   end
-  return ("%d bar%s fade%s when not needed"):format(count, count == 1 and "" or "s", count == 1 and "s" or "")
+  return (count == 1 and L["%d bar fades when not needed"] or L["%d bars fade when not needed"]):format(count)
 end
 
 local function RefreshPage()
@@ -87,7 +88,7 @@ function BF.BuildPage(page)
   if icon.SetTexCoord then
     icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
   end
-  local heading = UI.Heading(page, "Action bar visibility", 22)
+  local heading = UI.Heading(page, L["Action bar visibility"], 22)
   heading:SetPoint("TOPLEFT", icon, "TOPRIGHT", 12, -1)
   view.status = UI.Text(page, "body", 13, "muted")
   view.status:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -4)
@@ -98,13 +99,11 @@ function BF.BuildPage(page)
   about:SetPoint("RIGHT", 0, 0)
   about:SetJustifyH("LEFT")
   about:SetSpacing(2)
-  about:SetText("Choose when each bar shows. Faded bars come back while you drag a spell or item, while the "
-    .. "spell book or Edit Mode is open, and the main bar in a vehicle. Mouse-over bars stay a moment after the "
-    .. "mouse leaves. \"Never\" makes a bar invisible but its buttons still work (keys and clicks).")
+  about:SetText(L["Choose when each bar shows. Faded bars come back while you drag a spell or item, while the spell book or Edit Mode is open, and the main bar in a vehicle. Mouse-over bars stay a moment after the mouse leaves. \"Never\" makes a bar invisible but its buttons still work (keys and clicks)."])
 
   -- two columns: "Action bars" and "Other bars", one row per bar (its name, then a picker with its mode)
   local sections = {}
-  for column, title in ipairs({ "Action bars", "Other bars" }) do
+  for column, title in ipairs({ L["Action bars"], L["Other bars"] }) do
     local label = UI.Section(page, title)
     label:SetPoint("TOPLEFT", about, "BOTTOMLEFT", (column - 1) * (columnWidth + COLUMN_GAP), -16)
     sections[column] = label
@@ -127,7 +126,7 @@ function BF.BuildPage(page)
 
   -- "Fading", under the other bars: the faded opacity and "Show all now"
   local others = #BF.BARS - ACTION_BARS
-  local fading = UI.Section(page, "Fading")
+  local fading = UI.Section(page, L["Fading"])
   fading:SetPoint("TOPLEFT", sections[2], "BOTTOMLEFT", 0, -8 - others * ROW_HEIGHT - 14)
   local stepper = UI.Stepper(page, 48)
   stepper:SetPoint("TOPLEFT", fading, "BOTTOMLEFT", LABEL_WIDTH, -8)
@@ -136,7 +135,7 @@ function BF.BuildPage(page)
   fadedLabel:SetPoint("RIGHT", stepper, "LEFT", -8, 0)
   fadedLabel:SetWidth(LABEL_WIDTH - 8)
   fadedLabel:SetJustifyH("LEFT")
-  fadedLabel:SetText("Faded opacity")
+  fadedLabel:SetText(L["Faded opacity"])
   view.minus:SetScript("OnClick", function()
     BF.SetFaded(BF.Faded() - 0.05)
   end)
@@ -147,9 +146,9 @@ function BF.BuildPage(page)
   fadedNote:SetPoint("TOPLEFT", stepper, "BOTTOMLEFT", 0, -4)
   fadedNote:SetWidth(columnWidth - LABEL_WIDTH)
   fadedNote:SetJustifyH("LEFT")
-  fadedNote:SetText("How much of a faded bar still shows (0% is invisible).")
+  fadedNote:SetText(L["How much of a faded bar still shows (0% = invisible)."])
 
-  view.preview = UI.Check(page, "Show all now")
+  view.preview = UI.Check(page, L["Show all now"])
   view.preview:SetPoint("TOPLEFT", fading, "BOTTOMLEFT", -2, -64)
   view.preview:SetScript("OnClick", function(self)
     BF.SetPreview(self:GetChecked())
@@ -158,7 +157,7 @@ function BF.BuildPage(page)
   previewNote:SetPoint("TOPLEFT", view.preview.label, "BOTTOMLEFT", 0, -2)
   previewNote:SetWidth(columnWidth - 30)
   previewNote:SetJustifyH("LEFT")
-  previewNote:SetText("Every bar at full until you untick this or reload.")
+  previewNote:SetText(L["Every bar at full until you untick this or reload."])
 
   -- at the bottom, under a line: how this works with Edit Mode
   local editNote = UI.Text(page, "body", 12, "muted")
@@ -166,8 +165,7 @@ function BF.BuildPage(page)
   editNote:SetPoint("LEFT", page, "LEFT", 0, 0)
   editNote:SetPoint("RIGHT", 0, 0)
   editNote:SetJustifyH("LEFT")
-  editNote:SetText("Edit Mode has its own \"Bar Visible\" setting for each bar. A bar Edit Mode hides stays "
-    .. "hidden; the mode chosen here works on top of it.")
+  editNote:SetText(L["Edit Mode has its own \"Bar Visible\" setting for each bar. A bar Edit Mode hides stays hidden; the mode chosen here works on top of it."])
   local line = UI.Divider(page)
   line:SetPoint("BOTTOMLEFT", editNote, "TOPLEFT", 0, 8)
   line:SetPoint("RIGHT", 0, 0)
@@ -182,11 +180,11 @@ end
 
 ns.RegisterModule({
   id = "barfade",
-  name = "Action bar visibility",
+  name = L["Action bar visibility"],
   -- its section in the Codex window (Areas.lua)
-  area = "bars", sectionOrder = 20, sectionTitle = "Visibility", pageEstimate = 470,
+  area = "bars", sectionOrder = 20, sectionTitle = L["Visibility"], pageEstimate = 470,
   icon = "Interface\\Icons\\Spell_Nature_Invisibilty",
-  desc = "Choose when each action bar shows: on mouse-over, only in combat, out of combat or never.",
+  desc = L["Choose when each action bar shows: on mouse-over, only in combat, out of combat or never."],
   order = 95,
   Enable = function()
     BF.Enable()
@@ -204,8 +202,8 @@ ns.RegisterModule({
   Slash = function(_, rest)
     if rest:lower() == "show" and BF.running then
       BF.SetPreview(not BF.state.preview)
-      ns.Say(BF.state.preview and "Every action bar is shown. /codex barfade show again to fade them."
-        or "The action bars fade as set again.")
+      ns.Say(BF.state.preview and L["Every action bar is shown. /codex barfade show again to fade them."]
+        or L["The action bars fade as set again."])
     else
       ns.ShowPage("barfade")
     end

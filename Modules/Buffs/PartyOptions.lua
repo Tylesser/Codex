@@ -1,4 +1,5 @@
 local addonName, codex = ...
+local L = codex.L
 local ns = codex.buffs
 local UI = codex.UI
 
@@ -46,7 +47,7 @@ local function BlessingLabel(key)
   if family then
     return family.label
   end
-  return "None"
+  return L["None"]
 end
 
 -- Next value in: [by class], none, then each known blessing.
@@ -128,10 +129,14 @@ local function RefreshBuffs()
         end
       end
       row.icon:SetTexture(SpellIcon(names[1]) or ns.DEFAULT_ICON)
-      row.name:SetText(table.concat(names, ", or "))
+      local text = names[1] or ""
+      for index = 2, #names do
+        text = L["%s, or %s"]:format(text, names[index])
+      end
+      row.name:SetText(text)
       local first = family.spells[1]
       if ns.KnowsSpell(first.name) and first.reagents then
-        row.reagent:SetText((ns.ReagentName(first) or "Reagent") .. ": " .. ns.ReagentCount(first))
+        row.reagent:SetText((ns.ReagentName(first) or L["Reagent"]) .. ": " .. ns.ReagentCount(first))
         row.reagent:SetTextColor(UI.Unpack(ns.ReagentLow(first) and LOW_COLOR or codex.Theme().muted))
       else
         row.reagent:SetText("")
@@ -223,7 +228,7 @@ local function RefreshBlessings()
           row.button:SetText(BlessingLabel(own))
         else
           local byClass = ns.db.party.classes[class] or ns.DEFAULT_BLESSINGS[class]
-          row.button:SetText("Class: " .. BlessingLabel(byClass))
+          row.button:SetText(L["Class: %s"]:format(BlessingLabel(byClass)))
         end
         row:Show()
       end
@@ -247,10 +252,10 @@ local function Refresh()
   refreshButton:SetText(ns.FormatSeconds(ns.db.party.refreshSeconds))
   refreshButton:SetEnabled(ns.db.party.refresh)
   rangeCheck:SetChecked(ns.db.party.range)
-  rangeButton:SetText(ns.db.party.rangeYards .. " yd")
+  rangeButton:SetText(L["%d yd"]:format(ns.db.party.rangeYards))
   rangeButton:SetEnabled(ns.db.party.range)
   local warn = ns.db.party.reagentWarn
-  reagentButton:SetText(warn > 0 and tostring(warn) or "Off")
+  reagentButton:SetText(warn > 0 and tostring(warn) or L["Off"])
   RefreshBuffs()
   RefreshBlessings()
 end
@@ -270,18 +275,17 @@ end
 function ns.BuildPartyTab(tab)
   panel = ns.ScrollBody(tab, 580)
 
-  local intro = ns.HelpText(panel, "Buttons next to your party frames for buffs a member is missing. Click one to "
-    .. "cast it on them. Buttons can't appear or move during combat, so they update when combat ends.", 620)
+  local intro = ns.HelpText(panel, L["Buttons next to your party frames for buffs a member is missing. Click one to cast it on them. Buttons can't appear or move during combat, so they update when combat ends."], 620)
   intro:SetPoint("TOPLEFT", 0, 0)
 
-  enabledCheck = ns.TightCheck(UI.Check(panel, "Show buff buttons next to party frames"))
+  enabledCheck = ns.TightCheck(UI.Check(panel, L["Show buff buttons next to party frames"]))
   enabledCheck:SetPoint("TOPLEFT", panel, "TOPLEFT", LEFT_X, -34)
   enabledCheck:SetScript("OnClick", function(self)
     ns.db.party.enabled = self:GetChecked() and true or false
     ns.PartyChanged()
   end)
 
-  refreshCheck = ns.TightCheck(UI.Check(panel, "Also show buffs that end within"))
+  refreshCheck = ns.TightCheck(UI.Check(panel, L["Also show buffs that end within"]))
   refreshCheck:SetPoint("TOPLEFT", enabledCheck, "BOTTOMLEFT", 0, -4)
   refreshCheck:SetScript("OnClick", function(self)
     ns.db.party.refresh = self:GetChecked() and true or false
@@ -304,7 +308,7 @@ function ns.BuildPartyTab(tab)
     ns.PartyChanged()
   end)
 
-  raidCheck = ns.TightCheck(UI.Check(panel, "Buttons on raid frames"))
+  raidCheck = ns.TightCheck(UI.Check(panel, L["Buttons on raid frames"]))
   raidCheck:SetPoint("TOPLEFT", refreshCheck, "BOTTOMLEFT", 0, -4)
   raidCheck:SetScript("OnClick", function(self)
     ns.db.party.raid = self:GetChecked() and true or false
@@ -312,16 +316,16 @@ function ns.BuildPartyTab(tab)
   end)
   raidCheck:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-    GameTooltip:AddLine("Buttons on raid frames")
-    GameTooltip:AddLine("In a raid, small buttons in the top right corner of each raid frame. They hide during "
-      .. "combat, so a click there always reaches the raid frame.", 1, 1, 1, true)
+    GameTooltip:AddLine(L["Buttons on raid frames"])
+    GameTooltip:AddLine(L["In a raid, small buttons in the top right corner of each raid frame. They hide during combat, so a click there always reaches the raid frame."],
+      1, 1, 1, true)
     GameTooltip:Show()
   end)
   raidCheck:SetScript("OnLeave", function()
     GameTooltip:Hide()
   end)
 
-  resCheck = ns.TightCheck(UI.Check(panel, "Resurrect the dead"))
+  resCheck = ns.TightCheck(UI.Check(panel, L["Resurrect the dead"]))
   resCheck:SetPoint("TOPLEFT", raidCheck, "BOTTOMLEFT", 0, -4)
   resCheck:SetScript("OnClick", function(self)
     ns.db.party.res = self:GetChecked() and true or false
@@ -329,10 +333,9 @@ function ns.BuildPartyTab(tab)
   end)
   resCheck:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-    GameTooltip:AddLine("Resurrect the dead")
-    GameTooltip:AddLine("A dead party or raid member (not released) gets a button with your class's resurrection "
-      .. "spell instead of their buff buttons. Dimmed while someone is already resurrecting them. Out of combat, "
-      .. "like every button here.", 1, 1, 1, true)
+    GameTooltip:AddLine(L["Resurrect the dead"])
+    GameTooltip:AddLine(L["A dead party or raid member (not released) gets a button with your class's resurrection spell instead of their buff buttons. Dimmed while someone is already resurrecting them. Out of combat, like every button here."],
+      1, 1, 1, true)
     GameTooltip:Show()
   end)
   resCheck:SetScript("OnLeave", function()
@@ -340,7 +343,7 @@ function ns.BuildPartyTab(tab)
   end)
 
   -- Right column, beside the boxes above: a distance limit, cycling through ns.RANGE_CHOICES.
-  rangeCheck = ns.TightCheck(UI.Check(panel, "Hide when farther than"))
+  rangeCheck = ns.TightCheck(UI.Check(panel, L["Hide when farther than"]))
   rangeCheck:SetPoint("TOPLEFT", panel, "TOPLEFT", RIGHT_X, -34)
   rangeCheck:SetScript("OnClick", function(self)
     ns.db.party.range = self:GetChecked() and true or false
@@ -362,37 +365,36 @@ function ns.BuildPartyTab(tab)
     ns.PartyChanged()
   end)
 
-  local rangeHelp = ns.HelpText(panel, "Closer members keep their buttons, red while out of spell range.",
+  local rangeHelp = ns.HelpText(panel, L["Closer members keep their buttons, red while out of spell range."],
     RIGHT_WIDTH - 24)
   rangeHelp:SetPoint("TOPLEFT", rangeCheck, "BOTTOMLEFT", 24, -2)
 
-  local buffTitle = ns.SectionHeading(panel, "Your group buffs", LEFT_WIDTH)
+  local buffTitle = ns.SectionHeading(panel, L["Your group buffs"], LEFT_WIDTH)
   buffTitle:SetPoint("TOPLEFT", panel, "TOPLEFT", LEFT_X, HEADING_Y)
 
-  buffEmpty = ns.HelpText(panel, "You don't know any group buffs yet (Arcane Intellect, Power Word: Fortitude, "
-    .. "Divine Spirit, Shadow Protection, Mark of the Wild).", LEFT_WIDTH)
+  buffEmpty = ns.HelpText(panel, L["You don't know any group buffs yet (%s)."]:format(table.concat({
+    ns.LocalSpell("Arcane Intellect"), ns.LocalSpell("Power Word: Fortitude"), ns.LocalSpell("Divine Spirit"),
+    ns.LocalSpell("Shadow Protection"), ns.LocalSpell("Mark of the Wild") }, ", ")), LEFT_WIDTH)
   buffEmpty:SetPoint("TOPLEFT", buffTitle, "BOTTOMLEFT", 0, -10)
 
-  local note = ns.HelpText(panel, "The group spell is used when you can cast it. Without its reagent, the button "
-    .. "casts the single-target spell instead.", LEFT_WIDTH)
+  local note = ns.HelpText(panel, L["The group spell is used when you can cast it. Without its reagent, the button casts the single-target spell instead."], LEFT_WIDTH)
   note:SetPoint("TOPLEFT", panel, "TOPLEFT", LEFT_X, LIST_Y - #ns.GROUP_BUFFS * BUFF_ROW_HEIGHT - 4)
 
-  allBlessingsCheck = ns.TightCheck(UI.Check(panel, "Paladins: show every blessing they're missing"))
+  allBlessingsCheck = ns.TightCheck(UI.Check(panel, L["Paladins: show every blessing they're missing"]))
   allBlessingsCheck:SetPoint("TOPLEFT", note, "BOTTOMLEFT", 0, -12)
   allBlessingsCheck:SetScript("OnClick", function(self)
     ns.db.party.allBlessings = self:GetChecked() and true or false
     ns.PartyChanged()
   end)
 
-  local allBlessingsHelp = ns.HelpText(panel, "When a member has no blessing, or another paladin already gave them "
-    .. "the one chosen on the right, show a button for each blessing they don't have yet, not only the chosen one.",
+  local allBlessingsHelp = ns.HelpText(panel, L["When a member has no blessing, or another paladin already gave them the one chosen on the right, show a button for each blessing they don't have yet, not only the chosen one."],
     LEFT_WIDTH - 24)
   allBlessingsHelp:SetPoint("TOPLEFT", allBlessingsCheck, "BOTTOMLEFT", 24, -2)
 
   -- Low reagent warning, cycling through ns.REAGENT_CHOICES (0 = off).
   local reagentLabel = UI.Text(panel, "body", 12, "text")
   reagentLabel:SetPoint("TOPLEFT", allBlessingsHelp, "BOTTOMLEFT", -24, -14)
-  reagentLabel:SetText("Warn when reagents drop to")
+  reagentLabel:SetText(L["Warn when reagents drop to"])
 
   reagentButton = UI.Button(panel, 48, 20)
   reagentButton:SetPoint("LEFT", reagentLabel, "RIGHT", 8, 0)
@@ -409,19 +411,18 @@ function ns.BuildPartyTab(tab)
     ns.PartyChanged()
   end)
 
-  local reagentHelp = ns.HelpText(panel, "A chat message each time a reagent of your group buffs goes down to this "
-    .. "many or fewer. The button tooltips show the count in orange.", LEFT_WIDTH)
+  local reagentHelp = ns.HelpText(panel, L["A chat message each time a reagent of your group buffs goes down to this many or fewer. The button tooltips show the count in orange."], LEFT_WIDTH)
   reagentHelp:SetPoint("TOPLEFT", reagentLabel, "BOTTOMLEFT", 0, -6)
 
-  blessingTitle = ns.SectionHeading(panel, "Blessings by class", RIGHT_WIDTH)
+  blessingTitle = ns.SectionHeading(panel, L["Blessings by class"], RIGHT_WIDTH)
   blessingTitle:SetPoint("TOPLEFT", panel, "TOPLEFT", RIGHT_X, HEADING_Y)
 
-  blessingEmpty = ns.HelpText(panel, "For paladins: choose a blessing for each class and party member.", RIGHT_WIDTH)
+  blessingEmpty = ns.HelpText(panel, L["For paladins: choose a blessing for each class and party member."], RIGHT_WIDTH)
   blessingEmpty:SetPoint("TOPLEFT", blessingTitle, "BOTTOMLEFT", 0, -10)
 
-  memberTitle = ns.SectionHeading(panel, "Party members", RIGHT_WIDTH)
+  memberTitle = ns.SectionHeading(panel, L["Party members"], RIGHT_WIDTH)
 
-  memberEmpty = ns.HelpText(panel, "Join a group to choose a blessing for each member. Their choice is kept by name.",
+  memberEmpty = ns.HelpText(panel, L["Join a group to choose a blessing for each member. Their choice is kept by name."],
     RIGHT_WIDTH)
   memberEmpty:SetPoint("TOPLEFT", memberTitle, "BOTTOMLEFT", 0, -8 - ROW_HEIGHT)
 end

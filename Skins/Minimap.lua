@@ -307,7 +307,7 @@ end
 local function NewLabel(parent, size, color, justify)
   local zoneText = S.Get("MinimapZoneText")
   local text = parent:CreateFontString(nil, "OVERLAY")
-  local path, flags = "Fonts\\FRIZQT__.TTF", ""
+  local path, flags = (STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"), ""
   if S.IsRegion(zoneText) and zoneText.GetFont then
     local zonePath, _, zoneFlags = zoneText:GetFont()
     path = type(zonePath) == "string" and zonePath or path

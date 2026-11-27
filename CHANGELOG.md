@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.17.0
+
+- **In your language**: Codex is translated into German, French, Spanish, Russian and Brazilian Portuguese (other clients stay in English). Russian clients get the game's font where a theme's font has no Cyrillic letters (Runestone, Hearthwood), Korean and Chinese clients everywhere; the What's new window stays in English.
+- Commerce: **Fills its gaps from players' data**: with Tylesser - Data installed, writs whose NPC isn't known yet show who takes them and where, and crates show the Merchant's Favor players' recorded turn-ins gave, once someone has collected them with Tylesser - Collector. Your own turn-ins still come first.
+- Commerce: **The plain Waylaid Crate** says to read its label (using it turns it into a crate of one kind), and **Waylaid Herbs** says to read its shipping bill, or shows the bill from players' data.
+- Trade Crier: **A channel and a time of day per message**: the city button's list now also picks the channel a message goes to (Trade or Trade (Services), or the one set for all) and the time of day it is for (mornings, afternoons, evenings or nights, by your clock). Outside its hours a message's button hides and the post key skips it. The list stays open, so you can set all three at once.
+- Proc glow: **A tip for paladins**: with Unsealed Wrath, a one-time chat line explains when the seal echoes glow (3 stacks, on the seals you could switch to) and that in a fight Unsealed Wrath has to be tracked in the cooldown manager.
+- Proc glow: **Other game languages**: the paladin's seal echoes and Clearcasting's spells now light on German, French and other clients too (they were matched by their English names).
+- Buffs: **Other game languages**: party buff buttons, blessings, dispel buttons and "Add class basics" now work on German, French and other clients (they used the spells' English names, so no button showed).
+- Commerce: **Other game languages**: your faction is found by its ID, so the window's standing and the reputation per writ work on every client; "Only my professions" finds your professions in any language; the NPC who takes a writ no longer shows twice when you turned one in on another client.
+- Commerce: Four writs that only knew their item by name now know its ID (Catseye Draught, Gyromatic Micro-Adjuster, Draught of Detect Demon, Gnomish Alarm-O-Bot), so they get prices and a buy list on every client.
+- Quest info in tooltips: kill objectives are read in the game's language too (it looked for the English "slain").
+- Highlight: objects named in a quest objective now get the quest mark (the lookup never matched).
+- Auction: the stack's sell price line is found on French clients too.
+
 ## 1.16.1
 
 - Commerce: **Herb crates from Expert on now show their lines**: "Waylaid Crate: Earthly Artisan Herbs" and the other Earthly and Flowering crates showed no Favor, price or fill list in their tooltip. Crates are now known by their item, so this also works in every game language.

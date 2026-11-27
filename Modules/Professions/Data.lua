@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Professions module, part 1: prices, the profit of a recipe, make or buy, the recipes each character
 -- knows, vendor prices and the craft queue. Ported from Tylesser - Auctionator Profit Sort (same author,
@@ -695,7 +696,7 @@ end
 -- exact-name term per reagent. Returns the list (nil when there was nothing to write).
 function P.CreateShoppingList()
   if P.QueueTotal() == 0 then
-    ns.Say("right-click recipes in the profit list to queue them first.")
+    ns.Say(L["right-click recipes in the profit list to queue them first."])
     return nil
   end
   local names, unnamed = {}, 0
@@ -707,7 +708,7 @@ function P.CreateShoppingList()
     end
   end
   if #names == 0 and unnamed == 0 then
-    ns.Say("you already have every reagent for your queued crafts.")
+    ns.Say(L["you already have every reagent for your queued crafts."])
     return nil
   end
   local A = ns.auction
@@ -729,13 +730,13 @@ function P.CreateShoppingList()
     A.AddTerm(list, name, true, nil)
   end
   A.Changed("lists")
-  local message = ("shopping list \"%s\" has %d reagent(s) to buy; at the auction house click it in the Codex panel.")
+  local message = L["shopping list \"%s\" has %d reagent(s) to buy; at the auction house click it in the Codex panel."]
     :format(P.LIST_NAME, #names)
   if not ns.ModuleOn("auction") then
-    message = message .. " Switch the Auction House module on to search it."
+    message = message .. " " .. L["Switch the Auction House module on to search it."]
   end
   if unnamed > 0 then
-    message = message .. (" %d reagent(s) were left out because their names haven't loaded yet; try again."):format(unnamed)
+    message = message .. " " .. L["%d reagent(s) were left out because their names haven't loaded yet; try again."]:format(unnamed)
   end
   ns.Say(message)
   return list

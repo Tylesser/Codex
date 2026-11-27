@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Hide empty slots (2026-11-22, the user's request: "for action bars add option to hide empty slots"). Forever's
 -- bars (forever branch, Blizzard_ActionBar/Shared/ActionBar.lua UpdateShownButtons) already hide an empty button
@@ -136,9 +137,8 @@ end
 
 Q.AddToggle({
   key = KEY,
-  name = "Hide empty slots",
-  desc = "Action bar slots with nothing in them are hidden. They show again while you drag a spell or item, "
-    .. "while Edit Mode is open and while you bind keys by hovering, so there is always somewhere to put it.",
+  name = L["Hide empty slots"],
+  desc = L["Action bar slots with nothing in them are hidden. They show again while you drag a spell or item, while Edit Mode is open and while you bind keys by hovering, so there is always somewhere to put it."],
   default = false,
   order = 30,
   Enable = function()

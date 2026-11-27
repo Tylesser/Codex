@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Bags module, part 6: events, start-up and registration. Codex's own bag window with categories, every
 -- character's bags, bank and money, and item counts in tooltips. Baganator is the standalone: while it is
@@ -164,11 +165,11 @@ end
 
 ns.RegisterModule({
   id = "bags",
-  name = "Bags",
+  name = L["Bags"],
   -- its section in the Codex window (Areas.lua)
   area = "items", sectionOrder = 10, pageHeight = 450,
   icon = "Interface\\Icons\\INV_Misc_Bag_08",
-  desc = "One bag window with categories and search, a bank and guild bank window in the same look, every character's bags, bank and money, and item counts in tooltips.",
+  desc = L["One bag window with categories and search, a bank and guild bank window in the same look, every character's bags, bank and money, and item counts in tooltips."],
   standalone = "Baganator",
   standaloneName = "Baganator",
   order = 40,

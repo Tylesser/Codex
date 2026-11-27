@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Numbers on cooldowns (2026-11-21): the game's own countdown numbers on action buttons and buffs (CVar
 -- countdownForCooldowns, the "Show Numbers for Cooldowns" box in the game's Action Bars settings, forever branch
@@ -70,10 +71,8 @@ Q.ApplyCooldownNumbers = Apply
 
 Q.AddToggle({
   key = KEY,
-  name = "Numbers on cooldowns",
-  desc = "The time left as a number on every action button and buff that is cooling down (the game's own "
-    .. "countdown). With the restyle on, the numbers are in your theme's font. Switching it off gives back the "
-    .. "game setting you had before.",
+  name = L["Numbers on cooldowns"],
+  desc = L["The time left as a number on every action button and buff that is cooling down (the game's own countdown). With the restyle on, the numbers are in your theme's font. Switching it off gives back the game setting you had before."],
   default = false,
   order = 28,
   Enable = function()

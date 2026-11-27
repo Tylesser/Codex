@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Bags module, part 8: "Deposit reagents" on the bank window. When the game offers it for the character bank
 -- (C_Bank.DoesBankTypeSupportAutoDeposit(Enum.BankType.Character); the game's own button there is "Deposit
@@ -102,18 +103,18 @@ end
 local function Report(moved, left, reason)
   local text
   if moved > 0 then
-    text = ("Deposited %d reagent%s"):format(moved, moved == 1 and "" or "s")
+    text = moved == 1 and L["Deposited 1 reagent"] or L["Deposited %d reagents"]:format(moved)
     if reason == "closed" and left > 0 then
-      text = text .. (" (%d left: the bank closed)"):format(left)
+      text = text .. L[" (%d left: the bank closed)"]:format(left)
     elseif reason == "combat" and left > 0 then
-      text = text .. (" (%d left: stopped for combat)"):format(left)
+      text = text .. L[" (%d left: stopped for combat)"]:format(left)
     elseif left > 0 then
-      text = text .. (" (%d didn't fit)"):format(left)
+      text = text .. L[" (%d didn't fit)"]:format(left)
     end
   elseif left > 0 then
-    text = "No room in the bank for your reagents"
+    text = L["No room in the bank for your reagents"]
   else
-    text = "No reagents in your bags"
+    text = L["No reagents in your bags"]
   end
   D.last = text
   ns.Say(text:sub(1, 1):lower() .. text:sub(2) .. ".")
@@ -232,13 +233,13 @@ function D.Run(manual)
   end
   if not D.BankOpen() then
     if manual then
-      ns.Say("open the bank first.")
+      ns.Say(L["open the bank first."])
     end
     return false
   end
   if InCombatLockdown() then
     if manual then
-      ns.Say("can't deposit during a fight.")
+      ns.Say(L["can't deposit during a fight."])
     end
     return false
   end

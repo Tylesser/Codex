@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Vendor search module, part 2: filters the vendor window's own item grid. Ported from Tylesser - Vendor
 -- Search (same author, MIT), its controls drawn with Codex's widgets.
@@ -172,7 +173,7 @@ local function ResetAlpha()
 end
 
 local function PluralMatches(count)
-  return count == 1 and "1 match" or (count .. " matches")
+  return count == 1 and L["1 match"] or L["%d matches"]:format(count)
 end
 
 -- Session-only toggles (reset when the vendor closes).
@@ -212,7 +213,7 @@ local function ApplyFade(criteria)
     for n = 1, math.min(#pagesWithMatch, MAX_PAGES_LISTED) do
       listed[n] = pagesWithMatch[n]
     end
-    text = text .. " - page " .. table.concat(listed, ", ")
+    text = text .. L[" - page %s"]:format(table.concat(listed, ", "))
     if #pagesWithMatch > MAX_PAGES_LISTED then
       text = text .. "..."
     end
@@ -255,7 +256,7 @@ local function Marks(i, slot)
     local known = itemButton:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
     known:SetDrawLayer("OVERLAY", 7)
     known:SetPoint("BOTTOMLEFT", itemButton, "BOTTOMLEFT", 2, 2)
-    known:SetText("Known")
+    known:SetText(L["Known"])
     known:SetTextColor(0.3, 1, 0.3)
     known:Hide()
     marks = { bags = bags, known = known }
@@ -503,7 +504,7 @@ function Filter:Create()
   box:SetFrameLevel(MerchantFrame:GetFrameLevel() + 10)
   SearchLook(box)
   if type(box.Instructions) == "table" then
-    box.Instructions:SetText("Search items")
+    box.Instructions:SetText(L["Search items"])
   end
   ApplyBoxPosition()
 
@@ -522,10 +523,10 @@ function Filter:Create()
   end)
   box:HookScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
-    GameTooltip:SetText("Vendor Search", 1, 0.82, 0)
-    GameTooltip:AddLine("Type part of an item's name, type or slot,", 1, 1, 1)
-    GameTooltip:AddLine("e.g. vial, recipe cooking, head.", 1, 1, 1)
-    GameTooltip:AddLine("Alt-drag to move this box.", 0.6, 0.6, 0.6)
+    GameTooltip:SetText(L["Vendor Search"], 1, 0.82, 0)
+    GameTooltip:AddLine(L["Type part of an item's name, type or slot,"], 1, 1, 1)
+    GameTooltip:AddLine(L["e.g. vial, recipe cooking, head."], 1, 1, 1)
+    GameTooltip:AddLine(L["Alt-drag to move this box."], 0.6, 0.6, 0.6)
     GameTooltip:Show()
   end)
   box:HookScript("OnLeave", function()
@@ -549,7 +550,7 @@ function Filter:Create()
     ApplyBoxPosition()
   end)
 
-  fadeCheck = UI.Check(MerchantFrame, "Fade")
+  fadeCheck = UI.Check(MerchantFrame, L["Fade"])
   fadeCheck:SetSize(16, 16)
   UI.Font(fadeCheck.label, "body", 11, "text")
   fadeCheck:SetFrameLevel(box:GetFrameLevel())
@@ -563,9 +564,9 @@ function Filter:Create()
   end)
   fadeCheck:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
-    GameTooltip:SetText("Fade instead of hide", 1, 0.82, 0)
-    GameTooltip:AddLine("Keep the vendor's normal pages and fade the items", 1, 1, 1)
-    GameTooltip:AddLine("that don't match. Enter turns to the first page with a match.", 1, 1, 1)
+    GameTooltip:SetText(L["Fade instead of hide"], 1, 0.82, 0)
+    GameTooltip:AddLine(L["Keep the vendor's normal pages and fade the items"], 1, 1, 1)
+    GameTooltip:AddLine(L["that don't match. Enter turns to the first page with a match."], 1, 1, 1)
     GameTooltip:Show()
   end)
   fadeCheck:SetScript("OnLeave", function()
@@ -576,24 +577,24 @@ function Filter:Create()
   countText:SetPoint("LEFT", fadeLabel, "RIGHT", 6, 0)
 
   -- Second row, under the search box (moves with it).
-  unknownCheck = SmallCheck("Unknown recipes", "Unknown recipes only",
-    { "Show only recipes you haven't learned yet.", "Resets when you close the vendor." },
+  unknownCheck = SmallCheck(L["Unknown recipes"], L["Unknown recipes only"],
+    { L["Show only recipes you haven't learned yet."], L["Resets when you close the vendor."] },
     function(self)
       Filter.unknownOnly = self:GetChecked() and true or false
       Filter:Refresh(true)
     end)
   unknownCheck:SetPoint("TOPLEFT", box, "BOTTOMLEFT", -6, -1)
 
-  usableCheck = SmallCheck("Usable", "Usable items only",
-    { "Show only items your character can use.", "Resets when you close the vendor." },
+  usableCheck = SmallCheck(L["Usable"], L["Usable items only"],
+    { L["Show only items your character can use."], L["Resets when you close the vendor."] },
     function(self)
       Filter.usableOnly = self:GetChecked() and true or false
       Filter:Refresh(true)
     end)
   usableCheck:SetPoint("LEFT", unknownCheck.label, "RIGHT", 8, 0)
 
-  bagsCheck = SmallCheck("In bags", "Count in bags",
-    { "Show on each item how many you already have", "in your bags and bank, e.g. (3)." },
+  bagsCheck = SmallCheck(L["In bags"], L["Count in bags"],
+    { L["Show on each item how many you already have"], L["in your bags and bank, e.g. (3)."] },
     function(self)
       V.db.bagCount = self:GetChecked() and true or false
       Filter:UpdateMarks()
@@ -602,7 +603,7 @@ function Filter:Create()
   bagsCheck:SetChecked(V.db.bagCount)
 
   emptyText = UI.Text(MerchantFrame, "body", 12, "accent")
-  emptyText:SetText("No items match your search.")
+  emptyText:SetText(L["No items match your search."])
   if MerchantItem1 then
     emptyText:SetPoint("TOPLEFT", MerchantItem1, "TOPLEFT", 8, -12)
   else

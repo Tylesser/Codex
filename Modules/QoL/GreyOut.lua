@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Grey out what you can't use (2026-11-22, the user's request: "spells in action bar greyed out when they are not
 -- available (mana, range etc) instead of making their keybind text red"). Forever's buttons (forever branch,
@@ -116,9 +117,8 @@ end
 
 Q.AddToggle({
   key = KEY,
-  name = "Grey out what you can't use",
-  desc = "Action buttons you can't use right now (out of range, not enough mana, rage or energy, or not usable) "
-    .. "turn grey, and the key text keeps its colour instead of turning red.",
+  name = L["Grey out what you can't use"],
+  desc = L["Action buttons you can't use right now (out of range, not enough mana, rage or energy, or not usable) turn grey, and the key text keeps its colour instead of turning red."],
   default = false,
   order = 29,
   Enable = function()

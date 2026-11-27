@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Auction house module, part 3: the "Auction" line in item tooltips (with its age; the stack total while
 -- Shift is held), the game's "Sell Price:" line turned into one item's price (the stack with Shift), and a
@@ -94,6 +95,10 @@ local function SellPriceLine(tooltip, item, count, shift)
   for index = 1, tooltip:NumLines() do
     local line = _G[name .. "TextLeft" .. index]
     local text = line and line.GetText and line:GetText()
+    -- French writes a space before the colon ("Prix de vente : "), 2026-11-27 audit
+    if Readable(text) and type(text) == "string" and text:sub(1, #label + 3) == label .. " : " then
+      prefix = label .. " : "
+    end
     if Readable(text) and type(text) == "string" and text:sub(1, #prefix) == prefix then
       if shift then
         line:SetText(prefix .. GameMoney(unit * count) .. " |cff999999(x" .. count .. ")|r")
@@ -140,7 +145,7 @@ function A.AddHistoryLines(tooltip, item, price, shift, r, g, b, theme)
   if average then
     local text, color = A.TrendText(price / average - 1, theme)
     local trend = text ~= "" and (" |cff" .. ns.Hex(color) .. text .. "|r") or ""
-    tooltip:AddDoubleLine("Week average", ns.Money(average) .. trend, r, g, b, 1, 1, 1)
+    tooltip:AddDoubleLine(L["Week average"], ns.Money(average) .. trend, r, g, b, 1, 1, 1)
   end
   if not shift then
     return
@@ -194,9 +199,9 @@ function A.AddTooltipLines(tooltip, data)
     local price, seen = A.GetPrice(item)
     if price then
       Heading()
-      tooltip:AddDoubleLine("Auction", ns.Money(price) .. " |cff999999(" .. ns.Age(seen) .. ")|r", r, g, b, 1, 1, 1)
+      tooltip:AddDoubleLine(L["Auction"], ns.Money(price) .. " |cff999999(" .. ns.Age(seen) .. ")|r", r, g, b, 1, 1, 1)
       if count > 1 and shift then
-        tooltip:AddDoubleLine("Auction x" .. count, ns.Money(price * count), r, g, b, 1, 1, 1)
+        tooltip:AddDoubleLine(L["Auction x%s"]:format(count), ns.Money(price * count), r, g, b, 1, 1, 1)
       end
       if db.tooltipHistory then
         A.AddHistoryLines(tooltip, item, price, shift, r, g, b, theme)
@@ -212,7 +217,7 @@ function A.AddTooltipLines(tooltip, data)
         text = shift and (ns.Money(sell * count) .. " |cff999999(x" .. count .. ")|r") or text
       end
       Heading()
-      tooltip:AddDoubleLine("Vendor", text, r, g, b, 1, 1, 1)
+      tooltip:AddDoubleLine(L["Vendor"], text, r, g, b, 1, 1, 1)
     end
   end
 end

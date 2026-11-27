@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Learn all at trainers (2026-11-21): a "Learn all" button on the class trainer window that learns every spell
 -- you can learn now and afford, cheapest first. Forever's trainer is Blizzard_TrainerUI (Mainline + Camelot
@@ -73,7 +74,8 @@ function TA.LearnAll()
     pcall(BuyTrainerService, entry.index)
   end
   if #chosen > 0 then
-    ns.Say(("Learned %d %s for %s."):format(#chosen, #chosen == 1 and "spell" or "spells", ns.Money(total)))
+    ns.Say(#chosen == 1 and L["Learned 1 spell for %s."]:format(ns.Money(total))
+      or L["Learned %d spells for %s."]:format(#chosen, ns.Money(total)))
   end
   return #chosen, total
 end
@@ -89,24 +91,24 @@ function TA.Update()
   end
   local chosen, total, available = TA.Plan(TA.Money())
   button:Show()
-  button:SetText(#chosen > 0 and ("Learn all (%d)"):format(#chosen) or "Learn all")
+  button:SetText(#chosen > 0 and L["Learn all (%d)"]:format(#chosen) or L["Learn all"])
   button:SetEnabled(#chosen > 0)
   button.total, button.count, button.available = total, #chosen, available
 end
 
 local function ShowTip(self)
   GameTooltip:SetOwner(self, "ANCHOR_TOP")
-  GameTooltip:AddLine("Learn all")
+  GameTooltip:AddLine(L["Learn all"])
   if (self.count or 0) > 0 then
-    GameTooltip:AddLine(("%d %s for %s, cheapest first."):format(self.count, self.count == 1 and "spell" or "spells",
-      ns.Money(self.total or 0)), 1, 1, 1, true)
+    GameTooltip:AddLine(self.count == 1 and L["1 spell for %s, cheapest first."]:format(ns.Money(self.total or 0))
+      or L["%d spells for %s, cheapest first."]:format(self.count, ns.Money(self.total or 0)), 1, 1, 1, true)
   else
-    GameTooltip:AddLine("Nothing you can learn and afford right now.", 1, 1, 1, true)
+    GameTooltip:AddLine(L["Nothing you can learn and afford right now."], 1, 1, 1, true)
   end
   if (self.available or 0) > (self.count or 0) then
-    GameTooltip:AddLine(("%d more when you have the gold."):format(self.available - self.count), 0.7, 0.7, 0.7, true)
+    GameTooltip:AddLine(L["%d more when you have the gold."]:format(self.available - self.count), 0.7, 0.7, 0.7, true)
   end
-  GameTooltip:AddLine("Professions are left to you.", 0.7, 0.7, 0.7, true)
+  GameTooltip:AddLine(L["Professions are left to you."], 0.7, 0.7, 0.7, true)
   GameTooltip:Show()
 end
 
@@ -114,7 +116,7 @@ local function MakeButton()
   if button or not ClassTrainerFrame then
     return
   end
-  button = UI.Button(ClassTrainerFrame, 110, 22, "Learn all")
+  button = UI.Button(ClassTrainerFrame, 110, 22, L["Learn all"])
   local train = ClassTrainerTrainButton
   if train then
     button:SetPoint("RIGHT", train, "LEFT", -4, 0)
@@ -161,9 +163,8 @@ end
 
 Q.AddToggle({
   key = KEY,
-  name = "Learn all at trainers",
-  desc = "A Learn all button on the class trainer's window: learns every spell you can learn now and afford, "
-    .. "cheapest first. Professions are left to you. Click again for spells whose lower rank you just learned.",
+  name = L["Learn all at trainers"],
+  desc = L["A Learn all button on the class trainer's window: learns every spell you can learn now and afford, cheapest first. Professions are left to you. Click again for spells whose lower rank you just learned."],
   default = true,
   order = 60,
   Enable = function()

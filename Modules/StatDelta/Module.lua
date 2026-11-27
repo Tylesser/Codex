@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Stat Delta module, part 7: events, start-up and registration. Tylesser - Stat Delta ported into Codex:
 -- while the standalone Stat Delta addon is loaded Codex leaves this to it (unless the player forces Codex's
@@ -98,17 +99,13 @@ function S.Enable()
   S.running = true
 end
 
-local function OnOff(value)
-  return value and "|cff20ff20on|r" or "|cffff4040off|r"
-end
-
 ns.RegisterModule({
   id = "statdelta",
   name = "Stat Delta",
   -- its section in the Codex window (Areas.lua)
   area = "items", sectionOrder = 20, folded = true, pageEstimate = 430,
   icon = "Interface\\Icons\\INV_Chest_Plate06",
-  desc = "Hold Shift over an item to see the stats you gain or lose against your gear, with an optional upgrade score and arrows.",
+  desc = L["Hold Shift over an item to see the stats you gain or lose against your gear, with an optional upgrade score and arrows."],
   standalone = "StatDelta",
   standaloneName = "Stat Delta",
   order = 37,
@@ -130,10 +127,11 @@ ns.RegisterModule({
     local db = S.DB()
     if rest == "on" or rest == "off" then
       db.enabled = rest == "on"
-      ns.Say("stat changes " .. OnOff(db.enabled) .. ".")
+      ns.Say(db.enabled and L["stat changes on."] or L["stat changes off."])
     elseif rest == "primary" then
       db.showPrimary = not db.showPrimary
-      ns.Say("Strength, Agility, Stamina, Intellect and Spirit " .. OnOff(db.showPrimary) .. ".")
+      ns.Say(db.showPrimary and L["Strength, Agility, Stamina, Intellect and Spirit shown."]
+        or L["Strength, Agility, Stamina, Intellect and Spirit hidden."])
     else
       ns.ShowPage("statdelta")
       return

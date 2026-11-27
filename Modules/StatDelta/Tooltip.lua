@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Stat Delta module, part 4: which equipped items an item would replace, the comparisons, and the
 -- "Stat Delta" block at the bottom of item tooltips, only while the compare key (Shift) is held.
@@ -147,9 +148,9 @@ function S.BuildComparisons(link)
         comparison.score = { new = newScore, old = S.Score(oldStats, weights) }
       end
       if #links == 0 then
-        comparison.header = "Compared to an empty slot:"
+        comparison.header = L["Compared to an empty slot:"]
       else
-        comparison.header = "Compared to " .. table.concat(links, " + ") .. ":"
+        comparison.header = L["Compared to %s:"]:format(table.concat(links, " + "))
       end
       for _, stat in ipairs(S.STATS) do
         -- Item stats: only what's printed on the items.
@@ -275,14 +276,14 @@ local function AddComparisons(tooltip, show)
       tooltip:AddLine(text, r, g, b)
     end
     if #comparison.itemLines == 0 and #comparison.characterLines == 0 then
-      tooltip:AddLine("  No stat changes", 0.6, 0.6, 0.6)
+      tooltip:AddLine("  " .. L["No stat changes"], 0.6, 0.6, 0.6)
     end
     if #comparison.itemLines > 0 then
-      tooltip:AddLine("Item stats", gold[1], gold[2], gold[3])
+      tooltip:AddLine(L["Item stats"], gold[1], gold[2], gold[3])
       AddStatLines(tooltip, comparison.itemLines)
     end
     if #comparison.characterLines > 0 then
-      tooltip:AddLine("Your character", gold[1], gold[2], gold[3])
+      tooltip:AddLine(L["Your character"], gold[1], gold[2], gold[3])
       AddStatLines(tooltip, comparison.characterLines)
     end
   end

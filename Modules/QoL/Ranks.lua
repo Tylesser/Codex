@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Put new spell ranks on your action bars. When you learn a higher rank of a spell (a trainer, a book), every
 -- action button holding a lower rank of it gets the new one, then one chat line per spell ("Updated Fireball to
@@ -281,8 +282,11 @@ local function Merge(names)
 end
 
 function R.Line(name, sub, rank, count)
-  local to = sub or (rank and ("Rank %d"):format(rank)) or "its new rank"
-  return ("Updated %s to %s on %d button%s."):format(name, to, count, count == 1 and "" or "s")
+  local to = sub or (rank and L["Rank %d"]:format(rank)) or L["its new rank"]
+  if count == 1 then
+    return L["Updated %s to %s on 1 button."]:format(name, to)
+  end
+  return L["Updated %s to %s on %d buttons."]:format(name, to, count)
 end
 
 -- One pass. names: { [name] = true } or nil (every spell). manual: from "Update now" (says when nothing changed).
@@ -295,7 +299,7 @@ function R.Run(names, manual)
     Merge(names)
     R.Wait("PLAYER_REGEN_ENABLED")
     if manual then
-      ns.Say("Your action bars get their new ranks after the fight.")
+      ns.Say(L["Your action bars get their new ranks after the fight."])
     end
     return nil
   end
@@ -303,7 +307,7 @@ function R.Run(names, manual)
     Merge(names)
     R.Wait("CURSOR_CHANGED")
     if manual then
-      ns.Say("Your action bars get their new ranks once your cursor is empty.")
+      ns.Say(L["Your action bars get their new ranks once your cursor is empty."])
     end
     return nil
   end
@@ -328,7 +332,7 @@ function R.Run(names, manual)
     ns.Say(R.Line(name, entry.sub, entry.rank, entry.count))
   end
   if manual and total == 0 then
-    ns.Say("Your action bars already have the highest ranks you know.")
+    ns.Say(L["Your action bars already have the highest ranks you know."])
   end
   return total
 end
@@ -496,15 +500,12 @@ end
 
 Q.AddToggle({
   key = KEY,
-  name = "Put new spell ranks on your action bars",
-  desc = "When you learn a higher rank of a spell, your action buttons with a lower rank of it get the new one "
-    .. "(after the fight if you are in one). A lower rank kept beside a higher one is left alone (for "
-    .. "downranking), and so is a button where you put a lower rank back yourself. Macros and items are never "
-    .. "touched.",
+  name = L["Put new spell ranks on your action bars"],
+  desc = L["When you learn a higher rank of a spell, your action buttons with a lower rank of it get the new one (after the fight if you are in one). A lower rank kept beside a higher one is left alone (for downranking), and so is a button where you put a lower rank back yourself. Macros and items are never touched."],
   order = 55,
   Enable = R.Enable,
   Changed = R.Changed,
   options = {
-    { key = "spellRanksNow", kind = "button", name = "Update now", Click = function() R.UpdateNow() end },
+    { key = "spellRanksNow", kind = "button", name = L["Update now"], Click = function() R.UpdateNow() end },
   },
 })

@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Bind keys by hovering (2026-11-21): point at an action button, press a key, and that key casts the button.
 -- Escape clears the button's keys. A banner at the top of the screen says what to do and has Done / Cancel.
@@ -135,14 +136,14 @@ local function ShowTip()
   GameTooltip:AddLine(GetBindingName and GetBindingName(cover.command) or cover.command)
   local keys = HB.Keys(cover.command)
   if #keys == 0 then
-    GameTooltip:AddLine("No key yet: press one.", 1, 1, 1)
+    GameTooltip:AddLine(L["No key yet: press one."], 1, 1, 1)
   else
     local names = {}
     for index, key in ipairs(keys) do
       names[index] = KeyText(key)
     end
     GameTooltip:AddLine(table.concat(names, ", "), 1, 1, 1)
-    GameTooltip:AddLine("Press another key to add it, Escape to clear.", 0.7, 0.7, 0.7, true)
+    GameTooltip:AddLine(L["Press another key to add it, Escape to clear."], 0.7, 0.7, 0.7, true)
   end
   GameTooltip:Show()
 end
@@ -201,18 +202,18 @@ local function MakeBanner()
   UI.Panel(banner, { strip = false })
   local title = UI.Text(banner, "head", 14, "accent")
   title:SetPoint("TOPLEFT", 14, -12)
-  title:SetText("Binding keys")
+  title:SetText(L["Binding keys"])
   local help = UI.Text(banner, "body", 12, "text")
   help:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
   help:SetWidth(270)
   help:SetJustifyH("LEFT")
-  help:SetText("Point at an action button and press a key. Escape clears the button's keys.")
-  local done = UI.Button(banner, 80, 22, "Done")
+  help:SetText(L["Point at an action button and press a key. Escape clears the button's keys."])
+  local done = UI.Button(banner, 80, 22, L["Done"])
   done:SetPoint("RIGHT", -14, 0)
   done:SetScript("OnClick", function()
     HB.Stop(true)
   end)
-  local cancel = UI.Button(banner, 80, 22, "Cancel")
+  local cancel = UI.Button(banner, 80, 22, L["Cancel"])
   cancel:SetPoint("RIGHT", done, "LEFT", -8, 0)
   cancel:SetScript("OnClick", function()
     HB.Stop(false)
@@ -315,11 +316,11 @@ HB.Watch = Watch -- tests run it by hand
 
 function HB.Start()
   if not Q.On(KEY) then
-    ns.Say("Bind keys by hovering is off: switch it on under Action bars > Buttons.")
+    ns.Say(L["Bind keys by hovering is off: switch it on under Action bars > Buttons."])
     return false
   end
   if InCombat() then
-    ns.Say("Key binding waits until the fight is over.")
+    ns.Say(L["Key binding waits until the fight is over."])
     return false
   end
   if not cover then
@@ -352,10 +353,10 @@ function HB.Stop(save)
   if changed and GetCurrentBindingSet then
     if save and SaveBindings then
       pcall(SaveBindings, GetCurrentBindingSet())
-      ns.Say("Key bindings saved.")
+      ns.Say(L["Key bindings saved."])
     elseif not save and LoadBindings and not InCombat() then
       pcall(LoadBindings, GetCurrentBindingSet())
-      ns.Say("Key bindings put back.")
+      ns.Say(L["Key bindings put back."])
     end
   end
   changed = false
@@ -367,9 +368,8 @@ end
 
 Q.AddToggle({
   key = KEY,
-  name = "Bind keys by hovering",
-  desc = "Point at an action button and press a key to bind it, Escape to clear it. Start it with the button "
-    .. "below or /codex bind; Done saves the keys, Cancel puts back the ones you had. Not in a fight.",
+  name = L["Bind keys by hovering"],
+  desc = L["Point at an action button and press a key to bind it, Escape to clear it. Start it with the button below or /codex bind; Done saves the keys, Cancel puts back the ones you had. Not in a fight."],
   default = true,
   order = 29,
   Changed = function(on)
@@ -378,7 +378,7 @@ Q.AddToggle({
     end
   end,
   options = {
-    { key = "hoverBindStart", kind = "button", name = "Start binding", Click = function()
+    { key = "hoverBindStart", kind = "button", name = L["Start binding"], Click = function()
       if HB.Start() and ns.ToggleWindow and CodexWindow and CodexWindow:IsShown() then
         ns.ToggleWindow()
       end

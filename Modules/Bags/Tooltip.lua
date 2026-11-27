@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Bags module, part 2: "Codex: N on your characters" in item tooltips, with a line per character
 -- (bags / bank / equipped). Skipped when the item can't be read (forbidden tooltip or secret data).
@@ -10,13 +11,13 @@ local MAX_CHARACTERS = 6
 local function Where(entry)
   local parts = {}
   if entry.bags > 0 then
-    parts[#parts + 1] = "bags " .. entry.bags
+    parts[#parts + 1] = L["bags %d"]:format(entry.bags)
   end
   if entry.bank > 0 then
-    parts[#parts + 1] = "bank " .. entry.bank
+    parts[#parts + 1] = L["bank %d"]:format(entry.bank)
   end
   if entry.equipped > 0 then
-    parts[#parts + 1] = "worn " .. entry.equipped
+    parts[#parts + 1] = L["worn %d"]:format(entry.equipped)
   end
   return table.concat(parts, ", ")
 end
@@ -39,10 +40,10 @@ function B.TooltipLines(itemID)
   if total == 0 then
     return {}
   end
-  local lines = { { ("Codex: %d on your characters"):format(total), nil } }
+  local lines = { { L["Codex: %d on your characters"]:format(total), nil } }
   for index, entry in ipairs(list) do
     if index > MAX_CHARACTERS then
-      lines[#lines + 1] = { ("  and %d more"):format(#list - MAX_CHARACTERS), nil }
+      lines[#lines + 1] = { "  " .. L["and %d more"]:format(#list - MAX_CHARACTERS), nil }
       break
     end
     lines[#lines + 1] = { "  " .. B.ColoredName(entry.key), entry.total .. " |cff999999(" .. Where(entry) .. ")|r" }
@@ -77,7 +78,7 @@ function B.AddTooltipLines(tooltip, data)
   for index, line in ipairs(lines) do
     if sectioned and index == 1 then
       local total = line[1]:match("(%d+)") or ""
-      tooltip:AddDoubleLine("On your characters", total, theme.muted[1], theme.muted[2], theme.muted[3],
+      tooltip:AddDoubleLine(L["On your characters"], total, theme.muted[1], theme.muted[2], theme.muted[3],
         theme.bright[1], theme.bright[2], theme.bright[3])
     elseif line[2] then
       tooltip:AddDoubleLine(line[1], line[2], 1, 1, 1, 1, 1, 1)

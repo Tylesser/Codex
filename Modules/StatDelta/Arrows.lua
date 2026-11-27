@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 local S = ns.statdelta
 
@@ -193,7 +194,7 @@ local function HookBaganator()
     return
   end
   baganatorDone = true
-  pcall(api.RegisterCornerWidget, "Codex: upgrade (Stat Delta)", "tylesser_codex_statdelta_upgrade",
+  pcall(api.RegisterCornerWidget, L["Codex: upgrade (Stat Delta)"], "tylesser_codex_statdelta_upgrade",
     function(_, details)
       if not details then
         return false

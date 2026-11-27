@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = TylesserCodex.L
 local S = ns.S
 
 -- Quest pins on the continent and world maps, and on the flight map (FlightMapFrame, Blizzard_FlightMap: the
@@ -212,7 +213,7 @@ end
 
 local function Title(questID)
   local title = C_QuestLog.GetTitleForQuestID and C_QuestLog.GetTitleForQuestID(questID)
-  return Readable(title) and type(title) == "string" and title or "Quest"
+  return Readable(title) and type(title) == "string" and title or L["Quest"]
 end
 
 -- A cluster's tooltip: the zone, its quests (the ready ones marked), what a click does.
@@ -220,15 +221,15 @@ local function EnterCluster(pin)
   local cluster = pin.cluster
   local theme = S.Theme()
   GameTooltip:SetOwner(pin, "ANCHOR_RIGHT")
-  GameTooltip:SetText(cluster.zoneName or "Quests", S.UI.Unpack(theme.bright))
-  GameTooltip:AddLine(("%d quests%s"):format(#cluster.quests, cluster.ready > 0 and (", %d ready"):format(cluster.ready)
-    or ""), S.UI.Unpack(theme.muted))
+  GameTooltip:SetText(cluster.zoneName or L["Quests"], S.UI.Unpack(theme.bright))
+  GameTooltip:AddLine(cluster.ready > 0 and L["%d quests, %d ready"]:format(#cluster.quests, cluster.ready)
+    or L["%d quests"]:format(#cluster.quests), S.UI.Unpack(theme.muted))
   for _, quest in ipairs(cluster.quests) do
     local c = quest.complete and theme.good or theme.text
-    GameTooltip:AddLine(Title(quest.questID) .. (quest.complete and " (ready)" or ""), c[1], c[2], c[3])
+    GameTooltip:AddLine(quest.complete and L["%s (ready)"]:format(Title(quest.questID)) or Title(quest.questID), c[1], c[2], c[3])
   end
   if not pin.flight then
-    GameTooltip:AddLine("Click to open the zone's map.", S.UI.Unpack(theme.muted))
+    GameTooltip:AddLine(L["Click to open the zone's map."], S.UI.Unpack(theme.muted))
   end
   GameTooltip:Show()
 end
@@ -245,9 +246,9 @@ local function Enter(pin)
   local theme = S.Theme()
   GameTooltip:SetOwner(pin, "ANCHOR_RIGHT")
   local title = C_QuestLog.GetTitleForQuestID and C_QuestLog.GetTitleForQuestID(questID)
-  GameTooltip:SetText(Readable(title) and type(title) == "string" and title or "Quest", S.UI.Unpack(theme.bright))
+  GameTooltip:SetText(Readable(title) and type(title) == "string" and title or L["Quest"], S.UI.Unpack(theme.bright))
   if pin.complete then
-    GameTooltip:AddLine("Ready for turn-in", S.UI.Unpack(theme.good))
+    GameTooltip:AddLine(L["Ready for turn-in"], S.UI.Unpack(theme.good))
   else
     local objectives = C_QuestLog.GetQuestObjectives and C_QuestLog.GetQuestObjectives(questID)
     for _, objective in ipairs(type(objectives) == "table" and objectives or {}) do

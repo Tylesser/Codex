@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Professions module, part 3: what Codex adds to the profession window.
 --  * the block: reagent cost, AH value and profit of the selected recipe, inside the recipe page under the
@@ -113,14 +114,14 @@ local function ReagentLine(reagent)
   local name = reagent.name or P.ItemName(itemID) or ("item:" .. tostring(itemID))
   local right
   if reagent.source == "craft" then
-    right = "|cff909090crafted|r " .. ns.Money(reagent.unitPrice * reagent.count)
+    right = "|cff909090" .. L["crafted"] .. "|r " .. ns.Money(reagent.unitPrice * reagent.count)
   elseif reagent.unitPrice then
     right = ns.Money(reagent.unitPrice * reagent.count)
     if reagent.source == "vendor" then
-      right = "|cff909090vendor|r " .. right
+      right = "|cff909090" .. L["vendor"] .. "|r " .. right
     end
   else
-    right = "|cffff5050no price|r"
+    right = "|cffff5050" .. L["no price"] .. "|r"
   end
   return ("%dx %s"):format(reagent.count, name), right
 end
@@ -137,21 +138,21 @@ local function BlockOnEnter(self)
     local left, right = ReagentLine(reagent)
     GameTooltip:AddDoubleLine(left, right, 1, 1, 1, 1, 1, 1)
     if reagent.source == "craft" then
-      GameTooltip:AddDoubleLine("   |cff909090made with " .. (reagent.craftRecipe or "?") .. "|r",
-        "|cff909090buy:|r " .. P.Money(reagent.buyPrice and reagent.buyPrice * reagent.count), 1, 1, 1, 1, 1, 1)
+      GameTooltip:AddDoubleLine("   |cff909090" .. L["made with %s"]:format(reagent.craftRecipe or "?") .. "|r",
+        "|cff909090" .. L["buy:"] .. "|r " .. P.Money(reagent.buyPrice and reagent.buyPrice * reagent.count), 1, 1, 1, 1, 1, 1)
     end
   end
   GameTooltip:AddLine(" ")
   if entry.unitAH then
-    GameTooltip:AddDoubleLine("Auction price each", ns.Money(entry.unitAH) .. " |cff999999(" .. ns.Age(entry.seen) .. ")|r",
+    GameTooltip:AddDoubleLine(L["Auction price each"], ns.Money(entry.unitAH) .. " |cff999999(" .. ns.Age(entry.seen) .. ")|r",
       1, 1, 1, 1, 1, 1)
   else
-    GameTooltip:AddLine("No auction price for the item yet: scan at the auction house.", 1, 0.5, 0.25, true)
+    GameTooltip:AddLine(L["No auction price for the item yet: scan at the auction house."], 1, 0.5, 0.25, true)
   end
   if entry.fullCostMissing then
-    GameTooltip:AddLine("Some reagents have no price, so the cost is too low.", 1, 0.5, 0, true)
+    GameTooltip:AddLine(L["Some reagents have no price, so the cost is too low"], 1, 0.5, 0, true)
   end
-  GameTooltip:AddLine("Click to " .. (P.db.panel and "hide" or "show") .. " the profit list.", 0.6, 0.6, 0.6)
+  GameTooltip:AddLine(P.db.panel and L["Click to hide the profit list."] or L["Click to show the profit list."], 0.6, 0.6, 0.6)
   GameTooltip:Show()
 end
 
@@ -171,7 +172,7 @@ end
 function P.SearchAuction(listName, names, quantities)
   local A = ns.auction
   if InCombatLockdown() then
-    ns.Say("auction searches wait until the fight is over.")
+    ns.Say(L["auction searches wait until the fight is over."])
     return false
   end
   if not (A and A.SearchList) or #names == 0 then
@@ -183,7 +184,7 @@ function P.SearchAuction(listName, names, quantities)
   end
   local ok, why = A.SearchList(list)
   if not ok then
-    ns.Say(why or "the search could not start.")
+    ns.Say(why or L["the search could not start."])
     return false
   end
   if A.ShowPanel then
@@ -194,7 +195,7 @@ end
 
 function P.SearchItem(entry)
   local name = P.ItemName(entry.itemID) or entry.name
-  return P.SearchAuction("Recipe: " .. entry.name, { name })
+  return P.SearchAuction(L["Recipe: %s"]:format(entry.name), { name })
 end
 
 -- How many crafts the recipe window's count box asks for (forever Blizzard_ProfessionsCrafting.xml:
@@ -237,9 +238,9 @@ end
 function P.SearchReagents(entry)
   local names, unnamed, quantities = P.ReagentNames(entry)
   if unnamed > 0 then
-    ns.Say(("%d reagent name(s) haven't loaded yet; try again in a moment."):format(unnamed))
+    ns.Say(L["%d reagent name(s) haven't loaded yet; try again in a moment."]:format(unnamed))
   end
-  return P.SearchAuction("Reagents: " .. entry.name, names, quantities)
+  return P.SearchAuction(L["Reagents: %s"]:format(entry.name), names, quantities)
 end
 
 local SEARCH_ICON = "Interface\\Common\\UI-Searchbox-Icon"
@@ -283,7 +284,7 @@ local function CreateBlock(parent)
   SlotBox(block)
   block.title = UI.Text(block, "head", 11, "accent")
   block.title:SetPoint("TOPLEFT", BOX_PAD, -BOX_PAD + 1)
-  block.title:SetText("CODEX PROFIT")
+  block.title:SetText(L["CODEX PROFIT"])
   block.cut = UI.Text(block, "body", 11, "muted")
   block.cut:SetPoint("TOPRIGHT", -BOX_PAD, -BOX_PAD + 1)
   block.cut:SetJustifyH("RIGHT")
@@ -291,8 +292,8 @@ local function CreateBlock(parent)
   block.costLabel, block.cost = Line(block, top)
   block.valueLabel, block.value = Line(block, top - ROW_STEP)
   block.profitLabel, block.profit = Line(block, top - 2 * ROW_STEP)
-  block.costLabel:SetText("Reagent cost")
-  block.profitLabel:SetText("Profit")
+  block.costLabel:SetText(L["Reagent cost"])
+  block.profitLabel:SetText(L["Profit"])
   block.note = UI.Text(block, "body", 12, "warn")
   block.note:SetPoint("TOPLEFT", block.valueLabel, "TOPLEFT", 0, 0)
   block.note:SetPoint("RIGHT", -BOX_PAD, 0)
@@ -307,12 +308,9 @@ local function CreateBlock(parent)
     end
   end)
   block.codexProfRow = true
-  block.searchButton = SearchButton("Search", "Search the auction house for this recipe's item. Results show "
-    .. "in the Codex auction panel.", P.SearchItem)
+  block.searchButton = SearchButton(L["Search"], L["Search the auction house for this recipe's item. Results show in the Codex auction panel."], P.SearchItem)
   block.searchButton:SetPoint("BOTTOMLEFT", BOX_PAD, BOX_PAD - 2)
-  block.reagentsButton = SearchButton("Reagents", "Search the auction house for every reagent of this recipe, "
-    .. "also the ones you have. Results show in the Codex auction panel; opening one puts in the amount the "
-    .. "recipe needs.", P.SearchReagents)
+  block.reagentsButton = SearchButton(L["Reagents"], L["Search the auction house for every reagent of this recipe, also the ones you have. Results show in the Codex auction panel; opening one puts in the amount the recipe needs."], P.SearchReagents)
   block.reagentsButton:SetPoint("BOTTOMRIGHT", -BOX_PAD, BOX_PAD - 2)
   return block
 end
@@ -330,7 +328,7 @@ function P.UpdateBlock()
     return
   end
   block.entry = entry
-  block.cut:SetText(("after %g%% AH cut"):format(P.db.ahCut))
+  block.cut:SetText(L["after %g%% AH cut"]:format(P.db.ahCut))
   -- at the auction house the box grows a row of search buttons
   local auction = P.AuctionOpen()
   block:SetHeight(auction and BLOCK_H_SEARCH or BLOCK_H)
@@ -342,7 +340,7 @@ function P.UpdateBlock()
   block.cost:SetText(costText .. (entry.fullCostMissing and "|cffff8000*|r" or ""))
   if entry.unitAH then
     local made = entry.numMade ~= 1 and (" x%g"):format(entry.numMade) or ""
-    block.valueLabel:SetText("AH value" .. made)
+    block.valueLabel:SetText(L["AH value"] .. made)
     block.value:SetText(ns.Money(entry.value))
     local profit = entry.value - cost
     local margin = cost > 0 and profit / cost or nil
@@ -355,7 +353,7 @@ function P.UpdateBlock()
     for _, region in ipairs({ block.valueLabel, block.value, block.profitLabel, block.profit }) do
       region:Hide()
     end
-    block.note:SetText("No price yet - scan at the auction house.")
+    block.note:SetText(L["No price yet - scan at the auction house."])
     block.note:Show()
   end
   block:Show()
@@ -367,12 +365,12 @@ end
 -- inset box (8px below the title bar, 4px in) with a 24px header row whose sorted column is in the accent
 -- colour, 20px rows, the filter row, and a 40px footer with "x / y priced" and the Shopping list button.
 local COLUMNS = {
-  { key = "name", label = "Recipe", width = 190, justify = "LEFT" },
-  { key = "cost", label = "Cost", width = 66, justify = "RIGHT" },
-  { key = "value", label = "AH value", width = 66, justify = "RIGHT" },
-  { key = "profit", label = "Profit", width = 64, justify = "RIGHT" },
-  { key = "margin", label = "Margin", width = 50, justify = "RIGHT" },
-  { key = "skillCost", label = "Per skill", width = 56, justify = "RIGHT" },
+  { key = "name", label = L["Recipe"], width = 190, justify = "LEFT" },
+  { key = "cost", label = L["Cost"], width = 66, justify = "RIGHT" },
+  { key = "value", label = L["AH value"], width = 66, justify = "RIGHT" },
+  { key = "profit", label = L["Profit"], width = 64, justify = "RIGHT" },
+  { key = "margin", label = L["Margin"], width = 50, justify = "RIGHT" },
+  { key = "skillCost", label = L["Per skill"], width = 56, justify = "RIGHT" },
 }
 local GAP, ICON, LEFTPAD = 6, 24, 4 -- ICON: the 16px row icon plus an 8px gap before the name
 -- FILTER_H: two rows over the footer, the three filter checks and under them Min profit
@@ -423,39 +421,39 @@ local function RowOnEnter(self)
   for _, reagent in ipairs(entry.reagents) do
     local left, right = ReagentLine(reagent)
     if reagent.owned and reagent.owned > 0 then
-      left = left .. (" |cff40ff40(have %d)|r"):format(reagent.owned)
+      left = left .. " |cff40ff40" .. L["(have %d)"]:format(reagent.owned) .. "|r"
     end
     GameTooltip:AddDoubleLine(left, right, 1, 1, 1, 1, 1, 1)
   end
   GameTooltip:AddLine(" ")
-  GameTooltip:AddDoubleLine(entry.ownedFree and "Cost to buy what you lack" or "Reagent cost", P.Money(entry.cost),
+  GameTooltip:AddDoubleLine(entry.ownedFree and L["Cost to buy what you lack"] or L["Reagent cost"], P.Money(entry.cost),
     1, 1, 1, 1, 1, 1)
   if entry.unitAH then
     local made = entry.numMade ~= 1 and (" x%g"):format(entry.numMade) or ""
-    GameTooltip:AddDoubleLine(("AH value%s (after %g%% cut)"):format(made, P.db.ahCut), ns.Money(entry.value),
+    GameTooltip:AddDoubleLine(L["AH value%s (after %g%% cut)"]:format(made, P.db.ahCut), ns.Money(entry.value),
       1, 1, 1, 1, 1, 1)
-    GameTooltip:AddDoubleLine("Profit", P.Money(entry.profit, true), 1, 1, 1, 1, 1, 1)
-    GameTooltip:AddLine("Price seen " .. ns.Age(entry.seen) .. " ago", 0.6, 0.6, 0.6)
+    GameTooltip:AddDoubleLine(L["Profit"], P.Money(entry.profit, true), 1, 1, 1, 1, 1, 1)
+    GameTooltip:AddLine(L["Price seen %s ago"]:format(ns.Age(entry.seen)), 0.6, 0.6, 0.6)
   else
-    GameTooltip:AddLine("No auction price for the item yet", 1, 0.5, 0.25)
+    GameTooltip:AddLine(L["No auction price for the item yet"], 1, 0.5, 0.25)
   end
   if entry.missingReagents then
-    GameTooltip:AddLine("Some reagents have no price, so the cost is too low", 1, 0.5, 0)
+    GameTooltip:AddLine(L["Some reagents have no price, so the cost is too low"], 1, 0.5, 0)
   end
   if entry.skillChance then
     if entry.skillCost then
-      GameTooltip:AddDoubleLine(("Skill-up chance ~%d%%"):format(entry.skillChance * 100),
-        P.Money(entry.skillCost) .. " per point", 1, 1, 1, 1, 1, 1)
+      GameTooltip:AddDoubleLine(L["Skill-up chance ~%d%%%s"]:format(entry.skillChance * 100, ""),
+        P.Money(entry.skillCost) .. " " .. L["per point"], 1, 1, 1, 1, 1, 1)
     else
-      GameTooltip:AddLine("Gray recipe: no more skill points", 0.6, 0.6, 0.6)
+      GameTooltip:AddLine(L["Gray recipe: no more skill points"], 0.6, 0.6, 0.6)
     end
   end
   local queued = P.QueuedCount(entry)
   if queued > 0 then
-    GameTooltip:AddLine(("Queued: %d for the shopping list"):format(queued), 0.4, 0.73, 1)
+    GameTooltip:AddLine((L["Queued: %d for the shopping list"]):format(queued), 0.4, 0.73, 1)
   end
-  GameTooltip:AddLine("Click to select, Shift-click to link", 0.5, 0.5, 0.5)
-  GameTooltip:AddLine("Right-click to queue, Shift-right-click to unqueue", 0.5, 0.5, 0.5)
+  GameTooltip:AddLine(L["Click to select, Shift-click to link"], 0.5, 0.5, 0.5)
+  GameTooltip:AddLine(L["Right-click to queue, Shift-right-click to unqueue"], 0.5, 0.5, 0.5)
   GameTooltip:Show()
 end
 
@@ -531,8 +529,8 @@ local function Check(parent, label, key, tip)
   return check
 end
 
-local MIN_TIP = "Hide recipes that earn less than this per craft (after the auction house cut), every recipe that "
-  .. "loses money, and recipes without an auction price. At 0 only losses and break-even recipes are hidden."
+local MIN_TIP = L["Hide recipes that earn less than this per craft (after the auction house cut), every recipe that loses money, and recipes without an auction price."]
+  .. " " .. L["At 0 only losses and break-even recipes are hidden."]
 
 -- The Min profit box: Enter or clicking elsewhere applies the amount (and turns the filter on), Escape undoes.
 local function ApplyMinProfit(box)
@@ -553,7 +551,7 @@ local function CreatePanel(parent)
   panel:EnableMouse(true)
   UI.Panel(panel, { cornerSize = 14 })
 
-  panel.title = UI.Heading(panel, "Profit", 16)
+  panel.title = UI.Heading(panel, L["Profit"], 16)
   panel.title:SetPoint("LEFT", panel, "TOPLEFT", PAD + 12, -PAD - TITLE_H / 2)
   local close = UI.CloseButton(panel)
   close:SetSize(24, 24)
@@ -611,21 +609,21 @@ local function CreatePanel(parent)
   panel.list:SetPoint("TOPLEFT", 0, -HEADER_H)
   panel.list:SetPoint("BOTTOMRIGHT", 0, 0)
 
-  panel.craftable = Check(panel, "Craftable now", "craftableOnly", "Only recipes you have the reagents for right now.")
+  panel.craftable = Check(panel, L["Craftable now"], "craftableOnly", L["Only show recipes you have the reagents for right now."])
   panel.craftable:SetPoint("BOTTOMLEFT", PAD + 6, PAD + FOOTER_H + 6 + FILTER_ROW)
-  panel.priced = Check(panel, "Has AH price", "hideUnpriced", "Hide recipes whose item has no Codex auction price.")
+  panel.priced = Check(panel, L["Has AH price"], "hideUnpriced", L["Hide recipes whose item has no Codex auction price."])
   panel.priced:SetPoint("LEFT", panel.craftable.label, "RIGHT", 22, 0)
-  panel.owned = Check(panel, "Owned free", "ownedFree",
-    "Count reagents already in your bags and bank as free, so Cost and Profit show what crafting from your own stock earns.")
+  panel.owned = Check(panel, L["Owned free"], "ownedFree",
+    L["Count reagents already in your bags and bank as free, so Cost and Profit show what crafting from your own stock earns."])
   panel.owned:SetPoint("LEFT", panel.priced.label, "RIGHT", 22, 0)
 
-  panel.minProfit = Check(panel, "Min profit", "minProfitOn", MIN_TIP)
+  panel.minProfit = Check(panel, L["Min profit"], "minProfitOn", MIN_TIP)
   panel.minProfit:SetPoint("BOTTOMLEFT", PAD + 6, PAD + FOOTER_H + 6)
   panel.minProfit:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_TOPLEFT")
     GameTooltip:SetText(MIN_TIP, 1, 1, 1, 1, true)
     if P.db.minProfitOn then
-      GameTooltip:AddLine(("Hides %d of %d recipes."):format(P.minHidden or 0, P.minTotal or 0), 0.25, 1, 0.25, true)
+      GameTooltip:AddLine((L["Hides %d of %d recipes."]):format(P.minHidden or 0, P.minTotal or 0), 0.25, 1, 0.25, true)
     end
     GameTooltip:Show()
   end)
@@ -648,15 +646,15 @@ local function CreatePanel(parent)
   end)
   box:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_TOPLEFT")
-    GameTooltip:SetText("Min profit per craft", 1, 0.82, 0)
-    GameTooltip:AddLine("Type an amount like 50s, 1g or 1g 50s (a plain number is silver), then press Enter.",
+    GameTooltip:SetText(L["Min profit per craft"], 1, 0.82, 0)
+    GameTooltip:AddLine(L["Type an amount like 50s, 1g or 1g 50s (a plain number is silver), then press Enter."],
       1, 1, 1, true)
     GameTooltip:Show()
   end)
   box:SetScript("OnLeave", GameTooltip_Hide)
   panel.minBox = box
 
-  panel.shopping = UI.Button(panel, 150, 26, "Shopping list")
+  panel.shopping = UI.Button(panel, 150, 26, L["Shopping list"])
   panel.shopping:SetPoint("BOTTOMRIGHT", -PAD - 4, PAD + 7)
   panel.shopping:RegisterForClicks("LeftButtonUp", "RightButtonUp")
   panel.shopping:SetScript("OnClick", function(_, button)
@@ -669,10 +667,9 @@ local function CreatePanel(parent)
   end)
   panel.shopping:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_TOP")
-    GameTooltip:SetText("Codex shopping list", 1, 0.82, 0)
-    GameTooltip:AddLine("Right-click recipes to queue crafts, then click here.", 1, 1, 1, true)
-    GameTooltip:AddLine(("Writes the reagents you still need (minus your bags and bank) to the Codex shopping list "
-      .. "\"%s\". At the auction house, click it in the Codex panel to search."):format(P.LIST_NAME), 1, 1, 1, true)
+    GameTooltip:SetText(L["Codex shopping list"], 1, 0.82, 0)
+    GameTooltip:AddLine(L["Right-click recipes to queue crafts, then click here."], 1, 1, 1, true)
+    GameTooltip:AddLine(L["Writes the reagents you still need (minus your bags and bank) to the Codex shopping list \"%s\". At the auction house, click it in the Codex panel to search."]:format(P.LIST_NAME), 1, 1, 1, true)
     local toBuy = P.ReagentsToBuy()
     if #toBuy > 0 then
       GameTooltip:AddLine(" ")
@@ -681,7 +678,7 @@ local function CreatePanel(parent)
       end
     end
     GameTooltip:AddLine(" ")
-    GameTooltip:AddLine("Right-click to clear the queue", 0.6, 0.6, 0.6)
+    GameTooltip:AddLine(L["Right-click to clear the queue"], 0.6, 0.6, 0.6)
     GameTooltip:Show()
   end)
   panel.shopping:SetScript("OnLeave", GameTooltip_Hide)
@@ -702,7 +699,7 @@ function P.UpdatePanel()
     return
   end
   panel:Show()
-  panel.title:SetText("Profit \194\183 " .. (P.title or "Profession")) -- "Profit · Blacksmithing"
+  panel.title:SetText(L["Profit · %s"]:format(P.title or L["Profession"])) -- "Profit · Blacksmithing"
   panel.craftable:SetChecked(db.craftableOnly)
   panel.priced:SetChecked(db.hideUnpriced)
   panel.owned:SetChecked(db.ownedFree)
@@ -727,12 +724,12 @@ function P.UpdatePanel()
   end
   panel.list:SetItems(P.shown)
   if #P.all > 0 and (P.priced or 0) == 0 then
-    panel.status:SetText("|cffff8000No price yet - scan at the auction house.|r")
+    panel.status:SetText("|cffff8000" .. L["No price yet - scan at the auction house."] .. "|r")
   else
-    panel.status:SetText(("%d / %d priced"):format(P.priced or 0, #P.all))
+    panel.status:SetText(L["%d / %d priced"]:format(P.priced or 0, #P.all))
   end
   local total = P.QueueTotal()
-  panel.shopping:SetText(total > 0 and ("Shopping list (%d)"):format(total) or "Shopping list")
+  panel.shopping:SetText(total > 0 and (L["Shopping list (%d)"]):format(total) or L["Shopping list"])
 end
 
 -- Docking --------------------------------------------------------------------------------------------------

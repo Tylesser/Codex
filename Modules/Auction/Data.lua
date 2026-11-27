@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Auction house module, part 1: the price database, item keys, shopping lists and small helpers.
 -- Nothing here creates frames or registers events; Scan.lua, Tooltip.lua, Page.lua and Panel.lua do that
@@ -661,7 +662,7 @@ end
 
 function A.NewList(name)
   name = Clean(name)
-  local list = { name = name ~= "" and name or "New list", terms = {} }
+  local list = { name = name ~= "" and name or L["New list"], terms = {} }
   table.insert(A.Lists(), list)
   A.Changed("lists")
   return list

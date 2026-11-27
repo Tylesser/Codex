@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 -- Rings: saved data, what a slice is, and the premade rings. Nothing here creates frames or registers events.
 --
@@ -94,7 +95,7 @@ end
 function R.FindByName(name)
   name = strtrim(tostring(name or "")):lower()
   for _, ring in ipairs(R.Rings()) do
-    if ring.name:lower() == name then
+    if ring.name:lower() == name or R.RingName(ring):lower() == name then
       return ring
     end
   end
@@ -128,25 +129,25 @@ end
 
 -- Slices --------------------------------------------------------------------------------------------------------
 
-local MARKER_NAMES = { "Star", "Circle", "Diamond", "Triangle", "Moon", "Square", "Cross", "Skull" }
+local MARKER_NAMES = { L["Star"], L["Circle"], L["Diamond"], L["Triangle"], L["Moon"], L["Square"], L["Cross"], L["Skull"] }
 R.MARKER_NAMES = MARKER_NAMES
 
 function R.MarkerName(index)
   local name = _G["RAID_TARGET_" .. index]
-  return (type(name) == "string" and name ~= "") and name or MARKER_NAMES[index] or ("Marker " .. index)
+  return (type(name) == "string" and name ~= "") and name or MARKER_NAMES[index] or L["Marker %d"]:format(index)
 end
 
 -- Built-in actions: { name, icon, attrs }.
 R.ACTIONS = {
-  clearmark = { name = "Clear the target's marker", icon = "Interface\\Buttons\\UI-StopButton",
+  clearmark = { name = L["Clear the target's marker"], icon = "Interface\\Buttons\\UI-StopButton",
     attrs = { type = "raidtarget", action = "clear", unit = "target" } },
-  dismount = { name = "Dismount", icon = "Interface\\Icons\\Ability_Mount_RidingHorse",
+  dismount = { name = L["Dismount"], icon = "Interface\\Icons\\Ability_Mount_RidingHorse",
     attrs = { type = "macro", macrotext = "/dismount" } },
-  sit = { name = "Sit or stand", icon = "Interface\\Icons\\Spell_Nature_Sleep",
+  sit = { name = L["Sit or stand"], icon = "Interface\\Icons\\Spell_Nature_Sleep",
     attrs = { type = "macro", macrotext = "/sit" } },
-  stopcasting = { name = "Stop casting", icon = "Interface\\Icons\\Spell_Holy_Silence",
+  stopcasting = { name = L["Stop casting"], icon = "Interface\\Icons\\Spell_Holy_Silence",
     attrs = { type = "macro", macrotext = "/stopcasting" } },
-  cancelform = { name = "Leave your form", icon = "Interface\\Icons\\Ability_Druid_CatForm",
+  cancelform = { name = L["Leave your form"], icon = "Interface\\Icons\\Ability_Druid_CatForm",
     attrs = { type = "macro", macrotext = "/cancelform" } },
 }
 R.ACTION_ORDER = { "clearmark", "dismount", "sit", "stopcasting", "cancelform" }
@@ -156,20 +157,20 @@ R.ACTION_ORDER = { "clearmark", "dismount", "sit", "stopcasting", "cancelform" }
 -- bags and the map (no micro button) through the game's toggles. A window whose button this game hasn't is not
 -- offered (R.PanelAvailable).
 R.PANELS = {
-  { "character", "Character", "CharacterMicroButton", "Interface\\Icons\\INV_Chest_Cloth_17" },
-  { "spellbook", "Spellbook", "SpellbookMicroButton", "Interface\\Icons\\INV_Misc_Book_09" },
-  { "talents", "Talents", "TalentMicroButton", "Interface\\Icons\\Ability_Marksmanship" },
-  { "playerspells", "Spells and talents", "PlayerSpellsMicroButton", "Interface\\Icons\\INV_Misc_Book_07" },
-  { "professions", "Professions", "ProfessionMicroButton", "Interface\\Icons\\Trade_BlackSmithing" },
-  { "legacy", "Legacy", "LegacyMicroButton", "Interface\\Icons\\INV_Misc_Book_11" },
-  { "achievements", "Achievements", "AchievementMicroButton", "Interface\\Icons\\INV_Misc_Book_11" },
-  { "questlog", "Quest log", "QuestLogMicroButton", "Interface\\Icons\\INV_Misc_Note_01" },
-  { "guild", "Guild and communities", "GuildMicroButton", "Interface\\Icons\\INV_BannerPVP_02" },
-  { "groupfinder", "Group finder", "LFDMicroButton", "Interface\\Icons\\INV_Misc_GroupNeedMore" },
-  { "collections", "Collections", "CollectionsMicroButton", "Interface\\Icons\\Ability_Mount_RidingHorse" },
-  { "bags", "Bags", nil, "Interface\\Icons\\INV_Misc_Bag_08", "/run ToggleAllBags()" },
-  { "map", "World map", nil, "Interface\\Icons\\INV_Misc_Map_01", "/run ToggleWorldMap()" },
-  { "menu", "Game menu", "MainMenuMicroButton", "Interface\\Icons\\INV_Misc_Gear_01" },
+  { "character", L["Character"], "CharacterMicroButton", "Interface\\Icons\\INV_Chest_Cloth_17" },
+  { "spellbook", L["Spellbook"], "SpellbookMicroButton", "Interface\\Icons\\INV_Misc_Book_09" },
+  { "talents", L["Talents"], "TalentMicroButton", "Interface\\Icons\\Ability_Marksmanship" },
+  { "playerspells", L["Spells and talents"], "PlayerSpellsMicroButton", "Interface\\Icons\\INV_Misc_Book_07" },
+  { "professions", L["Professions"], "ProfessionMicroButton", "Interface\\Icons\\Trade_BlackSmithing" },
+  { "legacy", L["Legacy"], "LegacyMicroButton", "Interface\\Icons\\INV_Misc_Book_11" },
+  { "achievements", L["Achievements"], "AchievementMicroButton", "Interface\\Icons\\INV_Misc_Book_11" },
+  { "questlog", L["Quest log"], "QuestLogMicroButton", "Interface\\Icons\\INV_Misc_Note_01" },
+  { "guild", L["Guild and communities"], "GuildMicroButton", "Interface\\Icons\\INV_BannerPVP_02" },
+  { "groupfinder", L["Group finder"], "LFDMicroButton", "Interface\\Icons\\INV_Misc_GroupNeedMore" },
+  { "collections", L["Collections"], "CollectionsMicroButton", "Interface\\Icons\\Ability_Mount_RidingHorse" },
+  { "bags", L["Bags"], nil, "Interface\\Icons\\INV_Misc_Bag_08", "/run ToggleAllBags()" },
+  { "map", L["World map"], nil, "Interface\\Icons\\INV_Misc_Map_01", "/run ToggleWorldMap()" },
+  { "menu", L["Game menu"], "MainMenuMicroButton", "Interface\\Icons\\INV_Misc_Gear_01" },
 }
 R.PANEL_ORDER = {}
 for _, panel in ipairs(R.PANELS) do
@@ -258,10 +259,10 @@ function R.Info(slice)
   local kind, id = slice.kind, slice.id
   if kind == "spell" then
     local name = SpellName(id)
-    return { name = name or ("Spell " .. tostring(id)), icon = SpellIcon(id) or QUESTION, spell = id,
+    return { name = name or L["Spell %s"]:format(tostring(id)), icon = SpellIcon(id) or QUESTION, spell = id,
       attrs = { type = "spell", spell = name or id } }
   elseif kind == "item" then
-    return { name = ItemName(id) or ("Item " .. tostring(id)), icon = ItemIcon(id) or QUESTION, item = id,
+    return { name = ItemName(id) or L["Item %s"]:format(tostring(id)), icon = ItemIcon(id) or QUESTION, item = id,
       attrs = { type = "item", item = "item:" .. tostring(id) } }
   elseif kind == "toy" then
     local name, icon
@@ -269,18 +270,18 @@ function R.Info(slice)
       local _, toyName, toyIcon = R.Call(C_ToyBox.GetToyInfo, id)
       name, icon = Plain(toyName), Plain(toyIcon)
     end
-    return { name = name or ItemName(id) or ("Toy " .. tostring(id)), icon = icon or ItemIcon(id) or QUESTION,
+    return { name = name or ItemName(id) or L["Toy %s"]:format(tostring(id)), icon = icon or ItemIcon(id) or QUESTION,
       item = id, attrs = { type = "toy", toy = id } }
   elseif kind == "macro" then
     local name, icon = R.Call(GetMacroInfo, id)
     if not Plain(name) then
-      return { name = tostring(id) .. " (macro gone)", icon = QUESTION, missing = true, attrs = {} }
+      return { name = L["%s (macro gone)"]:format(tostring(id)), icon = QUESTION, missing = true, attrs = {} }
     end
     return { name = name, icon = Plain(icon) or QUESTION, attrs = { type = "macro", macro = name } }
   elseif kind == "mount" then
     local info = MountInfo(id)
     if not (info and info.spellID) then
-      return { name = "Mount " .. tostring(id), icon = QUESTION, missing = true, attrs = {} }
+      return { name = L["Mount %s"]:format(tostring(id)), icon = QUESTION, missing = true, attrs = {} }
     end
     return { name = info.name, icon = info.icon or SpellIcon(info.spellID) or QUESTION, spell = info.spellID,
       attrs = { type = "spell", spell = info.spellID } }
@@ -291,11 +292,11 @@ function R.Info(slice)
   elseif kind == "ring" then
     local inner = R.Find(id)
     if not inner then
-      return { name = "Ring (deleted)", icon = QUESTION, missing = true, attrs = {} }
+      return { name = L["Ring (deleted)"], icon = QUESTION, missing = true, attrs = {} }
     end
     local first = R.Slices(inner)[1]
     local firstInfo = first and first.kind ~= "ring" and R.Info(first)
-    return { name = inner.name or "Ring", icon = firstInfo and firstInfo.icon or RING_ICON, ring = inner.id,
+    return { name = R.RingName(inner) or L["Ring"], icon = firstInfo and firstInfo.icon or RING_ICON, ring = inner.id,
       attrs = { subring = tostring(inner.id) } }
   elseif kind == "action" then
     local action = R.ACTIONS[id]
@@ -494,12 +495,21 @@ for index = 1, 8 do
 end
 MARKERS[9] = { kind = "action", id = "clearmark" }
 
+-- The names stay English in CodexDB (a ring's stored name; "/codex ring mounts"); R.RingName shows them in the
+-- player's language while the player hasn't renamed the ring.
 R.PRESETS = {
   { id = "mounts", name = "Mounts", auto = "mounts" },
   { id = "travel", name = "Travel", auto = "travel" },
   { id = "professions", name = "Professions", auto = "professions" },
   { id = "markers", name = "Markers", slices = MARKERS },
 }
+local PRESET_NAMES = { Mounts = L["Mounts"], Travel = L["Travel"], Professions = L["Professions"], Markers = L["Markers"] }
+
+-- A ring's name as shown (a premade ring's stored English name in the player's language).
+function R.RingName(ring)
+  local name = ring and ring.name
+  return ring and ring.preset and PRESET_NAMES[name] or name
+end
 
 function R.Preset(id)
   for _, preset in ipairs(R.PRESETS) do
