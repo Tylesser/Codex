@@ -309,24 +309,40 @@ end
 -- Crates --------------------------------------------------------------------------------------------
 
 -- What a crate is: { name, level, category, made (double Favor), filled, guess, favor, key, contents }.
--- From names like "Waylaid Crate: Journeyman Ore" (to fill) and "Sealed Journeyman Crate" (filled).
--- nil for other items.
+-- By item ID (CRATE_ITEMS, SEALED_CRATE_ITEMS), else from names like "Waylaid Crate: Journeyman Ore",
+-- "Waylaid Crate: Earthly Artisan Herbs" (to fill) and "Sealed Journeyman Crate" (filled). nil for other items.
 function C.CrateInfo(itemID, name)
   name = name or C.ItemName(itemID)
   if not name then
     return nil
   end
-  local level, rest = name:match("^Waylaid Crate: (%a+) (.+)$")
-  local filled = false
-  if not level then
-    level = name:match("^Sealed (%a+) Crate$")
-    filled = level ~= nil
+  local known = itemID and C.CRATE_ITEMS[itemID]
+  local sealed = itemID and C.SEALED_CRATE_ITEMS[itemID]
+  local level, category, filled
+  if known then
+    level, category, filled = known[1], known[2], false
+  elseif sealed then
+    level, filled = sealed, true
+  else
+    local rest = name:match("^Waylaid Crate: (.+)$")
+    if rest then
+      for word in rest:gmatch("%a+") do
+        if C.CRATE_LEVELS[word] then
+          level = word
+          break
+        end
+      end
+      category = level and C.CrateCategory(rest)
+      filled = false
+    else
+      level = name:match("^Sealed (%a+) Crate$")
+      filled = level ~= nil
+    end
   end
   local info = level and C.CRATE_LEVELS[level]
   if not info then
     return nil
   end
-  local category = rest and C.CrateCategory(rest)
   local made
   if category then
     made = C.CRATE_MADE_GOODS[category] or false

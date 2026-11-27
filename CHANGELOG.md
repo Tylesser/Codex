@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.16.1
+
+- Commerce: **Herb crates from Expert on now show their lines**: "Waylaid Crate: Earthly Artisan Herbs" and the other Earthly and Flowering crates showed no Favor, price or fill list in their tooltip. Crates are now known by their item, so this also works in every game language.
+- Commerce: **Sealed Elite Crates** are known too (their Favor is a guess until you turn one in).
+
 ## 1.16.0
 
 - Trade Crier: **a message for one city only**: the new city button next to a message's icon picks the city it is for (or any city). Its button then shows only there, and the post key skips it elsewhere, so you can write a different message for each city you trade in.
