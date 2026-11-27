@@ -40,7 +40,7 @@ Home shows a card for each feature with what it is doing right now; click a card
   that doesn't stack with a class buff counts as having it). Formerly the Buff Tracker addon.
 - **Auction House**: scans the auction house and keeps a price history (up to a year: each day's lowest and highest
   price and how many were up), shows prices, the week's average and the trend in item tooltips, and shops from your
-  own lists. Click an item on the Auction prices page, or type `/codex history <item>`, for its price chart. "Below vendor" in the panel beside the auction house lists items on sale for less than a vendor pays. No other auction addon needed. "From Auctionator" copies Auctionator's saved
+  own lists. Click an item on the Auction prices page, or type `/codex history <item>`, for its price chart. "Below vendor" in the panel beside the auction house lists items on sale for less than a vendor pays, with a Buy button (one click, one purchase). No other auction addon needed. "From Auctionator" copies Auctionator's saved
   shopping lists into Codex while Auctionator is installed.
 - **Bags**: one bag window for all your bags, grouped into categories (small ones side by side; or in bag order) with a search box,
   identical items stacked into one button with the total (shown one by one at the bank, trade, mailbox,
@@ -143,7 +143,8 @@ Home shows a card for each feature with what it is doing right now; click a card
   are left to you. Skull mark (Unit frames > Skull mark, off until you switch it on, `/codex skull`): a key and a
   small button that put the skull on your target, only while your group role is the one you gave the skull to
   (by default the tank, in a party or raid); the game doesn't let addons mark by themselves, so press the key as
-  you pull. `/codex qol`.
+  you pull. Whisper group leaders (Chat > Whisper group leaders): write a message once, and each group in the
+  Looking For Group window gets a Whisper button that sends it to the group's leader in one click. `/codex qol`.
 - **Highlights** (off until you switch it on): a pulsing ring and the name on the herb, ore, chest or fishing pool
   you are next to (green, orange, gold, blue), a "!" on quest objects and quest mobs, and glowing quest items in
   your bags. Sets the game's interact-target options while on and gives yours back when off. If NodeSight is

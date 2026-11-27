@@ -3,13 +3,25 @@ local addonName, ns = ...
 -- Auction house module, part 5: a themed Codex panel docked to the right of the game's auction house
 -- window. It lists the shopping lists (click one to search all its terms), shows the results (click one to
 -- open it in the game's own buy view) and has the full scan button. "Below vendor" shows the items on sale for
--- less than a vendor pays (Below.lua) in the same result list. It never buys, bids or posts.
+-- less than a vendor pays (Below.lua) in the same result list, with a Buy button under it (Buy.lua: one click buys
+-- the top item while it is under the vendor price). It never bids or posts.
 
 local A = ns.auction
 local UI = ns.UI
 
 local WIDTH = 270
 local panel
+
+-- The result list ends above the Buy button in vendor mode.
+local function PlaceResults(vendor)
+  if panel.resultsVendor == vendor then
+    return
+  end
+  panel.resultsVendor = vendor
+  panel.results:ClearAllPoints()
+  panel.results:SetPoint("TOPLEFT", panel.searchText, "BOTTOMLEFT", 0, -8)
+  panel.results:SetPoint("BOTTOMRIGHT", -12, vendor and 62 or 12)
+end
 
 local function RefreshPanel()
   if not panel or not panel:IsShown() then
@@ -18,12 +30,23 @@ local function RefreshPanel()
   panel.scanText:SetText(A.ScanText())
   panel.scan:SetEnabled(A.scan.state == "idle" and A.NextScanIn() == 0)
   panel.lists:SetItems(A.Lists())
-  if panel.mode == "vendor" then
+  local vendor = panel.mode == "vendor"
+  PlaceResults(vendor)
+  panel.buy:SetShown(vendor)
+  panel.buyText:SetShown(vendor)
+  panel.stacks:SetShown(vendor)
+  if vendor then
+    A.PrepareBuy() -- (searches the top item so the next click can buy it)
     panel.searchText:SetText(A.BelowText())
     panel.stop:Hide()
     panel.sort:SetText(A.BelowSort() == "each" and "Each" or "Total")
     panel.sort:Show()
     panel.results:SetItems(A.BelowRows())
+    local state = A.buy.state
+    panel.buyText:SetText(A.BuyText())
+    panel.buy:SetEnabled(state == "ready")
+    panel.buy:SetText((state == "quote" or state == "buying") and "Buying..." or "Buy")
+    panel.stacks:SetText(A.BuyStacksOnly() and "Stacks only" or "All items")
     return
   end
   panel.sort:Hide()
@@ -217,8 +240,51 @@ local function CreatePanel()
       row.deal:SetShown(entry.deal)
     end,
   })
-  panel.results:SetPoint("TOPLEFT", panel.searchText, "BOTTOMLEFT", 0, -8)
-  panel.results:SetPoint("BOTTOMRIGHT", -12, 12)
+  PlaceResults(false)
+
+  -- (vendor mode) one click buys the top item while it is under the vendor price (Buy.lua)
+  panel.buy = UI.Button(panel, 100, 24, "Buy")
+  panel.buy:SetPoint("BOTTOMLEFT", 12, 12)
+  panel.buy:SetPoint("BOTTOMRIGHT", -108, 12)
+  panel.buy:Hide()
+  -- what Buy buys: every item, or only stackable goods (the auction house's commodities)
+  panel.stacks = UI.Button(panel, 90, 24, "All items")
+  panel.stacks:SetPoint("BOTTOMRIGHT", -12, 12)
+  panel.stacks:Hide()
+  panel.stacks:SetScript("OnClick", function()
+    A.SetBuyStacksOnly(not A.BuyStacksOnly())
+  end)
+  panel.stacks:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine("What Buy buys")
+    GameTooltip:AddLine(A.BuyStacksOnly()
+      and "Stacks only: only stackable goods (cloth, herbs, ore...). Click to buy every kind of item."
+      or "All items: every item on the list except gear. Click to buy only stackable goods.",
+      0.8, 0.8, 0.8, true)
+    GameTooltip:Show()
+  end)
+  panel.stacks:SetScript("OnLeave", GameTooltip_Hide)
+  panel.buy:SetScript("OnClick", function()
+    local ok, why = A.BuyNext()
+    if not ok and why then
+      ns.Say(why)
+    end
+  end)
+  panel.buy:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine("Buy below the vendor price")
+    GameTooltip:AddLine("Each click buys the top item of the list (gear excepted): stackable goods every one still "
+      .. "under the vendor price, other items the cheapest one. The price is checked again just before paying; "
+      .. "if it is no longer under what a vendor pays, nothing is bought. The game needs a click for every "
+      .. "purchase, so it never buys on its own.", 0.8, 0.8, 0.8, true)
+    GameTooltip:Show()
+  end)
+  panel.buy:SetScript("OnLeave", GameTooltip_Hide)
+  panel.buyText = UI.Text(panel, "body", 11, "muted")
+  panel.buyText:SetPoint("BOTTOMLEFT", panel.buy, "TOPLEFT", 2, 6)
+  panel.buyText:SetPoint("RIGHT", -12, 0)
+  panel.buyText:SetWordWrap(false)
+  panel.buyText:Hide()
 
   panel:SetScript("OnShow", RefreshPanel)
   ns.On("AUCTION_STATE", RefreshPanel)

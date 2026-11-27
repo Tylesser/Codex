@@ -469,6 +469,12 @@ function A.SearchList(list)
   end
   shop.index = 0
   shop.results = {}
+  -- the panel shows this search's results, whoever started it (Professions' Search / Reagents, the Commerce buy
+  -- list): it stayed on "Below vendor" and hid them (the user's screenshot, 2026-11-27)
+  local panel = A.Panel and A.Panel()
+  if panel then
+    panel.mode = "shop"
+  end
   NextTerm()
   return true
 end
@@ -501,7 +507,7 @@ function A.SearchText()
   return "Click a list to search it."
 end
 
--- Opens a result in the game's own buy view (the player buys there; Codex never buys, bids or posts).
+-- Opens a result in the game's own buy view (the player buys there; only Buy.lua's button buys, on a click).
 function A.OpenResult(entry)
   local frame = AuctionHouseFrame
   if not frame or not entry then
@@ -610,6 +616,7 @@ end
 
 function handlers.COMMODITY_SEARCH_RESULTS_UPDATED(itemID)
   FromCommodity(itemID)
+  A.BuyCommodityResults(itemID) -- (after the list has the new prices: Buy.lua)
   local want = A.wantQuantity
   if want and want.itemID == itemID and C_Timer and C_Timer.After then
     C_Timer.After(0, function()
@@ -622,6 +629,7 @@ end
 
 function handlers.ITEM_SEARCH_RESULTS_UPDATED(itemKey)
   FromItemSearch(itemKey)
+  A.BuyItemResults(itemKey)
 end
 
 function handlers.AUCTION_HOUSE_THROTTLED_SYSTEM_READY()
@@ -643,6 +651,7 @@ function A.StartEvents()
     end
   end)
   A.eventFrame = frame
+  A.StartBuyEvents()
   -- opened before login finished (a /reload at the auction house)
   if AuctionHouseFrame and AuctionHouseFrame.IsShown and AuctionHouseFrame:IsShown() then
     handlers.AUCTION_HOUSE_SHOW()

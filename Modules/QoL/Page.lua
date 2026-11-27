@@ -318,6 +318,7 @@ Q.SECTIONS = {
   zoneLevels = { area = "map", order = 30, title = "Zone levels on the world map", folded = true },
   mapExtras = { area = "map", order = 40, title = "Dungeons and town services on the map", folded = true },
   skullMark = { area = "units", order = 70, title = "Skull mark" },
+  lfgWhisper = { area = "chat", order = 50, title = "Whisper group leaders" },
 }
 
 local function ModuleOff()

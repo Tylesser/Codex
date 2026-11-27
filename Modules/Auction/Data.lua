@@ -33,6 +33,7 @@ A.DEFAULTS = {
   days = 30, -- days of price history to keep (A.DAY_CHOICES)
   tooltipHistory = true, -- the week's average and trend under the "Auction" line (the last days with Shift)
   belowSort = "total", -- "Below vendor" order: "total" (all the cheap ones) or "each" (profit on one item)
+  buyStacks = false, -- the Buy button buys only stackable goods (auction house commodities)
 }
 
 -- How long the price history goes back (the options' - / +). Past DAILY days, a week is one entry.

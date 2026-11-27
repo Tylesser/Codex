@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.14.0
+
+- Auction House: **a Buy button for "Below vendor"**. Each click buys the top item of the list while it is still under the vendor price: stackable goods every one under it, other items the cheapest one (gear is left to the auction house window). The price is checked again just before paying, and if it is no longer under what a vendor pays (or more than you have), nothing is bought. The line above the button says what the next click buys and the profit. "Stacks only" beside it limits it to stackable goods (cloth, herbs, ore...). The game needs a click for every purchase, so Codex never buys on its own.
+- Auction House: a search started outside the Codex panel (the Search and Reagents buttons of a recipe, the Commerce buy list) now shows its results there even while "Below vendor" is open.
+- Chat: **Whisper group leaders**. Write a message once (Chat > Whisper group leaders), and every group in the Looking For Group window gets a Whisper button: one click sends your message to the group's leader. The button says "Sent" afterwards, and the same leader can be whispered again after two minutes.
+- Buffs: Dispels: **debuffs now show in combat too**. In a fight WoW Forever hides a debuff's name and type from addons, so no dispel button lit up and no icon appeared. Now the game is asked which debuffs you can remove: if you know one dispel, its button lights up as before (with the spell's icon) and an icon appears where no button was; if you know several, an icon with your dispel's icon shows (not clickable, since the game doesn't say which spell fits).
+
 ## 1.13.0
 
 - Chat (with the restyled chat on): **every chat tab stays in view**. When a new whisper tab (or any new window) would push tabs off the chat bar, all tabs get the same smaller width so they fit, instead of hiding behind the arrow button. Names that don't fit are cut short.

@@ -137,7 +137,7 @@ ns.RegisterModule({
   name = "Quality of life",
   icon = "Interface\\Icons\\INV_Misc_Gear_01",
   desc = "Small conveniences, each with its own switch: faster loot, quest and gathering info in tooltips, "
-    .. "zone levels, unexplored areas, dungeons and town services on the map, glowing proc abilities, new spell ranks, numbers on cooldowns and key binding by hovering on your bars, a skull key for your role, and Learn all at trainers.",
+    .. "zone levels, unexplored areas, dungeons and town services on the map, glowing proc abilities, new spell ranks, numbers on cooldowns and key binding by hovering on your bars, a skull key for your role, a Whisper button for group leaders, and Learn all at trainers.",
   order = 97,
   area = "general",
   sectionOrder = 90,

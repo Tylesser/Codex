@@ -21,5 +21,6 @@
   <Script file="HoverBind.lua"/>
   <Script file="Trainer.lua"/>
   <Script file="Skull.lua"/>
+  <Script file="GroupWhisper.lua"/>
   <Script file="Page.lua"/>
 </Ui>

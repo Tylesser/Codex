@@ -271,6 +271,21 @@ while it is loaded Codex leaves the feature to it (the player can force Codex's 
   a list click goes back to "shop"): `A.AllBelow()` = the scan list plus every saved `realm.items[key].m` under the vendor price (`seen = rec.t`, no `u`; sell prices cached per session, unloaded items asked once + a redraw after 2 s; the panel also redraws on PRICES_UPDATED in vendor mode), `A.BelowRows()` (by `A.BelowSort()`, `db.belowSort` "total" = `p` or "each" = `s - l`, then the other one; button `panel.sort` in the Stop button's place; the row shows `+profit` instead of a price, `result.itemKey` from
   `C_AuctionHouse.MakeItemKey`; gear has no result and opens through the search box), `A.BelowText()`. Tests at
   `codex_auction_test` 9b.
+  Buy button (Buy.lua, 2026-11-27, the user's request; before it Codex never bought anything): `panel.buy` +
+  `panel.buyText` under the list in vendor mode (the list's bottom moves up, `PlaceResults`). `A.PrepareBuy()` (from
+  RefreshPanel) searches the first non-gear, non-skipped row with `SendSearchQuery(itemKey, {Buyout, Bid}, false)`
+  like Blizzard's buy views; Scan.lua's result handlers call `A.BuyCommodityResults` / `A.BuyItemResults` after the
+  list update. Offer: commodities = every unit under the vendor price minus `numOwnerItems`, capped by GetMoney;
+  items = the cheapest `buyoutAmount` under it, not `containsOwnerItem`. `panel.stacks` toggles `db.buyStacks`
+  (`A.BuyStacksOnly`): Target skips rows whose GetItemKeyInfo `isCommodity` (else GetItemInfo stack size > 1) is false, and
+  an item-kind search answer is skipped. Nothing to buy = `buy.skip[key]` until the
+  AH closes. The click (`A.BuyNext`, a hardware event: forever docs mark `PlaceBid` and `StartCommoditiesPurchase`
+  HasRestrictions) calls `StartCommoditiesPurchase(itemID, qty, unit)` as AuctionHouseFrameMixin does, then on
+  COMMODITY_PRICE_UPDATED(unit, total) confirms only while `total < sell * qty` and affordable (else
+  CancelCommoditiesPurchase); items `PlaceBid(auctionID, buyoutAmount)` like BUYOUT_AUCTION's OnAccept, done on
+  AUCTION_HOUSE_PURCHASE_COMPLETED(auctionID) / AUCTION_HOUSE_SHOW_ERROR. 10 s timeouts. Never loop purchases
+  without a click. Tests at `codex_auction_test` 9d. Not yet confirmed in game (ConfirmCommoditiesPurchase from an
+  event: no restriction in the docs).
 - `Modules/Bags`: Codex's bag window (standalone = `Baganator`; never read or copy Baganator/Syndicator, they are
   All Rights Reserved). Data per character in `CodexDB.bags.characters["Realm-Name"]` (slots as
   `{ link, count, quality }`, bank from the last visit, equipped, money). Own bags are
@@ -625,6 +640,15 @@ actions / windows / rings, `R.Choices(kind, ring)`, search, a click = `R.SetSlic
 `ring` (attribute `subring`, the trigger snippet opens it at the cursor; a ring can't hold itself); preview;
   sizes; editing refused in combat). `/codex rings`, `/codex ring <name>` (out of combat). Test `codex_rings_test.lua`
   (runs the snippets in a stand-in restricted environment).
+- Whisper group leaders (Modules/QoL/GroupWhisper.lua, `lfgWhisper`, default on, message `lfgWhisperText`, Chat >
+  Whisper group leaders; 2026-11-27, the user's request): Forever's LFG window is Blizzard_GroupFinder_VanillaStyle
+  (load on demand, Mainline family for camelot). `hooksecurefunc("LFGBrowseSearchEntry_Update", ...)` (hooked at
+  Enable or on its ADDON_LOADED) adds a `UI.Button` "Whisper" at the row's BOTTOMRIGHT; rows are recycled ScrollBox
+  frames, so the button is kept in a weak table (nothing written on Blizzard's frames) and re-read from
+  `entry.resultID` every update. Leader = `C_LFGList.GetSearchResultInfo(id).leaderName` (SecretInChatMessagingLockdown:
+  never used while `issecretvalue`); no button for solo players, delisted groups or your own listing. Sent only from
+  the click (`SendChatMessage` HasRestrictions) with `C_ChatInfo.SendChatMessage or SendChatMessage`, as Crier does;
+  the same leader again after 120 s. Tests at the end of `codex_qol_extras_test`. Button placement not yet seen in game.
 - Skull mark (Modules/QoL/Skull.lua, `skullMark`, default off, Unit frames > Skull mark, `/codex skull`, `Q.skull`;
   2026-11-26, the user's "mark the mob player attacks with skull if role assigned to skull"): **SetRaidTarget is
   protected since 12.0** (forever RaidMarkersDocumentation HasRestrictions; wiki "#protected"), and
