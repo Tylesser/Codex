@@ -97,6 +97,21 @@ local function Enable()
   ns.CreateDisplay() -- the icon row, and the combat frame for the click overlays
   ns.CreatePartyEvents()
   CreateEventFrame()
+  -- blessings shared with the other paladins (Share.lua, the same file as Buff Tracker's), and the next buff key
+  -- (NextBuff.lua), set again after a fight when it changed in one
+  ns.ShareSetup()
+  ns.ApplyNextKey()
+  local shareFrame = CreateFrame("Frame")
+  for _, event in ipairs(ns.SHARE_EVENTS) do
+    pcall(shareFrame.RegisterEvent, shareFrame, event)
+  end
+  shareFrame:SetScript("OnEvent", function(_, event, ...)
+    if event == "PLAYER_REGEN_ENABLED" and ns.NextKeyPending() then
+      ns.ApplyNextKey()
+    end
+    ns.ShareEvent(event, ...)
+  end)
+  ns.shareFrame = shareFrame
 end
 
 local function PrintList()
@@ -218,7 +233,7 @@ codex.RegisterModule({
   id = "buffs",
   name = L["Buffs"],
   -- its section in the Codex window (Areas.lua)
-  area = "auras", sectionOrder = 10, sectionTitle = L["Buff tracker"], pageHeight = function() return ns.db and 460 or nil end, -- the off text is short
+  area = "auras", sectionOrder = 10, sectionTitle = L["Buff tracker"], pageHeight = function() return ns.db and 488 or nil end, -- the off text is short
   icon = "Interface\\Icons\\Spell_Holy_WordFortitude",
   desc = L["A row of the buffs you choose, and click-to-buff and dispel buttons by your party frames."],
   standalone = "BuffTracker",

@@ -555,3 +555,56 @@ function A.HistoryCommand(rest)
   end
   A.ShowHistory(key)
 end
+
+-- How often an item is up for sale (2026-11-28, the Professions module's "listed on N of M days"): of the last
+-- `days` days (today included), on how many Codex saw the item up at the auction house, and on how many days
+-- Codex scanned at all on this realm (a day any item has a price). Codex sees listings, not sales. Read only.
+-- The scanned days are counted over every item once a minute at most.
+local scannedCache = { at = -math.huge }
+
+local function ScannedDays(realm, from, to)
+  local now = GetTime and GetTime() or 0
+  if scannedCache.realm == realm and scannedCache.from == from and scannedCache.to == to
+    and now - scannedCache.at < 60 then
+    return scannedCache.count
+  end
+  local seen, count, wanted = {}, 0, to - from + 1
+  for _, rec in pairs(realm.items or {}) do
+    local history = type(rec) == "table" and rec.h
+    if history then
+      for day = from, to do
+        if not seen[day] and history[day] then
+          seen[day] = true
+          count = count + 1
+        end
+      end
+      if count >= wanted then
+        break
+      end
+    end
+  end
+  scannedCache = { realm = realm, from = from, to = to, at = now, count = count }
+  return count
+end
+
+function A.DaysListed(item, days)
+  days = days or 14
+  local realm = A.Realm(false)
+  if not realm or item == nil then
+    return 0, 0
+  end
+  local today = A.Today()
+  local from = today - days + 1
+  local scanned = ScannedDays(realm, from, today)
+  local key = A.KeyOf(item)
+  local rec = key and realm.items[key]
+  local listed = 0
+  if rec and rec.h then
+    for day = from, today do
+      if rec.h[day] then
+        listed = listed + 1
+      end
+    end
+  end
+  return listed, scanned
+end

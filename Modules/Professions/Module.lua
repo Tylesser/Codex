@@ -53,6 +53,12 @@ function P.Enable()
   P.eventFrame = events
   ns.On("PRICES_UPDATED", P.RequestRefresh)
   P.running = true
+  -- crafting cooldowns of this character that are ready (after the login chat has settled)
+  C_Timer.After(8, function()
+    if P.running then
+      P.ScheduleCooldownNote()
+    end
+  end)
 end
 
 ns.RegisterModule({
@@ -77,4 +83,10 @@ ns.RegisterModule({
   Status = function()
     return P.StatusText()
   end,
+  commands = {
+    -- /codex cooldowns: the crafting cooldowns of all your characters
+    cooldowns = function()
+      P.PrintCooldowns()
+    end,
+  },
 })

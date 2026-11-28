@@ -13,10 +13,11 @@ local TRACKED_ROW_HEIGHT = 50 -- two lines: name and "when" on top, item and ale
 local LEFT_WIDTH = 300
 local RIGHT_X = 330
 local RIGHT_WIDTH = 300
-local LIST_TOP = -120
+local LIST_TOP = -148
+local SHIFT = 28 -- the row of the next buff key (NextBuff.lua) above the lists
 
 local panel, lockCheck, clickCheck, shapeButton, sizeText, searchBox, searchHint, status, presetButton
-local trackedList, pickerList, trackedEmpty, pickerEmpty
+local trackedList, pickerList, trackedEmpty, pickerEmpty, keyButton
 local spellbook = {}
 
 -- Shared helpers for the three tabs ---------------------------------------------------------------
@@ -292,6 +293,7 @@ local function RefreshMain()
   presetButton:SetText(L["Add %s basics"]:format(UnitClass("player") or L["class"]))
   presetButton:SetShown(preset ~= nil)
   presetButton:SetEnabled(preset ~= nil and #preset > 0)
+  keyButton:SetText(ns.NextKeyText(keyButton))
   RefreshTracked()
   RefreshPicker()
 end
@@ -368,13 +370,23 @@ local function BuildTrackedTab(tab)
   status = UI.Text(tab, "body", 11, "warn")
   status:SetPoint("TOPLEFT", 0, -58)
 
+  -- one key for the next missing buff (NextBuff.lua)
+  keyButton = UI.Button(tab, 110, 22, "")
+  keyButton:SetPoint("TOPRIGHT", tab, "TOPLEFT", RIGHT_X + RIGHT_WIDTH, -58)
+  ns.SetupNextKeyButton(keyButton, RefreshMain)
+  local keyLabel = UI.Text(tab, "body", 12, "text")
+  keyLabel:SetPoint("LEFT", tab, "TOPLEFT", RIGHT_X, -69)
+  keyLabel:SetPoint("RIGHT", keyButton, "LEFT", -8, 0)
+  keyLabel:SetJustifyH("LEFT")
+  keyLabel:SetText(L["Key: next missing buff"]) -- (bound to the room before the button: longer in some languages)
+
   local trackedTitle = ns.SectionHeading(tab, L["Tracked buffs"], LEFT_WIDTH)
-  trackedTitle:SetPoint("TOPLEFT", 0, -74)
+  trackedTitle:SetPoint("TOPLEFT", 0, -74 - SHIFT)
 
   -- "Add Mage basics": the class buffs you know (Core.lua, ns.PRESETS). Hidden for other classes.
   -- where and when the whole row shows (ConditionsOptions.lua)
   local rowWhere = UI.Button(tab, 140, 22, L["Where the row shows"])
-  rowWhere:SetPoint("TOPLEFT", 0, -94)
+  rowWhere:SetPoint("TOPLEFT", 0, -94 - SHIFT)
   rowWhere:SetScript("OnClick", function(self)
     ns.OpenConditions("row", self)
   end)
@@ -385,7 +397,7 @@ local function BuildTrackedTab(tab)
   ns.rowWhereButton = rowWhere
 
   presetButton = UI.Button(tab, LEFT_WIDTH - 146, 22)
-  presetButton:SetPoint("TOPLEFT", 146, -94)
+  presetButton:SetPoint("TOPLEFT", 146, -94 - SHIFT)
   presetButton:SetScript("OnClick", function()
     ns.AddPreset()
   end)
@@ -393,10 +405,10 @@ local function BuildTrackedTab(tab)
   presetButton:SetScript("OnLeave", Hide)
 
   local addTitle = ns.SectionHeading(tab, L["Add a buff"], RIGHT_WIDTH)
-  addTitle:SetPoint("TOPLEFT", RIGHT_X, -74)
+  addTitle:SetPoint("TOPLEFT", RIGHT_X, -74 - SHIFT)
 
   searchBox = UI.EditBox(tab, RIGHT_WIDTH, 22)
-  searchBox:SetPoint("TOPLEFT", RIGHT_X, -94)
+  searchBox:SetPoint("TOPLEFT", RIGHT_X, -94 - SHIFT)
   searchBox:SetScript("OnEnterPressed", AddFromSearchBox)
   searchBox:SetScript("OnTextChanged", RefreshPicker)
   searchBox:HookScript("OnEditFocusGained", RefreshPicker)
@@ -514,7 +526,7 @@ local function SubSection(id, key, title, order, height, estimate, build, show, 
     end,
   })
 end
-SubSection("buffs-party", "party", L["Party buff buttons"], 12, 580, nil, function(holder) ns.BuildPartyTab(holder) end,
+SubSection("buffs-party", "party", L["Party buff buttons"], 12, 820, nil, function(holder) ns.BuildPartyTab(holder) end,
   function() ns.ShowPartyTab() end,
   { "party buffs blessings reagents range click to buff", L["party buffs blessings reagents range click to buff"] })
 SubSection("buffs-dispel", "dispel", L["Dispel buttons"], 14, nil, 400, function(holder) ns.BuildDispelTab(holder) end,

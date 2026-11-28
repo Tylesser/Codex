@@ -23,7 +23,7 @@ end
 local UNITS = { "player", "party1", "party2", "party3", "party4" }
 
 local panel, enabledCheck, refreshCheck, refreshButton, rangeCheck, rangeButton, allBlessingsCheck, reagentButton
-local raidCheck, resCheck
+local raidCheck, resCheck, shareTitle, shareCheck, shareText
 local buffRows, buffEmpty = {}, nil
 local blessingTitle, blessingEmpty, classRows, memberTitle, memberRows, memberEmpty = nil, nil, {}, nil, {}, nil
 
@@ -208,8 +208,9 @@ local function RefreshBlessings()
     row.button:SetText(BlessingLabel(classes[class] or ns.DEFAULT_BLESSINGS[class]))
     row:SetShown(known)
   end
+  local memberY = LIST_Y - #CLASSES * ROW_HEIGHT - 12
   memberTitle:ClearAllPoints()
-  memberTitle:SetPoint("TOPLEFT", panel, "TOPLEFT", RIGHT_X, LIST_Y - #CLASSES * ROW_HEIGHT - 12)
+  memberTitle:SetPoint("TOPLEFT", panel, "TOPLEFT", RIGHT_X, memberY)
 
   local used = 0
   if known then
@@ -238,6 +239,15 @@ local function RefreshBlessings()
     memberRows[index]:Hide()
   end
   memberEmpty:SetShown(known and used <= 1 and not IsInGroup())
+
+  -- the other paladins' blessings (Share.lua), under the member list
+  shareTitle:ClearAllPoints()
+  shareTitle:SetPoint("TOPLEFT", panel, "TOPLEFT", RIGHT_X, memberY - 8 - math.max(used, 2) * ROW_HEIGHT - 16)
+  shareTitle:SetShown(known)
+  shareCheck:SetShown(known)
+  shareCheck:SetChecked(ns.db.party.share ~= false)
+  shareText:SetShown(known)
+  shareText:SetText(table.concat(ns.ShareLines(), "\n"))
 end
 
 local function Refresh()
@@ -273,7 +283,7 @@ function ns.ShowPartyTab()
 end
 
 function ns.BuildPartyTab(tab)
-  panel = ns.ScrollBody(tab, 580)
+  panel = ns.ScrollBody(tab, 820) -- (the other paladins under the member list)
 
   local intro = ns.HelpText(panel, L["Buttons next to your party frames for buffs a member is missing. Click one to cast it on them. Buttons can't appear or move during combat, so they update when combat ends."], 620)
   intro:SetPoint("TOPLEFT", 0, 0)
@@ -425,4 +435,26 @@ function ns.BuildPartyTab(tab)
   memberEmpty = ns.HelpText(panel, L["Join a group to choose a blessing for each member. Their choice is kept by name."],
     RIGHT_WIDTH)
   memberEmpty:SetPoint("TOPLEFT", memberTitle, "BOTTOMLEFT", 0, -8 - ROW_HEIGHT)
+
+  shareTitle = ns.SectionHeading(panel, L["Other paladins"], RIGHT_WIDTH)
+  shareCheck = ns.TightCheck(UI.Check(panel, L["Share my blessings"]))
+  shareCheck:SetPoint("TOPLEFT", shareTitle, "BOTTOMLEFT", 0, -12)
+  shareCheck:SetScript("OnClick", function(self)
+    ns.db.party.share = self:GetChecked() and true or false
+    ns.PartyChanged()
+  end)
+  shareCheck:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine(L["Share my blessings"])
+    GameTooltip:AddLine(L["Paladins in your group with Buff Tracker or Codex tell each other their blessing for each class and member. With \"every blessing\" on, a member's buttons leave out a blessing another paladin is giving them, and chat tells you when two of you chose the same one."],
+      1, 1, 1, true)
+    GameTooltip:Show()
+  end)
+  shareCheck:SetScript("OnLeave", function()
+    GameTooltip:Hide()
+  end)
+  shareText = UI.Text(panel, "body", 12, "text")
+  shareText:SetPoint("TOPLEFT", shareCheck, "BOTTOMLEFT", 0, -8)
+  shareText:SetWidth(RIGHT_WIDTH)
+  shareText:SetJustifyH("LEFT")
 end

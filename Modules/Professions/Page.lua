@@ -15,6 +15,8 @@ local OPTIONS = {
   { "tooltip", L["Craft cost and profit in item tooltips"], L["For items any of your characters can make."] },
   { "tooltipValue", L["AH value in item tooltips"], L["Only while the Auction House module's own price line is off."] },
   { "craftReagents", L["Craft cheaper reagents"], L["Use a reagent's craft cost when making it is cheaper than buying it."] },
+  { "ownedAlts", L["Owned free counts your other characters"], L["Reagents your other characters have (same realm and faction) count as free too, from the Bags module, else Syndicator."] },
+  { "cooldownNote", L["Tell me when a crafting cooldown is ready"], L["A chat line when a cooldown of this character (such as a transmute) is over."] },
 }
 
 local HOW = L["Open a profession: Codex reads its recipes, prices every reagent and shows the selected recipe's reagent cost, auction value (times the amount made, after the auction house cut) and profit under the reagents. Hover the block for the price of each reagent."]
@@ -70,6 +72,7 @@ function P.RefreshPage()
   view.status:SetText(P.StatusText())
   view.cut:SetText(L["Auction house cut: %g%%"]:format(db.ahCut))
   view.chars:SetText(CharacterText())
+  view.cooldowns:SetText(P.CooldownText())
 end
 
 -- One of the options (also from the Tooltips page's "Prices and stats in tooltips").
@@ -77,6 +80,9 @@ function P.SetOption(key, on)
   P.DB()[key] = on and true or false
   if P.active then
     P.Refresh()
+  end
+  if key == "cooldownNote" and on then
+    P.ScheduleCooldownNote()
   end
   P.RefreshPage()
 end
@@ -135,6 +141,15 @@ function P.BuildPage(page)
   view.chars = UI.Text(page, "body", 12, "text")
   view.chars:SetPoint("TOPLEFT", known, "BOTTOMLEFT", 0, -6)
   view.chars:SetWidth(270)
+
+  local cooldowns = UI.Text(page, "head", 12, "accent")
+  cooldowns:SetPoint("TOPLEFT", view.chars, "BOTTOMLEFT", 0, -18)
+  cooldowns:SetText(L["CRAFTING COOLDOWNS"])
+  view.cooldowns = UI.Text(page, "body", 12, "text")
+  view.cooldowns:SetPoint("TOPLEFT", cooldowns, "BOTTOMLEFT", 0, -6)
+  view.cooldowns:SetWidth(270)
+  view.cooldowns:SetJustifyH("LEFT")
+  view.cooldowns:SetWordWrap(true)
 
   local how = UI.Text(page, "head", 12, "accent")
   how:SetPoint("TOPLEFT", known, "TOPLEFT", 300, 0)

@@ -5,7 +5,8 @@ local L = ns.L
 -- window. It lists the shopping lists (click one to search all its terms), shows the results (click one to
 -- open it in the game's own buy view) and has the full scan button. "Below vendor" shows the items on sale for
 -- less than a vendor pays (Below.lua) in the same result list, with a Buy button under it (Buy.lua: one click buys
--- the top item while it is under the vendor price). It never bids or posts.
+-- the top item while it is under the vendor price). "Upgrades" (Upgrades.lua) lists the gear on sale that beats what
+-- you wear by the Stat Delta module's score. It never bids or posts.
 
 local A = ns.auction
 local UI = ns.UI
@@ -51,6 +52,13 @@ local function RefreshPanel()
     return
   end
   panel.sort:Hide()
+  if panel.mode == "upgrades" then
+    panel.stop:Hide()
+    local rows, text = A.UpgradeRows()
+    panel.searchText:SetText(text)
+    panel.results:SetItems(rows)
+    return
+  end
   panel.searchText:SetText(A.SearchText())
   local busy = A.shop.state == "searching" or A.shop.state == "throttled"
   panel.stop:SetShown(busy)
@@ -78,6 +86,20 @@ local function CreatePanel()
   open:SetScript("OnClick", function()
     ns.ShowPage("auction-prices")
   end)
+  -- gear on sale that beats what you wear (Upgrades.lua)
+  panel.upgrades = UI.Button(panel, 80, 20, L["Upgrades"])
+  panel.upgrades:SetPoint("RIGHT", open, "LEFT", -6, 0)
+  panel.upgrades:SetScript("OnClick", function()
+    panel.mode = "upgrades"
+    RefreshPanel()
+  end)
+  panel.upgrades:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine(L["Upgrades on sale"])
+    GameTooltip:AddLine(L["Gear on sale that beats what you wear by the upgrade score of Codex's Stat Delta (items you can use): the prices Codex saved in the last two days (a full scan, browsing, searching). Biggest gain first."], 0.8, 0.8, 0.8, true)
+    GameTooltip:Show()
+  end)
+  panel.upgrades:SetScript("OnLeave", GameTooltip_Hide)
 
   panel.scan = UI.Button(panel, 100, 24, L["Full scan"])
   panel.scan:SetPoint("TOPLEFT", 12, -40)
@@ -121,7 +143,8 @@ local function CreatePanel()
     end,
     UpdateRow = function(row, list)
       row.text:SetText(("%s |cff999999(%d)|r"):format(list.name, #list.terms))
-      row.selected:SetShown(panel.mode ~= "vendor" and list == A.shop.list and A.shop.state ~= "idle")
+      row.selected:SetShown(panel.mode ~= "vendor" and panel.mode ~= "upgrades" and list == A.shop.list
+        and A.shop.state ~= "idle")
     end,
   })
   panel.lists:SetPoint("TOPLEFT", listsLabel, "BOTTOMLEFT", 0, -4)
@@ -198,7 +221,7 @@ local function CreatePanel()
         end
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         local key = entry.key or (entry.result and A.KeyOf(entry.result.itemKey))
-        local link = key and A.Hyperlink(key)
+        local link = entry.link or (key and A.Hyperlink(key))
         if link then
           GameTooltip:SetHyperlink(link)
         else
@@ -217,6 +240,15 @@ local function CreatePanel()
           if below.seen then
             GameTooltip:AddDoubleLine(L["Price seen"], L["%s ago"]:format(ns.Age(below.seen)), 0.8, 0.8, 0.8, 1, 1, 1)
           end
+        elseif entry.upgrade then
+          local S = ns.statdelta
+          local text, r, g, b = S.ScoreText(entry.upgrade.new, entry.upgrade.old)
+          GameTooltip:AddLine(text, r, g, b)
+          if #entry.upgrade.links > 0 then
+            GameTooltip:AddLine(L["Instead of %s"]:format(table.concat(entry.upgrade.links, " + ")), 0.8, 0.8, 0.8, true)
+          end
+          GameTooltip:AddDoubleLine(L["Lowest price"], ns.Money(entry.price), 0.8, 0.8, 0.8, 1, 1, 1)
+          GameTooltip:AddDoubleLine(L["Price seen"], L["%s ago"]:format(ns.Age(entry.seen)), 0.8, 0.8, 0.8, 1, 1, 1)
         else
           GameTooltip:AddDoubleLine(L["Search"], entry.term.text, 0.8, 0.8, 0.8, 1, 1, 1)
         end
@@ -233,7 +265,8 @@ local function CreatePanel()
       row.icon:SetTexture(entry.icon or 134400)
       row.name:SetText(entry.name)
       row.name:SetTextColor(UI.Unpack(A.QualityColor(entry.quality)))
-      row.count:SetText(entry.count > 0 and ("x" .. entry.count) or "")
+      -- (upgrade rows: the gain instead of how many are up)
+      row.count:SetText(entry.gainText or (entry.count > 0 and ("x" .. entry.count) or ""))
       -- (below-vendor rows show what they make, the order of that list; shopping rows their price)
       row.price:SetText(entry.profit and ("+" .. ns.Money(entry.profit)) or ns.Money(entry.price))
       row.deal:SetShown(entry.deal)
@@ -285,7 +318,7 @@ local function CreatePanel()
   panel:SetScript("OnShow", RefreshPanel)
   ns.On("AUCTION_STATE", RefreshPanel)
   ns.On("PRICES_UPDATED", function()
-    if panel.mode == "vendor" then
+    if panel.mode == "vendor" or panel.mode == "upgrades" then
       RefreshPanel() -- (saved prices feed the below-vendor list too)
     end
   end)

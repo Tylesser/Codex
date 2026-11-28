@@ -4,6 +4,8 @@
   <Script file="Core.lua"/>
   <Script file="Learn.lua"/>
   <Script file="Quests.lua"/>
+  <Script file="Route.lua"/>
+  <Script file="Characters.lua"/>
   <Script file="Tooltip.lua"/>
   <Script file="Vendor.lua"/>
   <Script file="Shopping.lua"/>

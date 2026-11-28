@@ -4,6 +4,7 @@
   <Script file="Score.lua"/>
   <Script file="Tooltip.lua"/>
   <Script file="Arrows.lua"/>
+  <Script file="Best.lua"/>
   <Script file="Page.lua"/>
   <Script file="Module.lua"/>
 </Ui>

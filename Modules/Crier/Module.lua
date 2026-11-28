@@ -9,7 +9,7 @@ ns.RegisterModule({
   id = "crier",
   name = "Trade Crier",
   -- its section in the Codex window (Areas.lua)
-  area = "chat", sectionOrder = 40, pageEstimate = 680,
+  area = "chat", sectionOrder = 40, pageEstimate = 1000,
   icon = "Interface\\Icons\\INV_Misc_Note_01",
   desc = L["Your messages with your profession links in Trade chat, each again after its own time while you are in a city: a button lights up when it's time and one click (or a key) posts it."],
   standalone = "TradeCrier",
@@ -28,7 +28,7 @@ ns.RegisterModule({
   Status = function()
     return C.started and C.StatusText() or L["Off."]
   end,
-  -- /codex crier post | pause | resume | status | reset
+  -- /codex crier post | pause | resume | status | reset | requests
   Slash = function(_, rest)
     if not (C.started and C.Command(rest)) then
       ns.ShowPage("crier")

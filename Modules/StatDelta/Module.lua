@@ -18,6 +18,7 @@ local function RunRefresh()
     pendingForget = false
     S.ForgetUsable()
   end
+  S.ForgetBest()
   S.Refresh()
   if InCombatLockdown() then
     S.eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
@@ -96,6 +97,7 @@ function S.Enable()
   S.eventFrame = events
   S.HookTooltips()
   S.HookArrows()
+  S.HookBest()
   S.running = true
 end
 
@@ -121,13 +123,20 @@ ns.RegisterModule({
   Status = function()
     return S.StatusText()
   end,
-  -- /codex statdelta on | off | primary; anything else opens the page
+  -- /codex statdelta on | off | primary | best; anything else opens the page
   Slash = function(_, rest)
     rest = rest:lower()
     local db = S.DB()
     if rest == "on" or rest == "off" then
       db.enabled = rest == "on"
       ns.Say(db.enabled and L["stat changes on."] or L["stat changes off."])
+    elseif rest == "best" then
+      if S.running then
+        S.PrintBest()
+      else
+        ns.ShowPage("statdelta")
+      end
+      return
     elseif rest == "primary" then
       db.showPrimary = not db.showPrimary
       ns.Say(db.showPrimary and L["Strength, Agility, Stamina, Intellect and Spirit shown."]

@@ -106,6 +106,15 @@ local function Refresh()
   end
   buttons[#buttons + 1] = view.insertAll
   C.FlowButtons(view.insertRow, buttons, view.width, INSERT_INDENT, 6, 22)
+  -- buyers in Trade chat (CrierWatch.lua)
+  for _, box in ipairs(view.watchBoxes or {}) do
+    if not box:HasFocus() then
+      box:SetText(C.WatchText(box.key))
+    end
+  end
+  if view.watchStatus then
+    view.watchStatus:SetText(C.WatchStatus())
+  end
   -- a row more or less: the section's height changes
   if relayout and view.built and not view.relayingOut and type(ns.RefreshSections) == "function" then
     view.relayingOut = true
@@ -402,6 +411,66 @@ function C.BuildPage(page)
   local reset = UI.Button(page, 160, 24, L["Put the buttons back"])
   reset:SetPoint("TOPLEFT", keyHint, "BOTTOMLEFT", 0, -12)
   reset:SetScript("OnClick", C.ResetPlace)
+
+  -- buyers in Trade chat (CrierWatch.lua, 2026-11-28): the checks, the three text boxes, what it knows, the list
+  local watchLine = UI.Divider(page)
+  watchLine:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -14)
+  watchLine:SetWidth(width)
+  local watchLabel = UI.Text(page, "body", 13, "bright")
+  watchLabel:SetPoint("TOPLEFT", watchLine, "BOTTOMLEFT", 0, -12)
+  watchLabel:SetText(L["Buyers in Trade chat"])
+  local watchHint = Wrapped(page, 11, "muted", width)
+  watchHint:SetPoint("TOPLEFT", watchLabel, "BOTTOMLEFT", 0, -4)
+  watchHint:SetText(L["Trade Crier can watch Trade chat for players asking for something you make: a link to an item your recipes make, your profession, an item's name or one of your keywords, with a request word. You get a chat line, a sound if you like, and a list with a Whisper button. Nothing is ever sent for you."])
+  anchor = watchHint
+  for index, option in ipairs(C.WATCH_CHECKS) do
+    local check = UI.Check(page, C.WatchLabel(option.label))
+    check.key = option.key
+    check:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, index == 1 and -10 or -6)
+    check:SetScript("OnClick", function(self)
+      C.Settings()[self.key] = self:GetChecked() and true or false
+      Changed()
+    end)
+    view.checks[#view.checks + 1] = check
+    anchor = check
+  end
+  view.watchBoxes = {}
+  for index, option in ipairs(C.WATCH_BOXES) do
+    local label = UI.Text(page, "body", 12, "text")
+    label:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, index == 1 and -14 or -10)
+    label:SetWidth(120)
+    label:SetJustifyH("LEFT")
+    label:SetText(C.WatchLabel(option.label))
+    local box = UI.EditBox(page, width - 130, 24)
+    box:SetPoint("LEFT", label, "RIGHT", 8, 0)
+    box:SetMaxLetters(C.MAX_LENGTH)
+    box.key = option.key
+    box:SetScript("OnEditFocusLost", function(self)
+      C.SetWatchText(self.key, self:GetText())
+      self:SetText(C.WatchText(self.key))
+    end)
+    if option.key == "reply" then
+      C.WatchLinks(function()
+        return box
+      end)
+    end
+    view.watchBoxes[#view.watchBoxes + 1] = box
+    local hint = Wrapped(page, 11, "muted", width)
+    hint:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -8)
+    hint:SetText(C.WatchLabel(option.hint))
+    anchor = hint
+  end
+  view.watchStatus = Wrapped(page, 12, "text", width)
+  view.watchStatus:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -12)
+  local requests = UI.Button(page, 160, 24, L["Show the requests"])
+  requests:SetPoint("TOPLEFT", view.watchStatus, "BOTTOMLEFT", 0, -8)
+  requests:SetScript("OnClick", function()
+    if C.started then
+      C.ShowRequests()
+    else
+      C.Say(L["Switch Trade Crier on first (its switch above)."])
+    end
+  end)
 
   C.OnRefresh = function()
     if view.message:IsVisible() then

@@ -4,6 +4,8 @@
   <Script file="Display.lua"/>
   <Script file="Party.lua"/>
   <Script file="Dispel.lua"/>
+  <Script file="Share.lua"/>
+  <Script file="NextBuff.lua"/>
   <Script file="Options.lua"/>
   <Script file="ConditionsOptions.lua"/>
   <Script file="PartyOptions.lua"/>

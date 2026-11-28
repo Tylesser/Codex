@@ -691,6 +691,34 @@ actions / windows / rings, `R.Choices(kind, ring)`, search, a click = `R.SetSlic
   (only your own window, not linked ones). Tooltip adds Craft cost/profit; "AH value" only while the Auction
   module's own line is off. Queued reagents go to the Codex shopping list "Professions". While the AH is open the
   block has Search / Reagents buttons: `A.SearchList` on a temporary (unsaved) list, results in the Codex AH panel.
+- **2026-11-28 batch** (the user asked for competitor features; built by parallel workers, untested in game):
+  - `Modules/Mail` (`mail`, area trade, sectionOrder 60, default off; `Locales/Mail.lua`): built from Blizzard's
+    forever mail code. Open all / Gold only replace the game's Open All Mail button (hidden while ours show, an
+    OnShow hook keeps it hidden). Each step finds the first takeable mail again (emptied mails move the rest up);
+    3 tries per pickup, a run stops after 2000 steps and 5 waits for more mail. Recent names: hook on `SendMail`,
+    kept on `MAIL_SEND_SUCCESS`; characters in `CodexDB.mail.characters[realm|faction]`. Alt-click attach: hook on
+    `HandleModifiedItemClick` when the click passes a bag location. Postal loaded = all three parts step aside.
+  - `Modules/Crier/CrierWatch.lua`: buyers in Trade chat, shared byte for byte with TradeCrier (notes in
+    `TradeCrier/CLAUDE.md`); texts in `CrierLocales.lua`.
+  - `Modules/Professions/Cooldowns.lua` + `provider.Cooldowns()` (`C_TradeSkillUI.GetRecipeCooldown`, as the forever
+    recipe form does); `P.PlanReagent` (the saved queue holds a plain copy of the plan, never scan tables);
+    `P.AltOwned` (Bags module first, then Syndicator); `P.ListedDays` / `A.DaysListed` (Auction History.lua:
+    "scanned days" = days on which any item has a price, recounted at most once a minute). `Locales/Professions.lua`.
+  - `Modules/StatDelta/Best.lua` (`S.UpgradeChoices` / `S.BestUpgrade`, `.slot` / `.altSlot` on each comparison; AH
+    row hooks, see `StatDelta/CLAUDE.md`); `Modules/Auction/Upgrades.lua`: panel mode `upgrades`, `A.UpgradeRows()`
+    scores about 150 new items per refresh and redraws after 0.3 s while some are left. `Locales/Upgrades.lua`.
+  - `Modules/Commerce/Route.lua`, `Characters.lua`: same design as the standalone (`CommerceAuthority/CLAUDE.md`), on
+    `C.*`; `CodexDB.commerce.characters` stays out of profiles through `SKIP_ANY.characters`; the Deliveries heading
+    line ends 166 px short of the right edge for Route beside All NPCs.
+  - `Modules/VendorSearch/Buy.lua` (Alt-click Buy window; shares `V.BulkInfo` / `BuyPlan` / `BuyBulk` with the
+    standalone, only its `Look` table differs); Core.lua is the standalone's Core with `ns` -> `V`.
+    `Locales/VendorSearch.lua` (the retired "Unknown recipes" texts were removed from Ports.lua).
+  - `Modules/Buffs/Share.lua` / `NextBuff.lua`: byte-identical with Buff Tracker's (each detects Codex; notes in
+    `BuffTracker/CLAUDE.md`); the next-buff key is an override binding like the Crier's post key. Page height 488,
+    party section 820. `Locales/Blessings.lua`.
+  - Proc glow ending warning: `P.Endings` (end-time rules), `P.HookRefresh` (hooks the cooldown manager item's
+    `OnUnitAuraUpdatedEvent`), a `duration` field on each buff list entry; detail in the comment above
+    `P.ViewerAuras`.
 
 ## Forever pitfalls (each one cost a round trip with the user, 2026-11-17/18)
 

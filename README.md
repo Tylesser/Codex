@@ -37,11 +37,14 @@ Home shows a card for each feature with what it is doing right now; click a card
   out of combat;
   for the whole row or per buff; optionally a warning, with a click to remove it, when a buff is on where its rules
   say no), click-to-buff, weapon enchants, and click-to-buff and dispel buttons by your party frames (a camp buff
-  that doesn't stack with a class buff counts as having it). Formerly the Buff Tracker addon.
+  that doesn't stack with a class buff counts as having it). Paladins in your group running Codex or Buff Tracker
+  share their blessings, so two of you don't give the same one. One key (or `/click CodexBuffsNextBuff`) casts the
+  next missing buff. Formerly the Buff Tracker addon.
 - **Auction House**: scans the auction house and keeps a price history (up to a year: each day's lowest and highest
   price and how many were up), shows prices, the week's average and the trend in item tooltips, and shops from your
   own lists. Click an item on the Auction prices page, or type `/codex history <item>`, for its price chart. "Below vendor" in the panel beside the auction house lists items on sale for less than a vendor pays, with a Buy button (one click, one purchase). No other auction addon needed. "From Auctionator" copies Auctionator's saved
-  shopping lists into Codex while Auctionator is installed.
+  shopping lists into Codex while Auctionator is installed. "Upgrades" in the panel lists gear on sale that beats
+  what you wear by Stat Delta's score (prices of the last two days), biggest gain first.
 - **Bags**: one bag window for all your bags, grouped into categories (small ones side by side; or in bag order) with a search box,
   identical items stacked into one button with the total (shown one by one at the bank, trade, mailbox,
   vendors and auction house); keys shown or hidden with one click (the key button above the bags);
@@ -54,31 +57,44 @@ Home shows a card for each feature with what it is doing right now; click a card
   sessions if you choose.
 - **Professions**: the reagent cost, auction value and profit of the selected recipe in the profession window,
   a list of all your recipes sorted by profit, and craft cost and profit in item tooltips (also for items only
-  an alt can make). Uses Codex's own auction prices; queued crafts go to a Codex shopping list. Formerly Profit Sort.
+  an alt can make). Uses Codex's own auction prices; queued crafts go to a Codex shopping list, with reagents that
+  are cheaper to craft replaced by what they are made from. Crafting cooldowns of all your characters (the clock on
+  the profit list, the page or `/codex cooldowns`; a cooldown shows after its first use with the profession window
+  open), with a chat line when one is ready. Owned free can also count your other characters' reagents (Bags
+  module or Syndicator). Recipe tooltips say on how many recent days the item was up for sale, with an "Often
+  listed" filter. Formerly Profit Sort.
 - **Commerce Authority**: Craftsman's Writs and Waylaid Crates for the Azeroth Commerce Authority and Durotar
   Supply and Logistics. Writ tooltips show the reputation, what the writ asks for, its auction price, the cost per
   100 reputation and who takes it; crate tooltips the Merchant's Favor and the cheapest way to fill them; the
   vendors that take Merchant's Favor mark what you can buy. `/codex commerce` (or `/aca`) opens a window with your
   standing, Merchant's Favor, your writs grouped by who takes them (with waypoints) and the crates you have to fill
   (click one at the auction house to search for what fills it; a result opens with the amount your crates still need), the next standings and the
-  cheapest reputation by writ, NPC or zone, or every crate by its price plus the cheapest fill (By crate), with a
+  cheapest reputation by writ, NPC or zone (Writs tab), every crate by its price plus the cheapest fill (Crates tab), with a
   buy list for the Codex shopping lists; the window opens beside the auction house and closes with it (an option); "All NPCs" lists every
-  NPC who takes writs, grouped by continent and zone; a ready writ you haven't opened gets a Start button. Codex learns what your turn-ins really give. Uses Codex's own auction prices and the
+  NPC who takes writs, grouped by continent and zone; a ready writ you haven't opened gets a Start button. Route
+  puts waypoints on the NPCs who take your writs, nearest first, and the world map shows them; the Characters tab
+  lists every character's standing, Favor, writs and crates; an optional alert names crates under a price you set. Codex learns what your turn-ins really give. Uses Codex's own auction prices and the
   Professions module's craft costs. Formerly Tylesser - Commerce Authority.
 - **Vendor search**: a search box on the vendor window that filters its own items by name, type or slot (every
-  word must match), with "Unknown recipes" and "Usable" filters, a fade mode that keeps the vendor's pages, and
-  marks on the items: how many you have in your bags and bank, and "Known" on recipes you've learned. Buying,
-  tooltips and previews work as usual. Alt-drag the box to move it. Formerly Tylesser - Vendor Search.
+  word must match), with "Unknown" (recipes, mounts and pets you don't have), "Usable" and "Can afford" filters, a
+  fade mode that keeps the vendor's pages, and marks on the items: how many you have in your bags and bank, and
+  "Known" on recipes you've learned and mounts and pets you have. Alt-click a stackable item to buy several stacks
+  at once. Buying, tooltips and previews work as usual. Alt-drag the box to move it. Formerly Tylesser - Vendor Search.
 - **Action bar visibility**: choose when each action bar (and the micro menu, bags bar and experience bar)
   shows: always, on mouse-over, only in combat, only out of combat, in combat or on mouse-over, or never.
   Faded bars come back while you drag a spell. Every bar starts on Always. `/codex barfade`.
 - **Stat Delta**: hold Shift over an item to see what you gain or lose against the gear you wear, green for a
   gain and red for a loss, including what your class gets from other stats (Attack Power from Strength, Health
   from Stamina, ...). Optional upgrade score with rough presets per class and role (one for each talent group), and
-  green arrows on upgrades in your bags and on quest rewards. `/codex statdelta`. Formerly the Stat Delta addon.
+  green arrows on upgrades in your bags, on quest rewards and in the auction house lists. "Best in your bags"
+  (`/codex statdelta best`) lists, per slot, the bag item that beats what you wear, and a worn item's tooltip names
+  a better one. `/codex statdelta`. Formerly the Stat Delta addon.
 - **Vendor**: at a merchant, sells your grey items and repairs your gear (guild funds first if you like), with
   one line in chat; "Also sell" and "Never sell" lists, Sell junk and Repair buttons on the merchant window, and
   Shift while opening the merchant skips it. If Leatrix Plus already does either, Codex leaves that to it.
+- **Mail** (off until you switch it on): at the mailbox, Open all takes every mail's gold and items (Gold only just
+  the gold; Cash on Delivery mails are skipped), a button on the To box offers recent names and your characters,
+  and Alt-click on a bag item attaches all of it. Postal users keep Postal's.
 - **Loot text** (off until you switch it on): floating text for what you get. Items show how many you now have (with your other characters too)
   and what they are worth (Codex's auction prices, else what a merchant pays); grey items add up on one Junk line.
   Also money, reputation, experience (with how many more of the same reach the next level), honor, currencies,
@@ -120,7 +136,8 @@ Home shows a card for each feature with what it is doing right now; click a card
   picked from your buffs, gear, consumables and spells; glow style and colour per ability, a faint glow while you
   can't cast it yet. The art and glow wait while the ability can't be cast (no mana, on its own cooldown; the global cooldown doesn't count). Size, opacity and a
   "Show the art" test button. In combat the game hides your buffs from addons, so buff procs show there only for
-  buffs you track in the game's cooldown manager. Put new spell ranks on your
+  buffs you track in the game's cooldown manager. A warning before a buff proc ends (off by default): its last
+  seconds pulse and flash, with a sound if you like. Put new spell ranks on your
   action bars: when you learn a higher rank, buttons with the old one get it (after the fight if you're in one),
   with a line in chat; a lower rank kept beside a higher one, or put back by you, is left alone; macros and items
   are never touched; "Update now" does a pass by hand. Future spells in the spellbook: a tab after the spellbook's school tabs
@@ -173,7 +190,9 @@ Home shows a card for each feature with what it is doing right now; click a card
 - **Trade Crier** (off until you switch it on): your messages with your profession links in Trade chat (up to 8,
   `<Tailoring>` becomes your Tailoring link), each with its own time in seconds and its own icon (the profession it
   links until you pick one). While you are in a city each message has its own button that lights up when it is
-  ready; one click posts it, and a key posts the one that has waited longest. Also its own addon, Tylesser - Trade Crier.
+  ready; one click posts it, and a key posts the one that has waited longest. It can also watch Trade chat for
+  buyers asking for something you make, and list them with a Whisper button that only fills the chat box. Also its
+  own addon, Tylesser - Trade Crier.
 
 - **Rings** (off until you switch it on): hold a key and a ring of spells, items, macros, mounts or raid markers opens
   around your mouse; point at one and let go to use it, or click it. Works in combat. Ready-made rings for mounts,

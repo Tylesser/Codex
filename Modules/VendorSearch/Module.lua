@@ -3,7 +3,8 @@ local L = ns.L
 
 -- Vendor search module, part 3: settings, events, the module's page, commands and registration. Tylesser - Vendor
 -- Search ported into Codex: a search box on the vendor window that filters its own item grid by name, type or
--- slot, "Unknown recipes" / "Usable" filters, a fade mode, and bag counts and "Known" marks on the items. While the
+-- slot, "Unknown" (recipes, mounts, pets) / "Usable" / "Can afford" filters, a fade mode, bag counts and "Known"
+-- marks on the items, and a Buy window (Alt-click a stackable item: several stacks at once, Buy.lua). While the
 -- standalone addon is loaded Codex leaves this to it (unless the player forces Codex's copy).
 --
 -- CodexDB.vendorsearch = { fade, bagCount, boxOffset (the box's place on the vendor window, kept out of profiles) }
@@ -68,6 +69,13 @@ local function InventoryChanged()
   RequestRefresh()
 end
 
+-- Gold or currency changed: the "Can afford" filter shows other items.
+local function MoneyChanged()
+  if MerchantOpen() and V.Filter.affordOnly then
+    RequestRefresh()
+  end
+end
+
 local HANDLERS = {
   MERCHANT_SHOW = function()
     V.ClearKnownCache()
@@ -79,6 +87,11 @@ local HANDLERS = {
   BAG_UPDATE_DELAYED = InventoryChanged,
   NEW_RECIPE_LEARNED = InventoryChanged,
   LEARNED_SPELL_IN_TAB = InventoryChanged,
+  NEW_MOUNT_ADDED = InventoryChanged,
+  NEW_PET_ADDED = InventoryChanged,
+  COMPANION_LEARNED = InventoryChanged,
+  PLAYER_MONEY = MoneyChanged,
+  CURRENCY_DISPLAY_UPDATE = MoneyChanged,
 }
 
 function V.Enable()
@@ -110,7 +123,8 @@ local OPTIONS = {
   { "bagCount", L["How many you have"], L["A backpack mark with the count from your bags and bank on each item."] },
 }
 
-local HOW = L["Talk to a vendor: a search box sits at the top of the vendor window. Type part of an item's name, type or slot (\"vial\", \"recipe cooking\", \"head\"); every word must match. The vendor's own window shows the matches, so buying, tooltips and item previews work as usual. Under the box, \"Unknown recipes\" shows only recipes you haven't learned and \"Usable\" only what your character can use; both reset when the vendor closes. Learned recipes get a green \"Known\" mark."]
+local HOW = L["Talk to a vendor: a search box sits at the top of the vendor window. Type part of an item's name, type or slot (\"vial\", \"recipe cooking\", \"head\"); every word must match. The vendor's own window shows the matches, so buying, tooltips and item previews work as usual. Under the box, \"Unknown\" shows only recipes you haven't learned and mounts and pets you don't have, \"Usable\" only what your character can use and \"Can afford\" only what you can pay for now; they reset when the vendor closes. Learned recipes, and mounts and pets you have, get a green \"Known\" mark."]
+  .. "\n\n" .. L["Alt-click a stackable item to buy several stacks at once: type how many, and Buy splits it into one purchase per stack, as many as your gold, the vendor's stock and your bags allow."]
   .. "\n\n" .. L["Alt-drag the box to move it."]
 
 function V.StatusText()

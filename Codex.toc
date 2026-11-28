@@ -19,6 +19,11 @@ Locales\Commerce.lua
 Locales\Ports.lua
 Locales\ProcLocales.lua
 Locales\CrierLocales.lua
+Locales\Mail.lua
+Locales\Professions.lua
+Locales\Upgrades.lua
+Locales\VendorSearch.lua
+Locales\Blessings.lua
 Locales\Core.lua
 Core.lua
 Gathering.lua
@@ -59,4 +64,5 @@ Modules\InfoBar\InfoBar.xml
 Modules\Resource\Resource.xml
 Modules\Rings\Rings.xml
 Modules\Crier\Crier.xml
+Modules\Mail\Mail.xml
 Events.lua

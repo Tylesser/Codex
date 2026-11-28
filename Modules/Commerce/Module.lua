@@ -13,12 +13,29 @@ local EVENTS = {
   "PLAYER_ENTERING_WORLD", "QUEST_COMPLETE", "QUEST_TURNED_IN", "CURRENCY_DISPLAY_UPDATE",
   "CHAT_MSG_COMBAT_FACTION_CHANGE", "BAG_UPDATE_DELAYED", "UPDATE_FACTION", "QUEST_LOG_UPDATE",
   "SKILL_LINES_CHANGED", "AUCTION_HOUSE_SHOW", "AUCTION_HOUSE_CLOSED", "SPELLS_CHANGED", "TRAIT_CONFIG_UPDATED",
+  "PLAYER_LOGOUT",
 }
+
+-- The map pins follow bag and quest changes while the world map is open (QUEST_LOG_UPDATE comes in bursts).
+local pinsPending = false
+local function RequestMapPins()
+  if pinsPending then
+    return
+  end
+  pinsPending = true
+  C_Timer.After(0.5, function()
+    pinsPending = false
+    C.RefreshMapPins()
+  end)
+end
 
 local function OnEvent(_, event, ...)
   if event == "PLAYER_ENTERING_WORLD" then
     -- the currency can still read 0 right at login: take the starting balance a little later
     C_Timer.After(5, C.StartFavorTracking)
+    C_Timer.After(6, function() C.SaveCharacter() end)
+  elseif event == "PLAYER_LOGOUT" then
+    C.SaveCharacter()
   elseif event == "QUEST_COMPLETE" then
     C.OnQuestComplete()
   elseif event == "QUEST_TURNED_IN" then
@@ -27,6 +44,7 @@ local function OnEvent(_, event, ...)
     local currencyID = ...
     if currencyID == nil or currencyID == C.FAVOR_CURRENCY then
       C.OnFavorChanged()
+      C.RequestSaveCharacter()
     end
   elseif event == "CHAT_MSG_COMBAT_FACTION_CHANGE" then
     local message = ...
@@ -38,9 +56,16 @@ local function OnEvent(_, event, ...)
       C.OnAuctionHouseShow()
     else
       C.OnAuctionHouseClosed()
+      C.RequestCrateAlert()
     end
     C.RequestRefresh()
   else
+    if event == "BAG_UPDATE_DELAYED" or event == "UPDATE_FACTION" then
+      C.RequestSaveCharacter()
+    end
+    if event == "BAG_UPDATE_DELAYED" or event == "QUEST_LOG_UPDATE" then
+      RequestMapPins()
+    end
     if event == "SKILL_LINES_CHANGED" or event == "SPELLS_CHANGED" or event == "TRAIT_CONFIG_UPDATED" then
       C.InvalidateCheapest() -- professions, or a legacy talent (Diplomat) changed
       C.RefreshPage()
@@ -104,6 +129,11 @@ function C.Slash(rest)
     C.ToggleWindow()
   elseif command == "npcs" or command == "npc" then
     C.ToggleNPCWindow()
+  elseif command == "route" or command == "next" then
+    C.SetDeliveryRoute()
+  elseif command == "characters" or command == "alts" then
+    C.EnsureWindow():Show()
+    C.SelectWindowTab("characters")
   elseif command == "buy" then
     C.CreateBuyList()
   elseif command == "options" or command == "config" then
@@ -116,6 +146,8 @@ function C.Slash(rest)
     ns.Say(L["Commerce commands:"])
     print("  /codex commerce: " .. L["show or hide the window"])
     print("  /codex commerce npcs: " .. L["every NPC who takes writs, with all its writs and which you have"])
+    print("  /codex commerce route: " .. L["waypoints to the NPCs who take your writs, nearest first"])
+    print("  /codex commerce characters: " .. L["what each of your characters has"])
     print("  /codex commerce buy: " .. L["Codex shopping list of the cheapest writs to your next standing"])
     print("  /codex commerce options: " .. L["this module's page in the Codex window"])
     print("  /codex commerce debug: " .. L["what Codex sees (faction, Favor, prices, bags)"])
@@ -136,6 +168,7 @@ function C.Enable()
   C.DB()
   C.HookItemTooltips()
   C.HookVendor()
+  C.HookMapPins()
   local events = CreateFrame("Frame")
   for _, event in ipairs(EVENTS) do
     pcall(events.RegisterEvent, events, event)
@@ -145,6 +178,7 @@ function C.Enable()
   ns.On("PRICES_UPDATED", function()
     C.InvalidateCheapest()
     C.RequestRefresh()
+    C.RequestCrateAlert()
   end)
   SlashAliases()
   C.running = true

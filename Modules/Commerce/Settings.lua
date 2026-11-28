@@ -24,6 +24,11 @@ C.DEFAULTS = {
   windowTab = nil,           -- the window's tab: "writs" (nil) or "crates" (C.SelectWindowTab)
   position = nil,            -- the window's place
   auctionDock = true,        -- the window opens beside the auction house and closes with it (Dock.lua)
+  mapPins = true,            -- the NPCs who take your writs on the world map (Route.lua)
+  crateAlert = false,        -- tell me when a crate + its cheapest fill costs less than crateAlertBelow
+  crateAlertBelow = 10000,   -- copper (1g)
+  crateAlertSound = true,    -- ... with a sound
+  characters = {},           -- ["Realm-Name"] = what each character has (Characters.lua; data, kept out of profiles)
   npcPosition = nil,         -- the Writ NPCs window's place
   npcTier = nil,             -- the Writ NPCs window: only this writ level ("Journeyman", "Expert", "Artisan")
   npcMine = false,           -- the Writ NPCs window: only writs your professions make
@@ -39,7 +44,7 @@ C.DEFAULTS = {
 
 -- The standalone addon's saved data, copied once (the first time Codex's copy runs while it is around: the
 -- player forced Codex's copy). What turn-ins taught is worth keeping; positions are not.
-local IMPORT = { "writTooltips", "crateTooltips", "vendorMarks", "auctionDock", "onlyMyProfessions", "npcTier", "npcMine", "npcNotDone", "npcFolded", "cheapestBy", "windowTab", "learned", "factionIDs" }
+local IMPORT = { "writTooltips", "crateTooltips", "vendorMarks", "auctionDock", "onlyMyProfessions", "npcTier", "npcMine", "npcNotDone", "npcFolded", "cheapestBy", "windowTab", "learned", "factionIDs", "mapPins", "crateAlert", "crateAlertBelow", "crateAlertSound", "characters" }
 
 local function Copy(value)
   if type(value) ~= "table" then

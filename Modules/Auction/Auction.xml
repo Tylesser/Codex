@@ -2,6 +2,7 @@
   <Script file="Data.lua"/>
   <Script file="Scan.lua"/>
   <Script file="Below.lua"/>
+  <Script file="Upgrades.lua"/>
   <Script file="Buy.lua"/>
   <Script file="Tooltip.lua"/>
   <Script file="History.lua"/>

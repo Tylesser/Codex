@@ -21,6 +21,9 @@ local CHEAP_ROWS = 8
 local DELIVERY_ROWS = 4
 local FILL_ROWS = 5 -- the Crates tab: crates to fill
 local RANK_ROWS = 12 -- the Crates tab: the crate ranking (scrolls)
+local CHAR_ROWS = 13 -- the Characters tab (scrolls)
+local CHAR_ROW_HEIGHT = 30
+local TAB_LABELS = { writs = L["Writs"], crates = L["Crates"], characters = L["Characters"] }
 -- the cheapest list's rankings, switched by one button
 local MODE_LABELS = { writ = L["By writ"], npc = L["By NPC"], zone = L["By zone"] }
 local NEXT_MODE = { writ = "npc", npc = "zone", zone = "writ" }
@@ -30,6 +33,7 @@ local MODE_HELP = {
   zone = L["Zones, by what buying all the priced writs their NPCs take costs per 100 reputation: one shopping list, one trip around the zone."],
 }
 local crateOffset = 0 -- the crate ranking scrolls (with the mouse wheel)
+local charOffset = 0 -- so does the character list
 local window
 
 -- "1 writ" / "5 writs" and the like.
@@ -528,12 +532,12 @@ local function Create()
 
   -- the two tabs and their panes (each pane covers the window; its parts keep window coordinates)
   window.panes, window.tabs = {}, {}
-  for index, key in ipairs({ "writs", "crates" }) do
+  for index, key in ipairs({ "writs", "crates", "characters" }) do
     local pane = CreateFrame("Frame", nil, window)
     pane:SetAllPoints(window)
     pane:Hide()
     window.panes[key] = pane
-    local tab = UI.Button(window, 96, 22, key == "writs" and L["Writs"] or L["Crates"])
+    local tab = UI.Button(window, 96, 22, TAB_LABELS[key])
     tab:SetPoint("TOPLEFT", PAD + (index - 1) * 100, -40)
     tab.mark = tab:CreateTexture(nil, "OVERLAY")
     tab.mark:SetPoint("BOTTOMLEFT", 3, 1)
@@ -546,7 +550,7 @@ local function Create()
     end)
     window.tabs[key] = tab
   end
-  local writs, crates = window.panes.writs, window.panes.crates
+  local writs, crates, characters = window.panes.writs, window.panes.crates, window.panes.characters
 
   -- Writs ------------------------------------------------------------------------------------------------
   window.faction = UI.Text(writs, "body", 12, "bright")
@@ -579,7 +583,7 @@ local function Create()
   window.bags:SetPoint("RIGHT", -PAD, 0)
   window.bags:SetSpacing(2)
 
-  Heading(-180, L["Deliveries"], 86, writs)
+  Heading(-180, L["Deliveries"], 166, writs)
   local allNPCs = UI.Button(writs, 76, 20, L["All NPCs"])
   allNPCs:SetPoint("RIGHT", window, "TOPRIGHT", -PAD, -187) -- on the heading's middle
   allNPCs:SetScript("OnClick", function()
@@ -587,6 +591,25 @@ local function Create()
   end)
   TipButton(allNPCs, L["Writ NPCs"], L["Every NPC who takes writs, with all its writs and which of them you have (%s)."]:format(
     "/codex commerce npcs"))
+  local route = UI.Button(writs, 76, 20, L["Route"])
+  route:SetPoint("RIGHT", allNPCs, "LEFT", -4, 0)
+  route:SetScript("OnClick", function()
+    C.SetDeliveryRoute()
+  end)
+  route:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine(L["Delivery route"])
+    GameTooltip:AddLine(L["Waypoints to the NPCs who take your ready writs, nearest first (every writ you hold when none is ready). With TomTom every stop gets one; else the first, and chat names the rest (%s)."]:format("/codex commerce route"), 1, 1, 1, true)
+    local stops = C.DeliveryRoute()
+    if stops[1] then
+      GameTooltip:AddLine(L["Next: %s, %s"]:format(stops[1].group.customer.name,
+        C.MapName(stops[1].group.customer.mapID)), 0.25, 1, 0.25)
+    end
+    GameTooltip:AddLine(L["The world map shows these NPCs too (option Writ NPCs on the map)."], 0.6, 0.6, 0.6, true)
+    GameTooltip:Show()
+  end)
+  route:SetScript("OnLeave", HideTooltip)
+  window.route = route
   window.deliveries = {}
   for index = 1, DELIVERY_ROWS do
     local row = DeliveryRow(writs)
@@ -714,6 +737,74 @@ local function Create()
   window.rankEmpty:SetPoint("RIGHT", -PAD, 0)
   window.rankEmpty:SetWordWrap(true)
 
+  -- Characters -------------------------------------------------------------------------------------------
+  Heading(-72, L["Your characters"], nil, characters)
+  window.charRows = {}
+  for index = 1, CHAR_ROWS do
+    local row = CreateFrame("Button", nil, characters)
+    row:SetSize(INNER, CHAR_ROW_HEIGHT - 2)
+    row:SetPoint("TOPLEFT", PAD, -92 - (index - 1) * CHAR_ROW_HEIGHT)
+    C.RowHighlight(row)
+    row.name = Text(row, 12, "bright")
+    row.name:SetPoint("TOPLEFT", 2, -2)
+    row.name:SetPoint("RIGHT", -110, 0)
+    row.name:SetWordWrap(false)
+    row.favor = Text(row, 11, "text")
+    row.favor:SetPoint("TOPRIGHT", -2, -2)
+    row.favor:SetJustifyH("RIGHT")
+    row.detail = Text(row, 10, "muted")
+    row.detail:SetPoint("TOPLEFT", 2, -16)
+    row.detail:SetPoint("RIGHT", -90, 0)
+    row.detail:SetWordWrap(false)
+    row.seen = Text(row, 10, "muted")
+    row.seen:SetPoint("TOPRIGHT", -2, -16)
+    row.seen:SetJustifyH("RIGHT")
+    row:RegisterForClicks("AnyUp")
+    row:EnableMouseWheel(true)
+    row:SetScript("OnMouseWheel", function(_, delta)
+      charOffset = math.max(charOffset - delta, 0)
+      C.RefreshWindow()
+    end)
+    row:SetScript("OnClick", function(self, button)
+      if button == "RightButton" and IsShiftKeyDown and IsShiftKeyDown() and self.entry and not self.entry.current then
+        C.ForgetCharacter(self.entry.key)
+        C.RefreshWindow()
+      end
+    end)
+    row:SetScript("OnEnter", function(self)
+      local entry = self.entry
+      if not entry then
+        return
+      end
+      local record = entry.record
+      GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+      GameTooltip:AddLine(("%s - %s"):format(record.name, record.realm or "?"))
+      local standing, bags = C.CharacterLines(record)
+      GameTooltip:AddLine(("%s: %s"):format(C.FactionNameOf(record.side), standing), 1, 1, 1)
+      GameTooltip:AddLine(L["Merchant's Favor: %s"]:format(C.Number(record.favor or 0)), 1, 1, 1)
+      GameTooltip:AddLine(bags, 1, 1, 1, true)
+      if (record.crateFavor or 0) > 0 then
+        GameTooltip:AddLine(L["Its filled crates: about %s Favor"]:format(
+          C.Number(C.ExpectedFavor(record.crateFavor))), 0.25, 1, 0.25)
+      end
+      GameTooltip:AddLine(L["Last seen %s."]:format(C.SeenText(record.time)), 0.6, 0.6, 0.6)
+      if not entry.current then
+        GameTooltip:AddLine(L["Shift-right-click to forget this character."], 0.6, 0.6, 0.6)
+      end
+      GameTooltip:Show()
+    end)
+    row:SetScript("OnLeave", HideTooltip)
+    window.charRows[index] = row
+  end
+  window.charEmpty = Text(characters, 11, "muted")
+  window.charEmpty:SetPoint("TOPLEFT", PAD + 2, -94)
+  window.charEmpty:SetPoint("RIGHT", -PAD, 0)
+  window.charEmpty:SetWordWrap(true)
+  window.charTotal = Text(characters)
+  window.charTotal:SetPoint("TOPLEFT", PAD, -96 - CHAR_ROWS * CHAR_ROW_HEIGHT)
+  window.charTotal:SetPoint("RIGHT", -PAD, 0)
+  window.charTotal:SetWordWrap(false)
+
   window.session = Text(window, 10, "muted")
   window.session:SetPoint("BOTTOMLEFT", PAD, 14)
   window.session:SetPoint("RIGHT", -PAD, 0)
@@ -721,9 +812,9 @@ local function Create()
   C.SelectWindowTab(C.DB().windowTab, true)
 end
 
--- Shows a tab of the window ("writs" or "crates"; anything else = writs), saved for next time.
+-- Shows a tab of the window ("writs", "crates" or "characters"; anything else = writs), saved for next time.
 function C.SelectWindowTab(key, quiet)
-  key = key == "crates" and "crates" or "writs"
+  key = (key == "crates" or key == "characters") and key or "writs"
   local db = C.DB()
   if db then
     db.windowTab = key
@@ -963,6 +1054,45 @@ local function CrateRanking()
     or L["Crate price + its cheapest fill, cheapest first"])
 end
 
+-- The Characters tab: every saved character, the one you play first (saved again before it is shown).
+local function CharacterList(counts)
+  C.SaveCharacter(counts)
+  local list = C.Characters()
+  charOffset = math.min(charOffset, math.max(#list - CHAR_ROWS, 0))
+  for index, row in ipairs(window.charRows) do
+    local entry = list[charOffset + index]
+    row.entry = entry
+    if entry then
+      local record = entry.record
+      local color = record.class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[record.class]
+      local name = color and color.colorStr and ("|c%s%s|r"):format(color.colorStr, record.name) or record.name
+      if entry.current then
+        name = name .. " |cff999999" .. L["(this character)"] .. "|r"
+      elseif record.realm and GetRealmName and record.realm ~= GetRealmName() then
+        name = name .. " |cff999999- " .. record.realm .. "|r"
+      end
+      local standing, bags = C.CharacterLines(record)
+      SetText(row.name, name)
+      row.favor:SetText(L["%s Favor"]:format(C.Number(record.favor or 0)))
+      SetText(row.detail, standing .. " |cff999999-|r " .. bags)
+      row.seen:SetText(entry.current and "" or C.SeenText(record.time))
+      row:Show()
+    else
+      row:Hide()
+    end
+  end
+  if #list == 0 then
+    window.charEmpty:SetText(L["No characters yet. Each character shows here once it has reputation, Merchant's Favor, writs or crates."])
+    window.charTotal:SetText("")
+  else
+    window.charEmpty:SetText("")
+    local totals = C.CharacterTotals(list)
+    SetText(window.charTotal, L["All %d: %s Favor, %d writs, %d filled crates, %d to fill"]:format(#list,
+      C.Number(totals.favor), totals.writs, totals.crates, totals.toFill)
+      .. (#list > CHAR_ROWS and (" |cff999999" .. L["(scroll for more)"] .. "|r") or ""))
+  end
+end
+
 local function Cheapest(counts)
   local shown
   local mode = C.CheapestMode()
@@ -1044,6 +1174,10 @@ function C.RefreshWindow()
   window.crateBags:SetText(CrateBags(summary))
   Fills(counts)
   CrateRanking()
+  C.CheckCrateAlert()
+  if window.tab == "characters" then
+    CharacterList(counts)
+  end
 
   local session = C.session
   window.session:SetText(L["This session: +%s Favor, +%s reputation, %d crates, %d writs"]:format(

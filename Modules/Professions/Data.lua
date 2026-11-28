@@ -13,7 +13,9 @@ local L = ns.L
 --   vendor = { [itemID] = unit price a merchant sells it for (copper) },
 --   queue = { [recipe name] = { count, reagents = { { name, itemID, count } } } },
 --   block, panel, tooltip, tooltipValue, craftReagents, ahCut (percent), sortKey, ascending, craftableOnly,
---   hideUnpriced, minProfitOn, minProfit (copper), ownedFree,
+--   hideUnpriced, minProfitOn, minProfit (copper), ownedFree, ownedAlts, listedOften, cooldownNote,
+--   cooldowns = { ["Realm-Name"] = { name, class, recipes = { [recipe name] = { readyAt, prof, icon, charges,
+--     maxCharges, told } } } },  -- crafting cooldowns (Cooldowns.lua)
 -- }
 
 local P = {}
@@ -33,6 +35,10 @@ P.DEFAULTS = {
   minProfitOn = false,  -- hide recipes that earn less than minProfit per craft (and every loss)
   minProfit = 0,        -- copper
   ownedFree = false,
+  ownedAlts = false,    -- Owned free also counts your other characters' reagents (Codex Bags, else Syndicator)
+  listedOften = false,  -- profit list: only items Codex saw up for sale on at least half the scanned days
+  cooldownNote = true,  -- a chat line when a crafting cooldown of this character is ready
+  cooldowns = {},
   characters = {},
   vendor = {},
   queue = {},
@@ -94,6 +100,119 @@ function P.OwnedCount(itemID)
     return 0
   end
   return count(itemID, true) or 0
+end
+
+-- Your other characters' reagents (2026-11-28): on this realm and faction (the ones you can mail), from the Bags
+-- module's records (bags and bank) while it runs, else from Syndicator's public API (bags, bank and mail). The
+-- current character is left out (P.OwnedCount counts it). Cached a few seconds: a refresh asks for every reagent.
+local altCache, altCacheTime = {}, -math.huge
+
+local function SyndicatorAlts(itemID)
+  local api = Syndicator and Syndicator.API
+  if not (api and api.GetInventoryInfoByItemID) then
+    return nil
+  end
+  if api.IsReady then
+    local ok, ready = pcall(api.IsReady)
+    if not (ok and ready) then
+      return nil
+    end
+  end
+  local ok, info = pcall(api.GetInventoryInfoByItemID, itemID, true, true)
+  if not ok or type(info) ~= "table" then
+    return nil
+  end
+  local currentOk, current = pcall(api.GetCurrentCharacter or function() return nil end)
+  current = currentOk and current or nil
+  local list = {}
+  for _, char in ipairs(info.characters or {}) do
+    local name = char.character
+    if type(name) == "string" then
+      local realm = char.realmNormalized
+      local full = (realm and realm ~= "") and (name .. "-" .. realm) or name
+      local count = (char.bags or 0) + (char.bank or 0) + (char.mail or 0)
+      if full ~= current and count > 0 then
+        list[#list + 1] = { name = name, count = count }
+      end
+    end
+  end
+  return list
+end
+
+local function BagsOn()
+  local B = ns.bags
+  return B and B.CharacterKeys and B.CountsOf and B.Character and ns.ModuleOn and ns.ModuleOn("bags") and true or false
+end
+
+local function BagsAlts(itemID)
+  if not BagsOn() then
+    return nil
+  end
+  local B = ns.bags
+  local mine, realm = ns.CharacterKey(), ns.RealmName()
+  local faction = UnitFactionGroup and UnitFactionGroup("player")
+  local list = {}
+  for _, key in ipairs(B.CharacterKeys(false)) do
+    local char = key ~= mine and B.Character(key)
+    if char and (char.realm or key:match("^(.-)%-")) == realm and (not char.faction or char.faction == faction) then
+      local counts = B.CountsOf(key)[itemID]
+      local count = counts and ((counts.bags or 0) + (counts.bank or 0)) or 0
+      if count > 0 then
+        list[#list + 1] = { name = ns.CharacterDisplayName(char, key), count = count }
+      end
+    end
+  end
+  return list
+end
+
+-- How many of an item your other characters have, and { { name, count }, ... } most first.
+function P.AltOwned(itemID)
+  if not itemID then
+    return 0, {}
+  end
+  local now = GetTime and GetTime() or 0
+  if now - altCacheTime > 5 then
+    altCache, altCacheTime = {}, now
+  end
+  local cached = altCache[itemID]
+  if not cached then
+    local list = BagsAlts(itemID) or SyndicatorAlts(itemID) or {}
+    local total = 0
+    for _, char in ipairs(list) do
+      total = total + char.count
+    end
+    table.sort(list, function(a, b)
+      if a.count ~= b.count then
+        return a.count > b.count
+      end
+      return a.name < b.name
+    end)
+    cached = { total = total, list = list }
+    altCache[itemID] = cached
+  end
+  return cached.total, cached.list
+end
+
+-- Where your other characters' counts come from: "bags" (the Bags module), "syndicator" or nil (nowhere).
+function P.AltSource()
+  if BagsOn() then
+    return "bags"
+  end
+  local api = Syndicator and Syndicator.API
+  return (api and api.GetInventoryInfoByItemID) and "syndicator" or nil
+end
+
+-- "Ann 5, Bob 2" (at most four, then "...").
+function P.AltText(list)
+  local parts = {}
+  for index, char in ipairs(list or {}) do
+    if index > 4 then
+      parts[#parts + 1] = "..."
+      break
+    end
+    parts[#parts + 1] = char.name .. " " .. char.count
+  end
+  return table.concat(parts, ", ")
 end
 
 -- Prices --------------------------------------------------------------------------------------------------
@@ -267,12 +386,23 @@ end
 -- Estimated chance of a skill point by recipe colour (orange 100%, yellow ~75%, green ~25%).
 P.SKILL_CHANCE = { optimal = 1, medium = 0.75, easy = 0.25, trivial = 0 }
 
-local function OwnedOf(reagent)
-  local total = 0
+-- With alts, also your other characters' (the second value lists them).
+local function OwnedOf(reagent, alts)
+  local total, where = 0, nil
   for _, itemID in ipairs(reagent.alternatives or { reagent.itemID }) do
     total = total + P.OwnedCount(itemID)
+    if alts then
+      local count, list = P.AltOwned(itemID)
+      if count > 0 then
+        total = total + count
+        where = where or {}
+        for _, char in ipairs(list) do
+          where[#where + 1] = char
+        end
+      end
+    end
   end
-  return total
+  return total, where
 end
 
 -- Fills in cost / value / profit / margin of a recipe entry (see Providers.lua for its shape). The reagent
@@ -299,13 +429,14 @@ function P.Evaluate(entry, ownedFree, crafts)
         end
       end
     end
-    reagent.buyPrice, reagent.craftPrice, reagent.craftRecipe = unit, nil, nil
+    reagent.buyPrice, reagent.craftPrice, reagent.craftRecipe, reagent.craftEntry = unit, nil, nil, nil
     if crafts then
       local craftID
       for _, itemID in ipairs(reagent.alternatives or { reagent.itemID }) do
         local craftUnit, recipe = CraftUnitCost(crafts, itemID, 1, visiting)
         if craftUnit and (reagent.craftPrice == nil or craftUnit < reagent.craftPrice) then
-          reagent.craftPrice, reagent.craftRecipe, craftID = craftUnit, recipe.name, itemID
+          -- craftEntry: the recipe that makes it, for the shopping list (expanded in P.ReagentsToBuy)
+          reagent.craftPrice, reagent.craftRecipe, reagent.craftEntry, craftID = craftUnit, recipe.name, recipe, itemID
         end
       end
       if reagent.craftPrice and (unit == nil or reagent.craftPrice < unit) then
@@ -315,9 +446,9 @@ function P.Evaluate(entry, ownedFree, crafts)
     reagent.unitPrice, reagent.source, reagent.chosenItemID = unit, source, chosenID
 
     local toBuy = reagent.count
-    reagent.owned = nil
+    reagent.owned, reagent.ownedAlts = nil, nil
     if ownedFree then
-      reagent.owned = OwnedOf(reagent)
+      reagent.owned, reagent.ownedAlts = OwnedOf(reagent, P.db and P.db.ownedAlts)
       toBuy = math.max(0, reagent.count - reagent.owned)
     end
     reagent.toBuy = toBuy
@@ -641,6 +772,26 @@ function P.QueueTotal()
   return total
 end
 
+-- One reagent of a queued craft, as saved: { name, itemID, count }, and for a reagent that make or buy chose to
+-- craft also { recipe, made = average amount one craft makes, reagents = { ...the same, one level down } }. A
+-- plain copy: the scan's tables must not go into the saved variables.
+local function Plan(reagent, depth, visiting)
+  local itemID = reagent.chosenItemID or reagent.itemID
+  local node = { name = reagent.name or P.ItemName(itemID), itemID = itemID, count = reagent.count }
+  local recipe = reagent.craftEntry
+  if reagent.source == "craft" and recipe and recipe.reagents and (recipe.numMade or 0) > 0
+    and depth <= P.MAX_CRAFT_DEPTH and itemID and not visiting[itemID] then
+    visiting[itemID] = true
+    node.recipe, node.made, node.reagents = recipe.name, recipe.numMade, {}
+    for _, sub in ipairs(recipe.reagents) do
+      node.reagents[#node.reagents + 1] = Plan(sub, depth + 1, visiting)
+    end
+    visiting[itemID] = nil
+  end
+  return node
+end
+P.PlanReagent = Plan
+
 -- Adds (delta > 0) or removes crafts of a recipe; the reagents are kept with it.
 function P.ChangeQueue(entry, delta)
   local queue = P.Queue()
@@ -650,10 +801,12 @@ function P.ChangeQueue(entry, delta)
       return
     end
     queued = { count = 0, reagents = {} }
+    local visiting = {}
+    if entry.itemID then
+      visiting[entry.itemID] = true
+    end
     for _, reagent in ipairs(entry.reagents) do
-      local itemID = reagent.chosenItemID or reagent.itemID
-      table.insert(queued.reagents, { name = reagent.name or P.ItemName(itemID), itemID = itemID,
-        count = reagent.count })
+      table.insert(queued.reagents, Plan(reagent, 1, visiting))
     end
     queue[entry.name] = queued
   end
@@ -667,34 +820,72 @@ function P.ClearQueue()
   P.DB().queue = {}
 end
 
--- Reagents for every queued craft, minus what you already own, by name.
+-- Reagents to buy for every queued craft. What you own (bags and bank) is used first; a reagent that make or
+-- buy crafts is replaced by what crafting the rest of it takes, one level down at a time (crafts rounded up).
+-- Returns the reagents to buy by name and { { name, itemID, count = how many to craft, recipe } } to craft.
 function P.ReagentsToBuy()
-  local needed, order = {}, {}
-  for _, queued in pairs(P.Queue()) do
-    for _, reagent in ipairs(queued.reagents) do
-      local key = reagent.itemID or reagent.name
-      if key then
-        if not needed[key] then
-          needed[key] = { name = reagent.name, itemID = reagent.itemID, count = 0 }
-          table.insert(order, key)
-        end
-        needed[key].count = needed[key].count + reagent.count * queued.count
+  local stock = {}
+  local buy, buyOrder, craft, craftOrder = {}, {}, {}, {}
+  local function Take(itemID, amount)
+    if not itemID then
+      return 0
+    end
+    if stock[itemID] == nil then
+      stock[itemID] = P.OwnedCount(itemID)
+    end
+    local used = math.min(stock[itemID], amount)
+    stock[itemID] = stock[itemID] - used
+    return used
+  end
+  local function Need(node, amount)
+    local rest = amount - Take(node.itemID, amount)
+    local key = node.itemID or node.name
+    if rest <= 0 or not key then
+      return
+    end
+    if node.reagents and (node.made or 0) > 0 then
+      local crafts = math.ceil(rest / node.made - 1e-9)
+      if not craft[key] then
+        craft[key] = { name = node.name, itemID = node.itemID, recipe = node.recipe, count = 0 }
+        craftOrder[#craftOrder + 1] = key
       end
+      craft[key].count = craft[key].count + crafts
+      for _, sub in ipairs(node.reagents) do
+        Need(sub, (sub.count or 0) * crafts)
+      end
+      return
+    end
+    if not buy[key] then
+      buy[key] = { name = node.name, itemID = node.itemID, count = 0 }
+      buyOrder[#buyOrder + 1] = key
+    end
+    buy[key].count = buy[key].count + rest
+  end
+  -- the same order every time (pairs has none), so what you own goes to the same crafts
+  local names = {}
+  for name in pairs(P.Queue()) do
+    names[#names + 1] = name
+  end
+  table.sort(names)
+  for _, name in ipairs(names) do
+    local queued = P.Queue()[name]
+    for _, reagent in ipairs(queued.reagents) do
+      Need(reagent, (reagent.count or 0) * queued.count)
     end
   end
-  local toBuy = {}
-  for _, key in ipairs(order) do
-    local reagent = needed[key]
-    local missing = reagent.count - P.OwnedCount(reagent.itemID)
-    if missing > 0 then
-      table.insert(toBuy, { name = reagent.name or P.ItemName(reagent.itemID), itemID = reagent.itemID,
-        count = missing })
+  local function List(byKey, order)
+    local list = {}
+    for _, key in ipairs(order) do
+      local item = byKey[key]
+      item.name = item.name or P.ItemName(item.itemID)
+      list[#list + 1] = item
     end
+    table.sort(list, function(a, b)
+      return (a.name or "") < (b.name or "")
+    end)
+    return list
   end
-  table.sort(toBuy, function(a, b)
-    return (a.name or "") < (b.name or "")
-  end)
-  return toBuy
+  return List(buy, buyOrder), List(craft, craftOrder)
 end
 
 -- Writes the reagents still needed into the Codex shopping list "Professions" (Auction House module), one

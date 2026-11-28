@@ -16,7 +16,29 @@ local OPTIONS = {
     L["\"%s\" or how much Favor you still need, and how many crates that is."]:format(L["Can buy"]) },
   { "auctionDock", L["Open beside the auction house"],
     L["When the auction house opens, the window opens beside it and closes with it; a button on its edge opens it too."] },
+  { "mapPins", L["Writ NPCs on the map"],
+    L["The world map shows the NPCs who take the writs you hold: green when one is ready, gold while it still needs its item. Hover for the writs, click for a waypoint."] },
+  { "crateAlert", L["Tell me when a crate is cheap"],
+    L["When a crate and its cheapest fill cost this much or less on the auction house, chat names it, once per crate each session (after a scan or a search). Type an amount like 50s or 1g 20s."],
+    amount = true },
+  { "crateAlertSound", L["With a sound"], "" },
 }
+
+-- The crate alert's amount box: Enter or clicking elsewhere saves a valid amount, Escape undoes.
+local function ShowAlertAmount(box)
+  box:SetText(C.Money(C.DB().crateAlertBelow or 0))
+end
+
+function C.SetCrateAlertAmount(box)
+  local amount = C.ParseMoney(box:GetText())
+  if amount and amount > 0 then
+    C.DB().crateAlertBelow = amount
+    C.ResetCrateAlerts()
+    C.RequestCrateAlert()
+  end
+  ShowAlertAmount(box)
+  box:ClearFocus()
+end
 
 -- "How it works": the factions by the names the game gives them (the client's language), so built with the page.
 local function HowText()
@@ -75,6 +97,9 @@ function C.RefreshPage()
   for _, check in ipairs(view.checks) do
     check:SetChecked(db[check.key])
   end
+  if view.alertAmount and not view.alertAmount:HasFocus() then
+    ShowAlertAmount(view.alertAmount)
+  end
   view.status:SetText(C.StatusText())
   view.learned:SetText(LearnedText())
 end
@@ -83,6 +108,13 @@ function C.SetOption(key, on)
   C.DB()[key] = on and true or false
   if key == "vendorMarks" and C.running then
     C.UpdateVendorMarks()
+  end
+  if key == "mapPins" and C.running then
+    C.RefreshMapPins()
+  end
+  if key == "crateAlert" then
+    C.ResetCrateAlerts()
+    C.RequestCrateAlert()
   end
   C.RefreshWindow()
   C.RefreshPage()
@@ -159,6 +191,32 @@ function C.BuildPage(page)
     end)
     view.checks[#view.checks + 1] = check
     anchor = check
+    if option.amount then
+      -- the amount right under its check box
+      local row = CreateFrame("Frame", nil, page)
+      row:SetSize(1, 22)
+      row:SetPoint("TOPLEFT", check, "BOTTOMLEFT", 0, -4)
+      local label = UI.Text(page, "body", 11, "text")
+      label:SetPoint("LEFT", row, "LEFT", 26, 0)
+      label:SetText(L["At most:"])
+      local box = UI.EditBox(page, 90, 20)
+      box:SetPoint("LEFT", label, "RIGHT", 8, 0)
+      box:SetScript("OnEnterPressed", C.SetCrateAlertAmount)
+      box:SetScript("OnEditFocusLost", function(self)
+        local amount = C.ParseMoney(self:GetText())
+        if amount and amount > 0 and amount ~= C.DB().crateAlertBelow then
+          C.SetCrateAlertAmount(self)
+        else
+          ShowAlertAmount(self)
+        end
+      end)
+      box:SetScript("OnEscapePressed", function(self)
+        ShowAlertAmount(self)
+        self:ClearFocus()
+      end)
+      view.alertAmount = box
+      anchor = row
+    end
   end
 
   view.learned = UI.Text(page, "body", 12, "text")

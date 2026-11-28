@@ -62,6 +62,22 @@ P.Providers.TradeSkill = {
     return not (IsTradeSkillLinked and IsTradeSkillLinked())
   end,
 
+  -- { { name, icon, cooldown = seconds left or nil } } for the recipes the window lists (Cooldowns.lua)
+  Cooldowns = function()
+    local list = {}
+    if not (GetTradeSkillCooldown and GetNumTradeSkills) then
+      return list
+    end
+    for index = 1, GetNumTradeSkills() do
+      local name, skillType = GetTradeSkillInfo(index)
+      if name and not IsHeader(skillType) then
+        local ok, left = pcall(GetTradeSkillCooldown, index)
+        list[#list + 1] = { name = name, icon = GetTradeSkillIcon(index), cooldown = ok and left or nil }
+      end
+    end
+    return list
+  end,
+
   Scan = function()
     local entries = {}
     for index = 1, GetNumTradeSkills() do
@@ -149,6 +165,10 @@ P.Providers.Craft = {
 
   IsOwn = function()
     return true
+  end,
+
+  Cooldowns = function()
+    return {} -- the classic craft window (Enchanting) has no recipe cooldowns
   end,
 
   Scan = function()
@@ -274,6 +294,29 @@ P.Providers.Professions = {
       end
     end
     return true
+  end,
+
+  -- C_TradeSkillUI.GetRecipeCooldown(recipeID): seconds left (nil when ready), isDayCooldown, charges, maxCharges,
+  -- as forever Blizzard_ProfessionsRecipeSchematicForm reads it. Every learned recipe, not only the filtered ones.
+  Cooldowns = function()
+    local list = {}
+    if not (C_TradeSkillUI.GetRecipeCooldown and C_TradeSkillUI.GetAllRecipeIDs) then
+      return list
+    end
+    if C_TradeSkillUI.IsTradeSkillReady and not C_TradeSkillUI.IsTradeSkillReady() then
+      return list
+    end
+    for _, recipeID in ipairs(C_TradeSkillUI.GetAllRecipeIDs() or {}) do
+      local info = C_TradeSkillUI.GetRecipeInfo(recipeID)
+      if info and info.learned and info.name then
+        local ok, left, _, charges, maxCharges = pcall(C_TradeSkillUI.GetRecipeCooldown, recipeID)
+        if ok then
+          list[#list + 1] = { name = info.name, icon = info.icon, cooldown = left, charges = charges,
+            maxCharges = maxCharges }
+        end
+      end
+    end
+    return list
   end,
 
   Scan = function()

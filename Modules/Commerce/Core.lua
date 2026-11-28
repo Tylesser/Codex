@@ -859,3 +859,83 @@ function C.CheapestZones(max, counts)
   end
   return zones
 end
+
+-- "1g 50s", "75s", "2.5g", "30c" -> copper. A number without g, s or c is silver. nil when the text isn't money
+-- (the Professions module's ParseMoney; the standalone addon's ns.ParseMoney).
+function C.ParseMoney(text)
+  text = tostring(text or ""):lower():gsub(",", ".")
+  if not text:find("%d") then
+    return text:match("^%s*$") and 0 or nil
+  end
+  local total, bare = 0, 0
+  local rest = text:gsub("(%d*%.?%d+)%s*([gsc]?)", function(number, unit)
+    local factor = unit == "g" and 10000 or unit == "c" and 1 or 100
+    if unit == "" then
+      bare = bare + 1
+    end
+    total = total + tonumber(number) * factor
+    return ""
+  end)
+  if bare > 1 or rest:find("%S") then
+    return nil
+  end
+  return math.floor(total + 0.5)
+end
+
+-- Crate price alert (2026-11-28, the user's request): when crateAlert is on, every crate of C.CheapestCrates whose
+-- total (crate + cheapest fill) is at or under crateAlertBelow gets one chat line per session (and a sound, with
+-- crateAlertSound). Checked after Codex's prices change (PRICES_UPDATED), when the auction house closes and when
+-- the window shows the ranking. Returns the crates it told about.
+local alerted = {}
+function C.ResetCrateAlerts()
+  alerted = {}
+end
+
+function C.CheckCrateAlert()
+  local db = C.DB()
+  local below = db and tonumber(db.crateAlertBelow)
+  if not (db and db.crateAlert and below and below > 0) then
+    return {}
+  end
+  local found = {}
+  for _, entry in ipairs(C.CheapestCrates()) do
+    if entry.total > below then
+      break -- cheapest first
+    end
+    if not alerted[entry.itemID] then
+      alerted[entry.itemID] = true
+      found[#found + 1] = entry
+    end
+  end
+  for index, entry in ipairs(found) do
+    if index > 3 then
+      ns.Say(L["%d more crates under %s."]:format(#found - 3, C.Money(below)))
+      break
+    end
+    local what = entry.fill and L["%s with its fill"]:format(C.Money(entry.total)) or C.Money(entry.total)
+    ns.Say(L["%s costs %s on the auction house (%s Favor, %s per Favor): under your %s."]:format(entry.name, what,
+      C.Number(entry.favor), C.Money(entry.perFavor), C.Money(below)))
+  end
+  if #found > 0 and db.crateAlertSound and PlaySound then
+    pcall(PlaySound, SOUNDKIT and SOUNDKIT.RAID_WARNING or 8959)
+  end
+  return found
+end
+
+-- After a price update: checked once things have settled (a scan updates many prices at once).
+local alertPending = false
+function C.RequestCrateAlert()
+  local db = C.DB()
+  if not (db and db.crateAlert) then
+    return
+  end
+  if alertPending then
+    return
+  end
+  alertPending = true
+  C_Timer.After(3, function()
+    alertPending = false
+    C.InvalidateCheapest()
+    C.CheckCrateAlert()
+  end)
+end

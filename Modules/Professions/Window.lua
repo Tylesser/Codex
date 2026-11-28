@@ -32,6 +32,40 @@ function P.RequestRefresh()
   end)
 end
 
+-- How often the recipe's item is up for sale: on how many of the last P.LISTED_DAYS days Codex saw it at the
+-- auction house, of the days Codex scanned at all (Auction History.lua A.DaysListed). nil without the module.
+P.LISTED_DAYS = 14
+function P.ListedDays(entry)
+  local A = ns.auction
+  if not (A and A.DaysListed and entry and entry.itemID) then
+    return nil
+  end
+  local ok, listed, scanned = pcall(A.DaysListed, entry.itemID, P.LISTED_DAYS)
+  if not ok then
+    return nil
+  end
+  return listed, scanned
+end
+
+-- "Up for sale on 9 of the 12 days Codex scanned (last 14 days)" for a tooltip; nil before any scan.
+function P.ListedText(entry)
+  local listed, scanned = P.ListedDays(entry)
+  if not scanned or scanned == 0 then
+    return nil
+  end
+  return L["Up for sale on %d of the %d days Codex scanned (last %d days)"]:format(listed, scanned, P.LISTED_DAYS)
+end
+
+-- "Often listed": seen on at least half the scanned days. With fewer than 3 scanned days there is nothing to go
+-- by, so every recipe stays.
+function P.ListedOften(entry)
+  local listed, scanned = P.ListedDays(entry)
+  if not scanned or scanned < 3 then
+    return true
+  end
+  return listed * 2 >= scanned
+end
+
 -- Rescans the open window: remembers its recipes, prices every recipe, then redraws the block and list.
 function P.Refresh()
   local provider = P.active
@@ -43,6 +77,7 @@ function P.Refresh()
   local title = provider.GetTitle()
   if provider.IsOwn() then
     P.RememberRecipes(all, title, complete)
+    P.RecordCooldowns(provider)
   end
   local crafts = db.craftReagents and P.BuildCraftIndex(all) or nil
   local byKey, shown, priced = {}, {}, 0
@@ -58,6 +93,9 @@ function P.Refresh()
       keep = false
     end
     if db.hideUnpriced and entry.value == nil then
+      keep = false
+    end
+    if keep and db.listedOften and not P.ListedOften(entry) then
       keep = false
     end
     if keep then
@@ -148,6 +186,10 @@ local function BlockOnEnter(self)
       1, 1, 1, 1, 1, 1)
   else
     GameTooltip:AddLine(L["No auction price for the item yet: scan at the auction house."], 1, 0.5, 0.25, true)
+  end
+  local listed = P.ListedText(entry)
+  if listed then
+    GameTooltip:AddLine(listed, 0.6, 0.6, 0.6, true)
   end
   if entry.fullCostMissing then
     GameTooltip:AddLine(L["Some reagents have no price, so the cost is too low"], 1, 0.5, 0, true)
@@ -424,6 +466,10 @@ local function RowOnEnter(self)
       left = left .. " |cff40ff40" .. L["(have %d)"]:format(reagent.owned) .. "|r"
     end
     GameTooltip:AddDoubleLine(left, right, 1, 1, 1, 1, 1, 1)
+    if reagent.ownedAlts then
+      GameTooltip:AddLine("   |cff909090" .. L["on your other characters: %s"]:format(P.AltText(reagent.ownedAlts)) .. "|r",
+        1, 1, 1, true)
+    end
   end
   GameTooltip:AddLine(" ")
   GameTooltip:AddDoubleLine(entry.ownedFree and L["Cost to buy what you lack"] or L["Reagent cost"], P.Money(entry.cost),
@@ -436,6 +482,10 @@ local function RowOnEnter(self)
     GameTooltip:AddLine(L["Price seen %s ago"]:format(ns.Age(entry.seen)), 0.6, 0.6, 0.6)
   else
     GameTooltip:AddLine(L["No auction price for the item yet"], 1, 0.5, 0.25)
+  end
+  local listed = P.ListedText(entry)
+  if listed then
+    GameTooltip:AddLine(listed, 0.6, 0.6, 0.6, true)
   end
   if entry.missingReagents then
     GameTooltip:AddLine(L["Some reagents have no price, so the cost is too low"], 1, 0.5, 0)
@@ -560,6 +610,29 @@ local function CreatePanel(parent)
     P.db.panel = false
     P.UpdatePanel()
   end)
+  -- crafting cooldowns of all your characters (Cooldowns.lua): hover for the list, click to print it
+  local clock = CreateFrame("Button", nil, panel)
+  clock:SetSize(20, 20)
+  clock:SetPoint("RIGHT", close, "LEFT", -8, 0)
+  clock.icon = clock:CreateTexture(nil, "ARTWORK")
+  clock.icon:SetAllPoints()
+  clock.icon:SetTexture("Interface\\Icons\\INV_Misc_PocketWatch_01")
+  clock.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+  clock:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+  clock.count = UI.Text(clock, "body", 11, "good")
+  clock.count:SetPoint("BOTTOMRIGHT", 3, -3)
+  clock:SetScript("OnClick", P.PrintCooldowns)
+  clock:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_BOTTOMRIGHT")
+    GameTooltip:SetText(L["Crafting cooldowns"], 1, 0.82, 0)
+    P.AddCooldownLines(GameTooltip)
+    GameTooltip:AddLine(" ")
+    GameTooltip:AddLine(L["Click to print the list in chat (also /codex cooldowns)."], 0.5, 0.5, 0.5, true)
+    GameTooltip:Show()
+  end)
+  clock:SetScript("OnLeave", GameTooltip_Hide)
+  clock.codexProfRow = true
+  panel.clock = clock
   local titleLine = UI.Divider(panel)
   titleLine:SetPoint("TOPLEFT", PAD, -PAD - TITLE_H)
   titleLine:SetPoint("TOPRIGHT", -PAD, -PAD - TITLE_H)
@@ -613,9 +686,24 @@ local function CreatePanel(parent)
   panel.craftable:SetPoint("BOTTOMLEFT", PAD + 6, PAD + FOOTER_H + 6 + FILTER_ROW)
   panel.priced = Check(panel, L["Has AH price"], "hideUnpriced", L["Hide recipes whose item has no Codex auction price."])
   panel.priced:SetPoint("LEFT", panel.craftable.label, "RIGHT", 22, 0)
-  panel.owned = Check(panel, L["Owned free"], "ownedFree",
-    L["Count reagents already in your bags and bank as free, so Cost and Profit show what crafting from your own stock earns."])
+  local ownedTip = L["Count reagents already in your bags and bank as free, so Cost and Profit show what crafting from your own stock earns."]
+  panel.owned = Check(panel, L["Owned free"], "ownedFree", ownedTip)
   panel.owned:SetPoint("LEFT", panel.priced.label, "RIGHT", 22, 0)
+  panel.owned:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_TOPLEFT")
+    GameTooltip:SetText(ownedTip, 1, 1, 1, 1, true)
+    if P.db.ownedAlts then
+      local source = P.AltSource()
+      if source == "bags" then
+        GameTooltip:AddLine(L["Also counts your other characters' bags and bank (from Codex's bag records)."], 0.6, 0.6, 0.6, true)
+      elseif source == "syndicator" then
+        GameTooltip:AddLine(L["Also counts your other characters' bags, bank and mail (from Syndicator)."], 0.6, 0.6, 0.6, true)
+      else
+        GameTooltip:AddLine(L["Your other characters are counted with the Bags module on, or with Syndicator."], 1, 0.5, 0.25, true)
+      end
+    end
+    GameTooltip:Show()
+  end)
 
   panel.minProfit = Check(panel, L["Min profit"], "minProfitOn", MIN_TIP)
   panel.minProfit:SetPoint("BOTTOMLEFT", PAD + 6, PAD + FOOTER_H + 6)
@@ -654,6 +742,10 @@ local function CreatePanel(parent)
   box:SetScript("OnLeave", GameTooltip_Hide)
   panel.minBox = box
 
+  panel.often = Check(panel, L["Often listed"], "listedOften",
+    L["Only recipes whose item Codex saw up for sale on at least half the days it scanned in the last 14 (every recipe stays until Codex has scanned on 3 days). Codex sees listings, not sales."])
+  panel.often:SetPoint("LEFT", box, "RIGHT", 22, 0)
+
   panel.shopping = UI.Button(panel, 150, 26, L["Shopping list"])
   panel.shopping:SetPoint("BOTTOMRIGHT", -PAD - 4, PAD + 7)
   panel.shopping:RegisterForClicks("LeftButtonUp", "RightButtonUp")
@@ -670,11 +762,19 @@ local function CreatePanel(parent)
     GameTooltip:SetText(L["Codex shopping list"], 1, 0.82, 0)
     GameTooltip:AddLine(L["Right-click recipes to queue crafts, then click here."], 1, 1, 1, true)
     GameTooltip:AddLine(L["Writes the reagents you still need (minus your bags and bank) to the Codex shopping list \"%s\". At the auction house, click it in the Codex panel to search."]:format(P.LIST_NAME), 1, 1, 1, true)
-    local toBuy = P.ReagentsToBuy()
+    local toBuy, toCraft = P.ReagentsToBuy()
     if #toBuy > 0 then
       GameTooltip:AddLine(" ")
       for _, reagent in ipairs(toBuy) do
         GameTooltip:AddDoubleLine(reagent.name or ("item:" .. tostring(reagent.itemID)), reagent.count, 1, 1, 1, 1, 1, 1)
+      end
+    end
+    if #toCraft > 0 then
+      GameTooltip:AddLine(" ")
+      GameTooltip:AddLine(L["Craft first (their reagents are in the list):"], 1, 0.82, 0)
+      for _, reagent in ipairs(toCraft) do
+        GameTooltip:AddDoubleLine(reagent.name or ("item:" .. tostring(reagent.itemID)),
+          ("%dx %s"):format(reagent.count, reagent.recipe or "?"), 1, 1, 1, 0.6, 0.6, 0.6)
       end
     end
     GameTooltip:AddLine(" ")
@@ -704,6 +804,9 @@ function P.UpdatePanel()
   panel.priced:SetChecked(db.hideUnpriced)
   panel.owned:SetChecked(db.ownedFree)
   panel.minProfit:SetChecked(db.minProfitOn)
+  panel.often:SetChecked(db.listedOften)
+  local ready = P.ReadyCooldowns()
+  panel.clock.count:SetText(ready > 0 and ready or "")
   if not panel.minBox:HasFocus() then
     panel.minBox:SetText(P.PlainMoney(db.minProfit))
   end

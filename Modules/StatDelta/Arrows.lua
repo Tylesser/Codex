@@ -20,9 +20,17 @@ local ARROW_TEXTURE = "Interface\\Buttons\\Arrow-Down-Up"
 
 -- Upgrade decision -----------------------------------------------------------------------------
 
-local upgradeCache = {}
+-- The item's score against each comparison of FindReplaced: a list of { slot, altSlot, new, old, links } (slot: the
+-- inventory slot it would go in; links: the equipped items it would replace). false: no score, not gear, not
+-- usable or already worn; nil: the item's data isn't loaded yet. Cached per link until S.RefreshArrows. Used by
+-- the arrows, best in bags (Best.lua) and the auction house rows.
+local choiceCache = {}
 
-local function Decide(link)
+local function Choices(link)
+  local weights = S.ActiveWeights()
+  if not weights then
+    return false
+  end
   local equipLoc = S.EquipLoc(link)
   if not equipLoc or equipLoc == "" then
     return false
@@ -31,7 +39,6 @@ local function Decide(link)
   if not replacedList then
     return false
   end
-  local weights = S.ActiveWeights()
   local newStats = S.GetItemStats(link)
   if not newStats then
     return nil
@@ -44,9 +51,9 @@ local function Decide(link)
     return false
   end
   local newScore = S.Score(newStats, weights)
-  local upgrade = false
+  local list = {}
   for _, replaced in ipairs(replacedList) do
-    local oldList = {}
+    local oldList, links = {}, {}
     for i = 1, 2 do
       local oldLink = replaced[i]
       if oldLink == link then
@@ -58,14 +65,43 @@ local function Decide(link)
           return nil
         end
         table.insert(oldList, stats)
+        table.insert(links, oldLink)
       end
     end
-    -- better than at least one of the items it could replace (or than an empty slot)
-    if newScore > S.Score(S.SumStats(oldList), weights) + 0.001 then
-      upgrade = true
+    table.insert(list, { slot = replaced.slot, altSlot = replaced.altSlot, new = newScore, old = S.Score(S.SumStats(oldList), weights), links = links })
+  end
+  return list
+end
+
+function S.UpgradeChoices(link)
+  if not link then
+    return false
+  end
+  local cached = choiceCache[link]
+  if cached ~= nil then
+    return cached
+  end
+  local result = Choices(link)
+  if result ~= nil then
+    choiceCache[link] = result
+  end
+  return result
+end
+
+-- The comparison it beats by the most points (better than at least one of the items it could replace, or than
+-- an empty slot), or false; nil while loading.
+function S.BestUpgrade(link)
+  local list = S.UpgradeChoices(link)
+  if not list then
+    return list
+  end
+  local best
+  for _, choice in ipairs(list) do
+    if choice.new > choice.old + 0.001 and (not best or choice.new - choice.old > best.new - best.old) then
+      best = choice
     end
   end
-  return upgrade
+  return best or false
 end
 
 -- true: an upgrade for this character; false: not (or arrows are off); nil: item data not loaded yet.
@@ -73,15 +109,11 @@ function S.IsUpgrade(link)
   if not (link and S.ArrowsShown()) then
     return false
   end
-  local cached = upgradeCache[link]
-  if cached ~= nil then
-    return cached
+  local best = S.BestUpgrade(link)
+  if best == nil then
+    return nil
   end
-  local result = Decide(link)
-  if result ~= nil then
-    upgradeCache[link] = result
-  end
-  return result
+  return best and true or false
 end
 
 -- Arrows on item buttons ---------------------------------------------------------------------
@@ -285,12 +317,149 @@ local function HookQuests()
   end
 end
 
+-- Auction house ------------------------------------------------------------------------------------------
+-- The rows of the game's auction house lists (forever Blizzard_AuctionHouseUI, Shared/Blizzard_AuctionHouseItemList.lua):
+-- each list's table builder fills a row in AddRow (TableBuilderMixin: row.rowData, then the cells) and empties it in
+-- RemoveRow. The browse list's rows are item keys: gear with a random suffix ("of the Bear") gets no arrow there,
+-- as its stats come with the suffix; the item's own auction list (ItemBuyFrame) has each auction's link. The
+-- arrow sits on a small frame above the row's cells, at the item icon's top right corner.
+
+local auctionArrows = setmetatable({}, { __mode = "k" }) -- row -> arrow texture
+local auctionLinks = setmetatable({}, { __mode = "k" })  -- row -> the link it shows (false: none)
+local hookedBuilders = setmetatable({}, { __mode = "k" })
+local hookedLists = setmetatable({}, { __mode = "k" })
+
+local function AuctionRowLink(rowData)
+  if type(rowData) ~= "table" then
+    return nil
+  end
+  if type(rowData.itemLink) == "string" then
+    return rowData.itemLink
+  end
+  local key = rowData.itemKey
+  if type(key) ~= "table" or type(key.itemID) ~= "number" then
+    return nil
+  end
+  if (key.battlePetSpeciesID or 0) ~= 0 or (key.itemSuffix or 0) ~= 0 then
+    return nil
+  end
+  return "item:" .. key.itemID
+end
+S.AuctionRowLink = AuctionRowLink
+
+local function RowIcon(row)
+  for _, cell in ipairs(type(row.cells) == "table" and row.cells or {}) do
+    local icon = type(cell) == "table" and rawget(cell, "Icon")
+    if type(icon) == "table" and icon.IsShown and icon:IsShown() then
+      return icon
+    end
+  end
+  return nil
+end
+
+local function UpdateAuctionRow(row)
+  local link = AuctionRowLink(row.rowData)
+  auctionLinks[row] = link or false
+  local upgrade = link and S.IsUpgrade(link)
+  if link and upgrade == nil then
+    waiting = true
+  end
+  local arrow = auctionArrows[row]
+  if not upgrade then
+    if arrow then
+      arrow:Hide()
+    end
+    return
+  end
+  if not arrow then
+    local holder = CreateFrame("Frame", nil, row)
+    holder:SetAllPoints(row)
+    holder:SetFrameLevel(row:GetFrameLevel() + 10)
+    arrow = CreateArrow(holder)
+    arrow:SetSize(14, 14)
+    auctionArrows[row] = arrow
+  end
+  arrow:ClearAllPoints()
+  local icon = RowIcon(row)
+  if icon then
+    arrow:SetPoint("TOPRIGHT", icon, "TOPRIGHT", 4, 4)
+  else
+    arrow:SetPoint("LEFT", row, "LEFT", 2, 0)
+  end
+  arrow:Show()
+end
+
+local function ClearAuctionRow(row)
+  auctionLinks[row] = nil
+  if auctionArrows[row] then
+    auctionArrows[row]:Hide()
+  end
+end
+
+local function HookAuctionList(list)
+  if type(list) ~= "table" then
+    return
+  end
+  local function HookBuilder()
+    local builder = list.tableBuilder
+    if type(builder) ~= "table" or hookedBuilders[builder] or type(builder.AddRow) ~= "function" then
+      return
+    end
+    hookedBuilders[builder] = true
+    hooksecurefunc(builder, "AddRow", function(_, row)
+      if type(row) == "table" then
+        local ok, err = pcall(UpdateAuctionRow, row)
+        if not ok then
+          geterrorhandler()(err)
+        end
+      end
+    end)
+    if type(builder.RemoveRow) == "function" then
+      hooksecurefunc(builder, "RemoveRow", function(_, row)
+        if type(row) == "table" then
+          ClearAuctionRow(row)
+        end
+      end)
+    end
+  end
+  HookBuilder()
+  if not list.tableBuilder and type(list.Init) == "function" and not hookedLists[list] then
+    hookedLists[list] = true
+    hooksecurefunc(list, "Init", HookBuilder) -- the builder is made the first time the list is shown
+  end
+end
+
+local function HookAuctionHouse()
+  local frame = AuctionHouseFrame
+  if type(frame) ~= "table" then
+    return
+  end
+  for _, part in ipairs({ frame.BrowseResultsFrame, frame.ItemBuyFrame }) do
+    if type(part) == "table" then
+      HookAuctionList(part.ItemList)
+    end
+  end
+end
+
+local function RefreshAuctionRows()
+  for row, link in pairs(auctionLinks) do
+    if link and row:IsVisible() then
+      UpdateAuctionRow(row)
+    elseif auctionArrows[row] and not S.ArrowsShown() then
+      auctionArrows[row]:Hide()
+    end
+  end
+end
+
 -- Refresh ------------------------------------------------------------------------------------------
 
 -- Gear, weights, level or settings changed: decide again for every arrow on screen.
 function S.RefreshArrows()
-  upgradeCache = {}
+  choiceCache = {}
   waiting = false
+  if S.ForgetBest then
+    S.ForgetBest()
+  end
   for button, link in pairs(shownLinks) do
     if button:IsVisible() then
       SetArrow(button, link or nil)
@@ -298,6 +467,7 @@ function S.RefreshArrows()
       arrows[button]:Hide()
     end
   end
+  RefreshAuctionRows()
   RefreshBaganator()
 end
 
@@ -310,6 +480,7 @@ function S.HookArrows()
   HookBags()
   HookQuests()
   HookBaganator()
+  HookAuctionHouse() -- (when the game's auction house addon is already loaded)
   local events = CreateFrame("Frame")
   events:RegisterEvent("ADDON_LOADED")
   events:RegisterEvent("GET_ITEM_INFO_RECEIVED")
@@ -317,6 +488,8 @@ function S.HookArrows()
     if event == "ADDON_LOADED" then
       if name == "Baganator" then
         HookBaganator()
+      elseif name == "Blizzard_AuctionHouseUI" then
+        HookAuctionHouse()
       end
     elseif waiting then
       waiting = false
