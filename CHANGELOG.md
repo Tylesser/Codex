@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.18.1
+
+- Professions: **Fix: vendors that sell above the auction house**: a reagent now costs the cheaper of its vendor price and its auction price, and a dearer merchant (such as the Black Market) no longer replaces the price a cheaper one sells it for. Before, recipes like the dyes could show a big loss after a visit to the Black Market.
+
 ## 1.18.0
 
 - Commerce: **Beside the auction house**: the Commerce window opens docked to the auction house's right edge (right of the Codex auction panel) when you open it, and closes with it. When it's closed, a Commerce Authority button on that edge opens it. Drag it away to keep it open where you put it. Option **Open beside the auction house** (on by default).

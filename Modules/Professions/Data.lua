@@ -135,13 +135,14 @@ function P.VendorPrice(itemID)
   return vendor and itemID and vendor[itemID] or nil
 end
 
--- A reagent: a known vendor price wins, the auction price after that.
+-- A reagent: the cheaper of a known vendor price and the auction price. Some vendors sell reagents far above
+-- the auction house (the Black Market), so a vendor price alone must not win.
 function P.ReagentUnitPrice(itemID)
   local vendor = P.VendorPrice(itemID)
-  if vendor then
+  local auction = P.AuctionPrice(itemID)
+  if vendor and (not auction or vendor <= auction) then
     return vendor, "vendor"
   end
-  local auction = P.AuctionPrice(itemID)
   if auction then
     return auction, "auction"
   end
@@ -170,7 +171,11 @@ function P.RecordMerchant()
     local link = GetMerchantItemLink and GetMerchantItemLink(index)
     local itemID = Readable(link) and P.ItemIDFromLink(link)
     if itemID and Readable(price) and Readable(stack) and type(price) == "number" and price > 0 and not extended then
-      db.vendor[itemID] = price / math.max(1, stack or 1)
+      local unit = price / math.max(1, stack or 1)
+      -- Keep the lowest price seen: the same item can cost far more at another merchant.
+      if not db.vendor[itemID] or unit < db.vendor[itemID] then
+        db.vendor[itemID] = unit
+      end
       recorded = recorded + 1
     end
   end

@@ -683,7 +683,8 @@ actions / windows / rings, `R.Choices(kind, ring)`, search, a click = `R.SetSlic
   Cities (2026-11-27, TradeCrier issue #1): `message.city`, the city picker and the teleport icons; see
   TradeCrier/CLAUDE.md. Page.lua's rows use `C.CityButton` like TradeCrier's Options.lua.
 - `Modules/Professions`: Profit Sort ported in (standalone = `ProfitSort`). Prices only from Codex: auction
-  `ns.auction.GetPrice`, vendor prices recorded at merchants (`CodexDB.professions.vendor`). Forever opens the
+  `ns.auction.GetPrice`, vendor prices recorded at merchants (`CodexDB.professions.vendor`, the lowest unit price seen: the Black Market
+  sells the same reagents far dearer); a reagent costs the cheaper of vendor and auction. Forever opens the
   modern `ProfessionsFrame`; the classic TradeSkill/Craft providers are kept. The block sits in
   `CraftingPage.SchematicForm` under `.Reagents` (selection via `hooksecurefunc(form, "Init")`), the profit
   list docks right of the window. Recipes per character in `CodexDB.professions.characters["Realm-Name"]`
