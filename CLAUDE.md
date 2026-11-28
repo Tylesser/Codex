@@ -744,7 +744,9 @@ actions / windows / rings, `R.Choices(kind, ring)`, search, a click = `R.SetSlic
   the theme's muted/good/warn/accent/bright. Page.lua: options (no "all sources" option: one source). Module.lua:
   events, `/codex commerce [npcs|buy|options|debug]`, `/codex writs`, and `/aca` `/commerce` only while the
   standalone isn't loaded. Test `codex_commerce_test.lua` (ported from `ca_test.lua`). 2026-11-28 (twins of the
-  standalone): Dock.lua (the window docked beside the AH, right of the Codex auction panel; `auctionDock`;
+  standalone): Dock.lua (the window docked beside the AH, right of the Codex auction panel; opened from a tab in the AH's tab row,
+  `C.DockTab` / `C.ToggleDock`, see Commerce Authority's CLAUDE.md for the tab's rules; `auctionDock` off by default
+  since 1.19.2 (`dockTabSeen` switched it off once);
   `C.DockWindow`, `C.EnsureWindow`, `C.RestoreWindowPosition`; events from Module.lua) and the crate ranking
   (`C.CheapestCrates`, `C.SearchRankedCrate` with term quantities, `C.CreateRankedCrateBuyList`). The window has two
   tabs (same day, the user's "writs and crates are not the same thing"): `window.panes.writs` / `.crates` (each

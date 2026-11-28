@@ -15,7 +15,7 @@ local OPTIONS = {
   { "vendorMarks", L["Marks at the Commerce Authority vendors"],
     L["\"%s\" or how much Favor you still need, and how many crates that is."]:format(L["Can buy"]) },
   { "auctionDock", L["Open beside the auction house"],
-    L["When the auction house opens, the window opens beside it and closes with it; a button on its edge opens it too."] },
+    L["When the auction house opens, the window opens beside it too. Without this, the Commerce Authority tab at the bottom of the auction house opens and closes it."] },
   { "mapPins", L["Writ NPCs on the map"],
     L["The world map shows the NPCs who take the writs you hold: green when one is ready, gold while it still needs its item. Hover for the writs, click for a waypoint."] },
   { "crateAlert", L["Tell me when a crate is cheap"],

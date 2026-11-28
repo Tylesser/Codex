@@ -23,7 +23,7 @@ C.DEFAULTS = {
   cheapestBy = nil,          -- the window's cheapest list: "writ", "npc" or "zone" (nil: writ; C.CheapestMode)
   windowTab = nil,           -- the window's tab: "writs" (nil) or "crates" (C.SelectWindowTab)
   position = nil,            -- the window's place
-  auctionDock = true,        -- the window opens beside the auction house and closes with it (Dock.lua)
+  auctionDock = false,       -- the window opens by itself beside the auction house (Dock.lua; else its tab opens it)
   mapPins = true,            -- the NPCs who take your writs on the world map (Route.lua)
   crateAlert = false,        -- tell me when a crate + its cheapest fill costs less than crateAlertBelow
   crateAlertBelow = 10000,   -- copper (1g)
@@ -78,6 +78,11 @@ function C.DB()
   end
   if C.db ~= ns.db.commerce then
     C.db = ns.Fill(ns.db.commerce, C.DEFAULTS)
+    -- 1.19.2: the window no longer opens by itself with the auction house (its tab opens it); once for everyone
+    if not C.db.dockTabSeen then
+      C.db.dockTabSeen = true
+      C.db.auctionDock = false
+    end
   end
   return C.db
 end

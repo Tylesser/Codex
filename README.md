@@ -70,7 +70,7 @@ Home shows a card for each feature with what it is doing right now; click a card
   standing, Merchant's Favor, your writs grouped by who takes them (with waypoints) and the crates you have to fill
   (click one at the auction house to search for what fills it; a result opens with the amount your crates still need), the next standings and the
   cheapest reputation by writ, NPC or zone (Writs tab), every crate by its price plus the cheapest fill (Crates tab), with a
-  buy list for the Codex shopping lists; the window opens beside the auction house and closes with it (an option); "All NPCs" lists every
+  buy list for the Codex shopping lists; a Commerce Authority tab at the bottom of the auction house opens the window beside it (or it opens by itself: an option); "All NPCs" lists every
   NPC who takes writs, grouped by continent and zone; a ready writ you haven't opened gets a Start button. Route
   puts waypoints on the NPCs who take your writs, nearest first, and the world map shows them; the Characters tab
   lists every character's standing, Favor, writs and crates; an optional alert names crates under a price you set. Codex learns what your turn-ins really give. Uses Codex's own auction prices and the

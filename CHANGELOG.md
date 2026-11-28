@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.19.2
+
+- Commerce: the window no longer opens by itself with the auction house: the new **Commerce Authority** tab at the bottom of the auction house opens it beside it, and closes it again. Tick **Open beside the auction house** on the Commerce page to have it open by itself as before.
+
 ## 1.19.1
 
 - Highlights: the "!" on quest objects, quest mobs and quest-starting items is now a sharp drawn mark instead of a blurry font character.
