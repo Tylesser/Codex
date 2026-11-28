@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.19.1
+
+- Highlights: the "!" on quest objects, quest mobs and quest-starting items is now a sharp drawn mark instead of a blurry font character.
+
 ## 1.19.0
 
 - Buffs: **Paladins share their blessings** (with Buff Tracker or Codex users in your group: their choices on the Party buff buttons page, a chat line when two of you chose the same, and buttons that leave a blessing to the paladin giving it), and **one key for the next missing buff** (Buff tracker section, or `/click CodexBuffsNextBuff`).

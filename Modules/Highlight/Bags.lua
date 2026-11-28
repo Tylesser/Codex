@@ -10,14 +10,14 @@ local addonName, ns = ...
 -- starter gets our own "!" in the top-right corner instead (2026-11-27, the user's wish: it was gone with the
 -- border). Blizzard's buttons keep their own "!". Only alpha, textures and text of ours (one set per button, weak
 -- table): fine in combat.
--- Art: branding/source/highlight-art.py (Corner.tga).
+-- Art: branding/source/highlight-art.py (Corner.tga, Bang.tga).
 
 local H = ns.highlight
 
 local CORNER = "Interface\\AddOns\\Codex\\Modules\\Highlight\\Media\\Corner"
 local SLOT, MARK, INSET = 40, 9, 3 -- the board's slot, mark and inset (px)
-local BANG_FONT = "Fonts\\ARIALN.TTF" -- the same heavy "!" as the quest mobs' (Plates.lua)
-local BANG_SIZE = 18 -- px on a 40px slot
+local BANG_SIZE = 17 -- px on a 40px slot; the texture is Plates.lua's H.BANG, the quest mobs' "!"
+local BANG = "Interface\\AddOns\\Codex\\Modules\\Highlight\\Media\\Bang"
 -- The board's questMark token per theme (not in the theme files yet): the accent, except Slate's blue accent.
 local QUEST_COLORS = {
   runestone = { 0.94, 0.76, 0.31 }, -- #f0c24e
@@ -45,11 +45,10 @@ end
 local function Build(button)
   local corner = button:CreateTexture(nil, "OVERLAY", nil, 6)
   corner:SetTexture(CORNER)
-  local bang = button:CreateFontString(nil, "OVERLAY", nil, 7)
-  bang:SetFont(BANG_FONT, BANG_SIZE, "OUTLINE")
-  bang:SetText("!")
-  bang:SetShadowOffset(0, -1)
-  bang:SetShadowColor(0, 0, 0, 1)
+  local bang = button:CreateTexture(nil, "OVERLAY", nil, 7)
+  local art = H.BANG or {}
+  bang:SetTexture(art.texture or BANG)
+  bang:SetTexCoord(art.left or 18 / 64, art.right or 46 / 64, 0, 1)
   bang:Hide()
   local mark = { corner = corner, bang = bang }
   marks[button] = mark
@@ -129,11 +128,11 @@ function H.QuestMark(button, bag, slot)
   local bang = mark.bang
   if state == "starts" and Own(button) then
     local size = math.max(9, math.floor(BANG_SIZE * scale + 0.5))
-    bang:SetFont(BANG_FONT, size, "OUTLINE")
+    bang:SetSize(size * ((H.BANG and H.BANG.aspect) or 28 / 64), size)
     bang:ClearAllPoints()
-    bang:SetPoint("TOPRIGHT", button, "TOPRIGHT", -INSET * scale, -1 * scale)
+    bang:SetPoint("TOPRIGHT", button, "TOPRIGHT", -INSET * scale, -2 * scale)
     local quest = H.COLORS and H.COLORS.quest or { 1, 0.82, 0 }
-    bang:SetTextColor(quest[1], quest[2], quest[3], 1)
+    bang:SetVertexColor(quest[1], quest[2], quest[3], 1)
     bang:Show()
   else
     bang:Hide()

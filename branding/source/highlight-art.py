@@ -9,6 +9,8 @@ Writes white RGBA TGAs (tinted in game with SetVertexColor; black parts stay bla
                  64x64 glyphs, the board's 24-unit SVG paths stroked 2.2 wide with round ends (Fish is ours: the
                  board has no pool)
   Corner.tga     32x32 right triangle in the top-left corner (the bag slot's quest mark)
+  Bang.tga       64x64 "!" for quest objects, quest mobs and quest-starting items: a tapered bar with round ends
+                 and a dot, white with a 4px black edge baked in (it replaced a font "!", blurry in game, 2026-11-28)
 """
 import math
 import os
@@ -135,6 +137,39 @@ def corner(path, size=32):
     save(image, path)
 
 
+# Bang -------------------------------------------------------------------------------------------------------
+
+def bang_shape(draw, k, grow):
+    """The "!" in 64-unit design space, every edge pushed out by grow units."""
+    top, bottom, half_top, half_bottom = 12.5, 40.0, 7.0, 4.75
+    ht, hb = half_top + grow, half_bottom + grow
+    draw.polygon([((32 - ht) * k, top * k), ((32 + ht) * k, top * k),
+                  ((32 + hb) * k, bottom * k), ((32 - hb) * k, bottom * k)], fill=255)
+    draw.ellipse(((32 - ht) * k, (top - ht) * k, (32 + ht) * k, (top + ht) * k), fill=255)
+    draw.ellipse(((32 - hb) * k, (bottom - hb) * k, (32 + hb) * k, (bottom + hb) * k), fill=255)
+    r = 6.0 + grow
+    draw.ellipse(((32 - r) * k, (53 - r) * k, (32 + r) * k, (53 + r) * k), fill=255)
+
+
+def bang(path, size=64, edge=4.0):
+    big = size * SS
+    k = big / 64.0
+    outer = Image.new("L", (big, big), 0)
+    inner = Image.new("L", (big, big), 0)
+    bang_shape(ImageDraw.Draw(outer), k, edge)
+    bang_shape(ImageDraw.Draw(inner), k, 0)
+    outer = outer.resize((size, size), Image.LANCZOS)
+    inner = inner.resize((size, size), Image.LANCZOS)
+    image = Image.new("RGBA", (size, size))
+    for y in range(size):
+        for x in range(size):
+            a, w = outer.getpixel((x, y)), inner.getpixel((x, y))
+            a = max(a, w)
+            grey = int(round(255 * w / a)) if a else 0
+            image.putpixel((x, y), (grey, grey, grey, a))
+    save(image, path)
+
+
 if __name__ == "__main__":
     root = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), "..", "..")
     media = os.path.join(root, "Modules", "Highlight", "Media")
@@ -144,3 +179,4 @@ if __name__ == "__main__":
     glyph(os.path.join(media, "Chest.tga"), chest())
     glyph(os.path.join(media, "Fish.tga"), fish())
     corner(os.path.join(media, "Corner.tga"))
+    bang(os.path.join(media, "Bang.tga"))

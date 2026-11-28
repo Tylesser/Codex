@@ -21,7 +21,9 @@ local MEDIA = "Interface\\AddOns\\Codex\\Modules\\Highlight\\Media\\"
 local GLOW = "Interface\\AddOns\\Codex\\Media\\Circle"
 local RING = "Interface\\AddOns\\Codex\\Modules\\Buffs\\Media\\Ring"
 local SPARKLE = "Interface\\Cooldown\\star4"
-local BANG_FONT = "Fonts\\ARIALN.TTF" -- the board's "!" is heavy Arial
+-- The "!": our own texture (a font "!" was blurry in game, 2026-11-28), cropped to the glyph's columns so it
+-- anchors like text; white with a black edge, tinted with SetVertexColor. Shared with Bags.lua.
+H.BANG = { texture = MEDIA .. "Bang", left = 18 / 64, right = 46 / 64, aspect = 28 / 64 }
 local FONT = STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"
 local RING_SIZE = 30
 local GLOW_SPAN, SPARKLE_SPAN = 1.7, 1.5 -- times the ring
@@ -301,11 +303,9 @@ local function Build(plate)
   end)
   mark.ring = mark:CreateTexture(nil, "ARTWORK")
   mark.ring:SetTexture(RING)
-  mark.bang = mark:CreateFontString(nil, "OVERLAY")
-  mark.bang:SetFont(BANG_FONT, 16, "OUTLINE")
-  mark.bang:SetText("!")
-  mark.bang:SetShadowOffset(0, -1)
-  mark.bang:SetShadowColor(0, 0, 0, 1)
+  mark.bang = mark:CreateTexture(nil, "OVERLAY")
+  mark.bang:SetTexture(H.BANG.texture)
+  mark.bang:SetTexCoord(H.BANG.left, H.BANG.right, 0, 1)
   mark.label = mark:CreateFontString(nil, "OVERLAY")
   mark.label:SetFont(BodyFont(), 13, "OUTLINE")
   mark.label:SetShadowOffset(0, -1)
@@ -345,13 +345,13 @@ function P.Show(plate, kind, name)
   local r, g, b = color[1], color[2], color[3]
   mark:ClearAllPoints()
   mark.bang:ClearAllPoints()
-  mark.bang:SetTextColor(r, g, b, 1)
+  mark.bang:SetVertexColor(r, g, b, 1)
   if kind == "questmob" then
-    -- the board's "!": 15px heavy, #ffd100, black edge; no disc behind it
-    local s = math.floor(16 * size + 0.5)
+    -- the board's "!": #ffd100, black edge; no disc behind it
+    local s = math.floor(18 * size + 0.5)
     mark:SetSize(s, s)
     mark:SetPoint(MobAnchor(plate))
-    mark.bang:SetFont(BANG_FONT, s, "OUTLINE")
+    mark.bang:SetSize(s * H.BANG.aspect, s)
     mark.bang:SetPoint("CENTER", mark, "CENTER", 0, 0)
     mark.bang:Show()
     mark.ring:Hide()
@@ -375,7 +375,8 @@ function P.Show(plate, kind, name)
     if mark.pulse and not mark.pulse:IsPlaying() then mark.pulse:Play() end
     if mark.turn and not mark.turn:IsPlaying() then mark.turn:Play() end
     if kind == "quest" then -- a quest object: "!" in the ring
-      mark.bang:SetFont(BANG_FONT, math.floor(17 * size + 0.5), "OUTLINE")
+      local s = math.floor(20 * size + 0.5)
+      mark.bang:SetSize(s * H.BANG.aspect, s)
       mark.bang:SetPoint("CENTER", mark, "CENTER", 0, 0)
       mark.bang:Show()
     else
